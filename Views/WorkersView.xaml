@@ -1,0 +1,161 @@
+<UserControl x:Class="Site_Workforce_Manager.Views.WorkersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                           Text="Workers" />
+                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                           Text="Manage your workforce, maintain profiles, and keep rate history up to date." />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,24,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Worker Details" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Add a new worker or update the selected worker." />
+
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="First Name" />
+                            <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Last Name" />
+                            <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trade" />
+                            <TextBox Text="{Binding Trade, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Margin="0,20,0,0" Orientation="Horizontal">
+                        <Button Margin="0,0,12,0"
+                                Command="{Binding AddWorkerCommand}"
+                                Content="Add Worker"
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Margin="0,0,12,0"
+                                Command="{Binding EditSelectedWorkerCommand}"
+                                Content="Edit Selected"
+                                Style="{StaticResource BaseButtonStyle}" />
+                        <Button Command="{Binding DeactivateSelectedWorkerCommand}"
+                                Content="Deactivate"
+                                Style="{StaticResource DangerButtonStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Workers List" />
+                    <TextBlock Margin="0,6,0,16"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Select a worker to edit details or view their rate history." />
+
+                    <DataGrid AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              ItemsSource="{Binding Workers}"
+                              SelectedItem="{Binding SelectedWorker, Mode=TwoWay}"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Id}" Header="Id" Width="70" />
+                            <DataGridTextColumn Binding="{Binding FirstName}" Header="First Name" Width="*" />
+                            <DataGridTextColumn Binding="{Binding LastName}" Header="Last Name" Width="*" />
+                            <DataGridTextColumn Binding="{Binding Trade}" Header="Trade" Width="*" />
+                            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="130" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="3"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Hourly Rate Update" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Add a new rate for the selected worker with an effective date." />
+
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="New Hourly Rate" />
+                            <TextBox Text="{Binding NewHourlyRate, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Effective Date" />
+                            <DatePicker SelectedDate="{Binding NewRateEffectiveDate, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2"
+                                    VerticalAlignment="Bottom">
+                            <Button Command="{Binding AddHourlyRateCommand}"
+                                    Content="Add Hourly Rate"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="4"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Rate History" />
+                    <TextBlock Margin="0,6,0,16"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Review all hourly rates for the selected worker." />
+
+                    <DataGrid AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              ItemsSource="{Binding SelectedWorkerRateHistory}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="*" />
+                            <DataGridTextColumn Binding="{Binding EffectiveFrom, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective From" Width="*" />
+                            <DataGridTextColumn Binding="{Binding EffectiveTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective To" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

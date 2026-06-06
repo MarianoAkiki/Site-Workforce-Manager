@@ -1,0 +1,247 @@
+<UserControl x:Class="Site_Workforce_Manager.Views.WorkLogsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                           Text="Work Logs" />
+                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                           Text="Track daily work entries, review payment status, and filter logs across your sites." />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,24,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Filters" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Filter work logs by date, worker, site, or payment status." />
+
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Start Date" />
+                            <DatePicker SelectedDate="{Binding FilterStartDate, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="End Date" />
+                            <DatePicker SelectedDate="{Binding FilterEndDate, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Worker" />
+                            <ComboBox ItemsSource="{Binding WorkerFilterOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedFilterWorkerOption, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Construction Site" />
+                            <ComboBox ItemsSource="{Binding ConstructionSiteFilterOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedFilterConstructionSiteOption, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Payment Status" />
+                            <ComboBox ItemsSource="{Binding PaymentStatusFilterOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedFilterPaymentStatusOption, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="5"
+                                    VerticalAlignment="Bottom">
+                            <Button Command="{Binding ClearFiltersCommand}"
+                                    Content="Clear Filters"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Work Log Entry" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Add a new work log or update a selected unpaid entry." />
+
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="130" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Worker" />
+                            <ComboBox ItemsSource="{Binding WorkerOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedWorkerOption, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Construction Site" />
+                            <ComboBox ItemsSource="{Binding ConstructionSiteOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedConstructionSiteOption, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Work Date" />
+                            <DatePicker SelectedDate="{Binding WorkDate, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Start Time" />
+                            <TextBox Text="{Binding StartTimeText, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="End Time" />
+                            <TextBox Text="{Binding EndTimeText, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Margin="0,16,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Duration Hours" />
+                            <TextBox IsReadOnly="True"
+                                     Text="{Binding DurationHours, StringFormat={}{0:F2}}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,16,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Hourly Rate Snapshot" />
+                            <TextBox IsReadOnly="True"
+                                     Text="{Binding HourlyRateSnapshot, StringFormat={}{0:F2}}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,16,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Total Amount" />
+                            <TextBox IsReadOnly="True"
+                                     Text="{Binding TotalAmount, StringFormat={}{0:F2}}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="2" Margin="0,16,0,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Notes" />
+                            <TextBox Height="72"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Margin="0,20,0,0" Orientation="Horizontal">
+                        <Button Margin="0,0,12,0"
+                                Command="{Binding AddWorkLogCommand}"
+                                Content="Add Work Log"
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Margin="0,0,12,0"
+                                Command="{Binding EditSelectedWorkLogCommand}"
+                                Content="Edit Selected"
+                                Style="{StaticResource BaseButtonStyle}" />
+                        <Button Command="{Binding CancelSelectedWorkLogCommand}"
+                                Content="Cancel Work Log"
+                                Style="{StaticResource DangerButtonStyle}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="3"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <DockPanel LastChildFill="False">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                       Text="Work Logs List" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Cancelled logs stay visible, but they are excluded from the totals shown below." />
+                        </StackPanel>
+
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Total Hours" />
+                                    <TextBlock FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding FilteredTotalHours, StringFormat={}{0:F2}}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Total Amount" />
+                                    <TextBlock FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding FilteredTotalAmount, StringFormat={}{0:C}}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DataGrid Margin="0,16,0,0"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              ItemsSource="{Binding WorkLogs}"
+                              SelectedItem="{Binding SelectedWorkLog, Mode=TwoWay}"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Id}" Header="Id" Width="60" />
+                            <DataGridTextColumn Binding="{Binding Worker.FirstName}" Header="First Name" Width="120" />
+                            <DataGridTextColumn Binding="{Binding Worker.LastName}" Header="Last Name" Width="120" />
+                            <DataGridTextColumn Binding="{Binding ConstructionSite.Name}" Header="Construction Site" Width="170" />
+                            <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
+                            <DataGridTextColumn Binding="{Binding StartTime}" Header="Start" Width="90" />
+                            <DataGridTextColumn Binding="{Binding EndTime}" Header="End" Width="90" />
+                            <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Hours" Width="80" />
+                            <DataGridTextColumn Binding="{Binding HourlyRateSnapshot, StringFormat={}{0:C}}" Header="Rate" Width="90" />
+                            <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total" Width="100" />
+                            <DataGridTextColumn Binding="{Binding PaymentStatus}" Header="Status" Width="100" />
+                            <DataGridTextColumn Binding="{Binding Notes}" Header="Notes" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
