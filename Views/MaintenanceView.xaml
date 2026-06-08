@@ -1,0 +1,65 @@
+<UserControl x:Class="Site_Workforce_Manager.Views.MaintenanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                           Text="Maintenance" />
+                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                           Text="Create database backups and restore the application from a previous SQLite backup when needed." />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,24,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Database File" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Current application database location." />
+
+                    <TextBox Margin="0,16,0,0"
+                             IsReadOnly="True"
+                             Text="{Binding DatabasePath}" />
+
+                    <TextBlock Margin="0,16,0,0"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Text="{Binding StatusMessage}" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Backup and Restore" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Backup copies the current database to another file. Restore replaces the current database with a selected backup file." />
+
+                    <WrapPanel Margin="0,20,0,0">
+                        <Button Command="{Binding BackupDatabaseCommand}"
+                                Content="Backup Database"
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                        <Button Margin="12,0,0,0"
+                                Command="{Binding RestoreDatabaseCommand}"
+                                Content="Restore Database"
+                                Style="{StaticResource DangerButtonStyle}" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

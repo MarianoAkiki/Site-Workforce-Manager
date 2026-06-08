@@ -27,30 +27,40 @@
                                Text="Report Filters" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource TextMutedBrush}"
-                               Text="Choose a date range, one or more workers, one or more sites, and the payment status you want to analyze." />
+                               Text="Choose a date range, one or more workers, trades, and sites, plus the payment status you want to analyze." />
 
                     <Grid Margin="0,20,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="180" />
                             <ColumnDefinition Width="180" />
                             <ColumnDefinition Width="220" />
                             <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="220" />
                             <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Margin="0,0,12,0">
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="0"
+                                    Margin="0,0,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Date From" />
                             <DatePicker SelectedDate="{Binding DateFrom, Mode=TwoWay}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                        <StackPanel Grid.Row="0"
+                                    Grid.Column="1"
+                                    Margin="0,0,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Date To" />
                             <DatePicker SelectedDate="{Binding DateTo, Mode=TwoWay}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="0"
+                                    Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Workers" />
                             <Border Style="{StaticResource FilterPanelBorderStyle}">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="130">
@@ -67,7 +77,28 @@
                             </Border>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="1"
+                                    Margin="0,18,16,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trades" />
+                            <Border Style="{StaticResource FilterPanelBorderStyle}">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="130">
+                                    <ItemsControl ItemsSource="{Binding TradeOptions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Margin="0,0,0,8"
+                                                          Content="{Binding Name}"
+                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="2"
+                                    Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Construction Sites" />
                             <Border Style="{StaticResource FilterPanelBorderStyle}">
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="130">
@@ -84,25 +115,25 @@
                             </Border>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="4" Margin="0,0,12,0">
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="4"
+                                    Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Payment Status" />
                             <ComboBox ItemsSource="{Binding PaymentStatusOptions}"
                                       DisplayMemberPath="Name"
                                       SelectedItem="{Binding SelectedPaymentStatusOption, Mode=TwoWay}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Column="5"
-                                    Margin="0,24,12,0"
+                        <StackPanel Grid.Row="2"
+                                    Grid.Column="0"
+                                    Margin="0,18,12,0"
+                                    Orientation="Horizontal"
                                     VerticalAlignment="Bottom">
                             <Button Command="{Binding ApplyFiltersCommand}"
                                     Content="Apply Filters"
                                     Style="{StaticResource PrimaryButtonStyle}" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="6"
-                                    Margin="0,24,0,0"
-                                    VerticalAlignment="Bottom">
                             <Button Command="{Binding ClearFiltersCommand}"
+                                    Margin="12,0,0,0"
                                     Content="Clear"
                                     Style="{StaticResource BaseButtonStyle}" />
                         </StackPanel>
@@ -126,6 +157,10 @@
                         <StackPanel DockPanel.Dock="Right"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Right">
+                            <Button Margin="0,0,12,0"
+                                    Command="{Binding ExportToExcelCommand}"
+                                    Content="Export to Excel"
+                                    Style="{StaticResource BaseButtonStyle}" />
                             <Border Margin="12,0,0,0"
                                     Style="{StaticResource SummaryCardBorderStyle}">
                                 <StackPanel>
@@ -148,26 +183,130 @@
                                                Text="{Binding TotalAmount, StringFormat={}{0:C}}" />
                                 </StackPanel>
                             </Border>
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Workers" />
+                                    <TextBlock FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding NumberOfWorkers}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Trades" />
+                                    <TextBlock FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding NumberOfTrades}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Sites" />
+                                    <TextBlock FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding NumberOfConstructionSites}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Logs" />
+                                    <TextBlock FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding NumberOfLogs}" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </DockPanel>
 
-                    <DataGrid Margin="0,18,0,0"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True"
-                              ItemsSource="{Binding ReportWorkLogs}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Worker}" Header="Worker" Width="170" />
-                            <DataGridTextColumn Binding="{Binding ConstructionSite}" Header="Construction Site" Width="180" />
-                            <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
-                            <DataGridTextColumn Binding="{Binding StartTime}" Header="Start Time" Width="90" />
-                            <DataGridTextColumn Binding="{Binding EndTime}" Header="End Time" Width="90" />
-                            <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Duration Hours" Width="110" />
-                            <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="100" />
-                            <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="110" />
-                            <DataGridTextColumn Binding="{Binding PaymentStatus}" Header="Payment Status" Width="110" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <TabControl Margin="0,18,0,0">
+                        <TabItem Header="Detailed Logs">
+                            <DataGrid AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      ItemsSource="{Binding ReportWorkLogs}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding Worker}" Header="Worker Name" Width="170" />
+                                    <DataGridTextColumn Binding="{Binding Trade}" Header="Trade Name" Width="140" />
+                                    <DataGridTextColumn Binding="{Binding ConstructionSite}" Header="Construction Site" Width="180" />
+                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
+                                    <DataGridTextColumn Binding="{Binding StartTime}" Header="Start Time" Width="90" />
+                                    <DataGridTextColumn Binding="{Binding EndTime}" Header="End Time" Width="90" />
+                                    <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Duration Hours" Width="110" />
+                                    <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="100" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="110" />
+                                    <DataGridTextColumn Binding="{Binding PaymentStatus}" Header="Payment Status" Width="110" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Summary by Worker">
+                            <DataGrid AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      ItemsSource="{Binding WorkerSummaries}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding Worker}" Header="Worker Name" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Summary by Trade">
+                            <DataGrid AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      ItemsSource="{Binding TradeSummaries}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding Trade}" Header="Trade Name" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Summary by Construction Site">
+                            <DataGrid AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      ItemsSource="{Binding ConstructionSiteSummaries}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding ConstructionSite}" Header="Construction Site" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Summary by Date">
+                            <DataGrid AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      ItemsSource="{Binding DateSummaries}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
                 </StackPanel>
             </Border>
         </Grid>

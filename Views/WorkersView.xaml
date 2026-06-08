@@ -12,6 +12,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel>
@@ -50,7 +51,9 @@
 
                         <StackPanel Grid.Column="2">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trade" />
-                            <TextBox Text="{Binding Trade, UpdateSourceTrigger=PropertyChanged}" />
+                            <ComboBox ItemsSource="{Binding TradeOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedTradeOption, Mode=TwoWay}" />
                         </StackPanel>
                     </Grid>
 
@@ -87,11 +90,11 @@
                               SelectedItem="{Binding SelectedWorker, Mode=TwoWay}"
                               SelectionMode="Single">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Id}" Header="Id" Width="70" />
-                            <DataGridTextColumn Binding="{Binding FirstName}" Header="First Name" Width="*" />
-                            <DataGridTextColumn Binding="{Binding LastName}" Header="Last Name" Width="*" />
-                            <DataGridTextColumn Binding="{Binding Trade}" Header="Trade" Width="*" />
-                            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="130" />
+                            <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker Name" Width="*" />
+                            <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade Name" Width="*" />
+                            <DataGridTextColumn Binding="{Binding CurrentHourlyRate, StringFormat={}{0:C}}" Header="Current Hourly Rate" Width="160" />
+                            <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
+                            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="120" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </StackPanel>
@@ -154,6 +157,78 @@
                             <DataGridTextColumn Binding="{Binding EffectiveTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective To" Width="*" />
                         </DataGrid.Columns>
                     </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="5"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Construction Site Assignments" />
+                    <TextBlock Margin="0,6,0,16"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Assign the selected worker to one or more construction sites and manage existing assignments." />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}"
+                                       Text="Available Sites" />
+                            <ListBox MinHeight="220"
+                                     ItemsSource="{Binding AvailableConstructionSites}"
+                                     SelectedItem="{Binding SelectedAvailableConstructionSite, Mode=TwoWay}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,2">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Text="{Binding Name}" />
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="{Binding Location}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1"
+                                    Margin="20,32"
+                                    VerticalAlignment="Center">
+                            <Button Margin="0,0,0,12"
+                                    Command="{Binding AssignSiteCommand}"
+                                    Content="Assign >"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button Command="{Binding RemoveAssignmentCommand}"
+                                    Content="&lt; Remove"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}"
+                                       Text="Assigned Sites" />
+                            <ListBox MinHeight="220"
+                                     ItemsSource="{Binding AssignedConstructionSites}"
+                                     SelectedItem="{Binding SelectedAssignedConstructionSite, Mode=TwoWay}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,2">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Text="{Binding Name}" />
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="{Binding Location}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
         </Grid>

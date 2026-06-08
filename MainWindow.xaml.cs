@@ -10,4 +10,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = new MainViewModel();
     }
+
+    public void ReloadApplicationData()
+    {
+        DataContext = new MainViewModel();
+    }
 }

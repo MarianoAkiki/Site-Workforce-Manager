@@ -12,6 +12,7 @@ namespace Site_Workforce_Manager.ViewModels;
 public partial class WorkLogsViewModel : ObservableObject
 {
     private bool isUpdatingForm;
+    private readonly List<LookupOption> allConstructionSiteOptions = new();
 
     public WorkLogsViewModel()
     {
@@ -80,6 +81,9 @@ public partial class WorkLogsViewModel : ObservableObject
     [ObservableProperty]
     private decimal filteredTotalAmount;
 
+    [ObservableProperty]
+    private string constructionSiteSelectionMessage = string.Empty;
+
     partial void OnSelectedWorkLogChanged(WorkLog? value)
     {
         if (value is null)
@@ -91,7 +95,7 @@ public partial class WorkLogsViewModel : ObservableObject
         isUpdatingForm = true;
 
         SelectedWorkerOption = WorkerOptions.FirstOrDefault(item => item.Id == value.WorkerId);
-        SelectedConstructionSiteOption = ConstructionSiteOptions.FirstOrDefault(item => item.Id == value.ConstructionSiteId);
+        FilterConstructionSitesForSelectedWorker(value.ConstructionSiteId);
         WorkDate = value.WorkDate;
         StartTimeText = value.StartTime.ToString(@"hh\:mm");
         EndTimeText = value.EndTime.ToString(@"hh\:mm");
@@ -107,6 +111,7 @@ public partial class WorkLogsViewModel : ObservableObject
     {
         if (!isUpdatingForm)
         {
+            FilterConstructionSitesForSelectedWorker();
             UpdateRateAndTotals();
         }
     }
@@ -365,6 +370,7 @@ public partial class WorkLogsViewModel : ObservableObject
 
         WorkerOptions.Clear();
         ConstructionSiteOptions.Clear();
+        allConstructionSiteOptions.Clear();
         WorkerFilterOptions.Clear();
         ConstructionSiteFilterOptions.Clear();
 
@@ -379,7 +385,7 @@ public partial class WorkLogsViewModel : ObservableObject
 
         foreach (var site in sites)
         {
-            ConstructionSiteOptions.Add(site);
+            allConstructionSiteOptions.Add(site);
             ConstructionSiteFilterOptions.Add(new LookupOption { Id = site.Id, Name = site.Name });
         }
 
@@ -393,7 +399,7 @@ public partial class WorkLogsViewModel : ObservableObject
         SelectedFilterConstructionSiteOption = ConstructionSiteFilterOptions.FirstOrDefault();
         SelectedFilterPaymentStatusOption = PaymentStatusFilterOptions.FirstOrDefault();
         SelectedWorkerOption = WorkerOptions.FirstOrDefault();
-        SelectedConstructionSiteOption = ConstructionSiteOptions.FirstOrDefault();
+        FilterConstructionSitesForSelectedWorker();
 
         UpdateRateAndTotals();
     }
@@ -405,6 +411,12 @@ public partial class WorkLogsViewModel : ObservableObject
         if (SelectedWorkerOption?.Id is not int workerId)
         {
             MessageBox.Show("Please select a worker.");
+            return false;
+        }
+
+        if (ConstructionSiteOptions.Count == 0)
+        {
+            MessageBox.Show("The selected worker has no assigned construction sites. Please assign a site before creating a work log.");
             return false;
         }
 
@@ -506,7 +518,7 @@ public partial class WorkLogsViewModel : ObservableObject
     {
         isUpdatingForm = true;
         SelectedWorkerOption = WorkerOptions.FirstOrDefault();
-        SelectedConstructionSiteOption = ConstructionSiteOptions.FirstOrDefault();
+        FilterConstructionSitesForSelectedWorker();
         WorkDate = DateTime.Today;
         StartTimeText = "08:00";
         EndTimeText = "16:00";
@@ -526,6 +538,50 @@ public partial class WorkLogsViewModel : ObservableObject
             .FirstOrDefault();
 
         return rate?.HourlyRate ?? 0m;
+    }
+
+    private void FilterConstructionSitesForSelectedWorker(int? siteIdToKeep = null)
+    {
+        var selectedSiteId = siteIdToKeep ?? SelectedConstructionSiteOption?.Id;
+
+        ConstructionSiteOptions.Clear();
+
+        if (SelectedWorkerOption?.Id is not int workerId)
+        {
+            ConstructionSiteSelectionMessage = "Select a worker first to see assigned construction sites.";
+            SelectedConstructionSiteOption = null;
+            return;
+        }
+
+        using var context = new AppDbContext();
+
+        var assignedSiteIds = context.WorkerConstructionSites
+            .AsNoTracking()
+            .Where(item => item.WorkerId == workerId)
+            .Select(item => item.ConstructionSiteId)
+            .ToHashSet();
+
+        var filteredSites = allConstructionSiteOptions
+            .Where(site => site.Id.HasValue && assignedSiteIds.Contains(site.Id.Value))
+            .OrderBy(site => site.Name)
+            .ToList();
+
+        foreach (var site in filteredSites)
+        {
+            ConstructionSiteOptions.Add(site);
+        }
+
+        SelectedConstructionSiteOption = ConstructionSiteOptions
+            .FirstOrDefault(site => site.Id == selectedSiteId);
+
+        if (ConstructionSiteOptions.Count == 0)
+        {
+            ConstructionSiteSelectionMessage = "This worker has no assigned construction sites. Assign a site on the Workers page first.";
+        }
+        else
+        {
+            ConstructionSiteSelectionMessage = string.Empty;
+        }
     }
 
     private class WorkLogFormValues

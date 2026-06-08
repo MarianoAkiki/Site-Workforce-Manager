@@ -1,0 +1,355 @@
+<UserControl x:Class="Site_Workforce_Manager.Views.PayrollView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                           Text="Payroll" />
+                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                           Text="Generate payroll slips from unpaid work logs and review payroll history by worker and date range." />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,24,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Payroll Filters and Slip Entry" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Choose one worker and a date period to load unpaid work logs for payroll generation." />
+
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Worker" />
+                            <ComboBox ItemsSource="{Binding WorkerOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedWorkerOption, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Date From" />
+                            <DatePicker SelectedDate="{Binding DateFrom, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Date To" />
+                            <DatePicker SelectedDate="{Binding DateTo, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="3" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Payment Date" />
+                            <DatePicker SelectedDate="{Binding PaymentDate, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4" Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Amount Paid" />
+                            <TextBox Text="{Binding AmountPaid, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F2}}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Margin="0,16,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Notes" />
+                            <TextBox Height="72"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="4"
+                                    Grid.ColumnSpan="2"
+                                    Margin="0,24,0,0"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Bottom">
+                            <Button Command="{Binding LoadPayrollDataCommand}"
+                                    Content="Refresh Logs"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                            <Button Margin="12,0,0,0"
+                                    Command="{Binding ClearFiltersCommand}"
+                                    Content="Reset Filters"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                            <Button Margin="12,0,0,0"
+                                    Command="{Binding GeneratePayrollSlipCommand}"
+                                    Content="Generate Payroll Slip"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <DockPanel LastChildFill="False">
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                       Text="Unpaid Work Logs" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="{Binding AvailableLogsMessage}" />
+                        </StackPanel>
+
+                        <StackPanel DockPanel.Dock="Right"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right">
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Total Hours" />
+                                    <TextBlock FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding AvailableTotalHours, StringFormat={}{0:F2}}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="12,0,0,0"
+                                    Style="{StaticResource SummaryCardBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock FontSize="12"
+                                               Foreground="{StaticResource TextMutedBrush}"
+                                               Text="Total Amount" />
+                                    <TextBlock FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding AvailableTotalAmount, StringFormat={}{0:C}}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DataGrid Margin="0,16,0,0"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              ItemsSource="{Binding AvailableWorkLogs}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Id}" Header="Log Id" Width="70" />
+                            <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker" Width="160" />
+                            <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade" Width="130" />
+                            <DataGridTextColumn Binding="{Binding ConstructionSiteName}" Header="Construction Site" Width="170" />
+                            <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
+                            <DataGridTextColumn Binding="{Binding StartTime}" Header="Start" Width="90" />
+                            <DataGridTextColumn Binding="{Binding EndTime}" Header="End" Width="90" />
+                            <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Hours" Width="80" />
+                            <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Rate" Width="90" />
+                            <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Amount" Width="100" />
+                            <DataGridTextColumn Binding="{Binding Notes}" Header="Notes" Width="*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="3"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Payroll History" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Payroll slips remain as historical records. Select a slip below to review its included work logs and payments." />
+
+                    <DataGrid Margin="0,16,0,0"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              ItemsSource="{Binding PayrollSlips}"
+                              SelectedItem="{Binding SelectedPayrollSlip, Mode=TwoWay}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding SlipNumber}" Header="Slip Number" Width="130" />
+                            <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker" Width="160" />
+                            <DataGridTextColumn Binding="{Binding DateFrom, StringFormat={}{0:yyyy-MM-dd}}" Header="Date From" Width="110" />
+                            <DataGridTextColumn Binding="{Binding DateTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Date To" Width="110" />
+                            <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="110" />
+                            <DataGridTextColumn Binding="{Binding AmountPaid, StringFormat={}{0:C}}" Header="Amount Paid" Width="110" />
+                            <DataGridTextColumn Binding="{Binding RemainingBalance, StringFormat={}{0:C}}" Header="Remaining" Width="110" />
+                            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="120" />
+                            <DataGridTextColumn Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Header="Created" Width="150" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Grid Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Margin="0,0,10,0"
+                                Style="{StaticResource FilterPanelBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                           Text="Slip Details" />
+                                <WrapPanel Margin="0,14,0,0">
+                                    <Border Margin="0,0,12,12"
+                                            Style="{StaticResource SummaryCardBorderStyle}">
+                                        <StackPanel>
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="Total Hours" />
+                                            <TextBlock FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding SelectedSlipTotalHours, StringFormat={}{0:F2}}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Margin="0,0,12,12"
+                                            Style="{StaticResource SummaryCardBorderStyle}">
+                                        <StackPanel>
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="Total Amount" />
+                                            <TextBlock FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding SelectedSlipTotalAmount, StringFormat={}{0:C}}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Margin="0,0,12,12"
+                                            Style="{StaticResource SummaryCardBorderStyle}">
+                                        <StackPanel>
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="Amount Paid" />
+                                            <TextBlock FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding SelectedSlipAmountPaid, StringFormat={}{0:C}}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Margin="0,0,0,12"
+                                            Style="{StaticResource SummaryCardBorderStyle}">
+                                        <StackPanel>
+                                            <TextBlock FontSize="12"
+                                                       Foreground="{StaticResource TextMutedBrush}"
+                                                       Text="Remaining Balance" />
+                                            <TextBlock FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding SelectedSlipRemainingBalance, StringFormat={}{0:C}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </WrapPanel>
+
+                                <TextBlock Margin="0,4,0,0"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Text="{Binding SelectedSlipStatusText, StringFormat=Status: {0}}" />
+
+                                <StackPanel Margin="0,12,0,0"
+                                            Orientation="Horizontal"
+                                            Visibility="{Binding CanCancelSelectedSlip, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Button Command="{Binding CancelSelectedSlipCommand}"
+                                            Content="Cancel Slip"
+                                            Style="{StaticResource DangerButtonStyle}" />
+                                </StackPanel>
+
+                                <DataGrid Margin="0,16,0,0"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True"
+                                          ItemsSource="{Binding SelectedSlipLines}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding WorkLogId}" Header="Log Id" Width="70" />
+                                        <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker" Width="150" />
+                                        <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade" Width="120" />
+                                        <DataGridTextColumn Binding="{Binding ConstructionSiteName}" Header="Construction Site" Width="160" />
+                                        <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
+                                        <DataGridTextColumn Binding="{Binding StartTime}" Header="Start" Width="90" />
+                                        <DataGridTextColumn Binding="{Binding EndTime}" Header="End" Width="90" />
+                                        <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Hours" Width="80" />
+                                        <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Rate" Width="90" />
+                                        <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Amount" Width="100" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1"
+                                Margin="10,0,0,0"
+                                Style="{StaticResource FilterPanelBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                           Text="Payments" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Any recorded payroll payments for the selected slip appear below." />
+
+                                <Grid Margin="0,16,0,0"
+                                      Visibility="{Binding CanAddPaymentToSelectedSlip, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Margin="0,0,12,0">
+                                        <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Payment Date" />
+                                        <DatePicker SelectedDate="{Binding AdditionalPaymentDate, Mode=TwoWay}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Amount" />
+                                        <TextBox Text="{Binding AdditionalPaymentAmount, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F2}}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                                        <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Notes" />
+                                        <TextBox Text="{Binding AdditionalPaymentNotes, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="3"
+                                                Margin="0,24,0,0"
+                                                VerticalAlignment="Bottom">
+                                        <Button Command="{Binding AddPaymentToSelectedSlipCommand}"
+                                                Content="Add Payment"
+                                                Style="{StaticResource PrimaryButtonStyle}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <DataGrid Margin="0,16,0,0"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True"
+                                          ItemsSource="{Binding SelectedSlipPayments}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding PaymentDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Payment Date" Width="120" />
+                                        <DataGridTextColumn Binding="{Binding Amount, StringFormat={}{0:C}}" Header="Amount" Width="110" />
+                                        <DataGridTextColumn Binding="{Binding Notes}" Header="Notes" Width="*" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

@@ -1,6 +1,7 @@
 using Site_Workforce_Manager.Data;
 using Site_Workforce_Manager.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 
 namespace Site_Workforce_Manager.Services;
 
@@ -11,7 +12,11 @@ public static class DatabaseInitializer
         using var context = new AppDbContext();
 
         context.Database.EnsureCreated();
+        EnsureTradesSchemaExists(context);
         EnsureWorkLogsTableExists(context);
+        EnsurePayrollTablesExist(context);
+        SeedTrades(context);
+        BackfillWorkerTrades(context);
 
         if (context.Workers.Any())
         {
@@ -19,27 +24,31 @@ public static class DatabaseInitializer
             return;
         }
 
+        var electricianTrade = context.Trades.First(trade => trade.Name == "Electrician");
+        var carpenterTrade = context.Trades.First(trade => trade.Name == "Carpenter");
+        var plumberTrade = context.Trades.First(trade => trade.Name == "Plumber");
+
         var workers = new List<Worker>
         {
             new()
             {
                 FirstName = "Ahmed",
                 LastName = "Hassan",
-                Trade = "Electrician",
+                TradeId = electricianTrade.Id,
                 Status = EntityStatus.Active
             },
             new()
             {
                 FirstName = "John",
                 LastName = "Miller",
-                Trade = "Carpenter",
+                TradeId = carpenterTrade.Id,
                 Status = EntityStatus.Active
             },
             new()
             {
                 FirstName = "Maria",
                 LastName = "Santos",
-                Trade = "Plumber",
+                TradeId = plumberTrade.Id,
                 Status = EntityStatus.Active
             }
         };
@@ -118,6 +127,33 @@ public static class DatabaseInitializer
         SeedWorkLogs(context);
     }
 
+    private static void EnsureTradesSchemaExists(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS Trades (
+                Id INTEGER NOT NULL CONSTRAINT PK_Trades PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL,
+                Description TEXT NULL,
+                IsActive INTEGER NOT NULL DEFAULT 1,
+                CreatedAt TEXT NOT NULL,
+                UpdatedAt TEXT NOT NULL
+            );
+            """);
+
+        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_Trades_Name ON Trades (Name);");
+
+        if (!ColumnExists(context, "Workers", "TradeId"))
+        {
+            context.Database.ExecuteSqlRaw("ALTER TABLE Workers ADD COLUMN TradeId INTEGER NULL;");
+        }
+
+        if (!IndexExists(context, "IX_Workers_TradeId"))
+        {
+            context.Database.ExecuteSqlRaw("CREATE INDEX IX_Workers_TradeId ON Workers (TradeId);");
+        }
+    }
+
     private static void EnsureWorkLogsTableExists(AppDbContext context)
     {
         context.Database.ExecuteSqlRaw(
@@ -144,6 +180,68 @@ public static class DatabaseInitializer
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_WorkerId ON WorkLogs (WorkerId);");
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_ConstructionSiteId ON WorkLogs (ConstructionSiteId);");
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_WorkDate ON WorkLogs (WorkDate);");
+    }
+
+    private static void EnsurePayrollTablesExist(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS PayrollSlips (
+                Id INTEGER NOT NULL CONSTRAINT PK_PayrollSlips PRIMARY KEY AUTOINCREMENT,
+                SlipNumber TEXT NOT NULL,
+                WorkerId INTEGER NOT NULL,
+                DateFrom TEXT NOT NULL,
+                DateTo TEXT NOT NULL,
+                TotalHours TEXT NOT NULL,
+                TotalAmount TEXT NOT NULL,
+                AmountPaid TEXT NOT NULL,
+                RemainingBalance TEXT NOT NULL,
+                Status INTEGER NOT NULL,
+                CreatedAt TEXT NOT NULL,
+                Notes TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT
+            );
+            """);
+
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS PayrollSlipLines (
+                Id INTEGER NOT NULL CONSTRAINT PK_PayrollSlipLines PRIMARY KEY AUTOINCREMENT,
+                PayrollSlipId INTEGER NOT NULL,
+                WorkLogId INTEGER NOT NULL,
+                WorkerNameSnapshot TEXT NOT NULL,
+                TradeNameSnapshot TEXT NOT NULL DEFAULT '',
+                ConstructionSiteNameSnapshot TEXT NOT NULL,
+                WorkDate TEXT NOT NULL,
+                StartTime TEXT NOT NULL,
+                EndTime TEXT NOT NULL,
+                DurationHours TEXT NOT NULL,
+                HourlyRateSnapshot TEXT NOT NULL,
+                TotalAmountSnapshot TEXT NOT NULL,
+                FOREIGN KEY (PayrollSlipId) REFERENCES PayrollSlips (Id) ON DELETE CASCADE,
+                FOREIGN KEY (WorkLogId) REFERENCES WorkLogs (Id) ON DELETE RESTRICT
+            );
+            """);
+
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS PayrollPayments (
+                Id INTEGER NOT NULL CONSTRAINT PK_PayrollPayments PRIMARY KEY AUTOINCREMENT,
+                PayrollSlipId INTEGER NOT NULL,
+                PaymentDate TEXT NOT NULL,
+                Amount TEXT NOT NULL,
+                Notes TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (PayrollSlipId) REFERENCES PayrollSlips (Id) ON DELETE CASCADE
+            );
+            """);
+
+        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_PayrollSlips_SlipNumber ON PayrollSlips (SlipNumber);");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlips_WorkerId ON PayrollSlips (WorkerId);");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlips_DateFrom ON PayrollSlips (DateFrom);");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlips_DateTo ON PayrollSlips (DateTo);");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlipLines_PayrollSlipId ON PayrollSlipLines (PayrollSlipId);");
+        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_PayrollSlipLines_WorkLogId ON PayrollSlipLines (WorkLogId);");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollPayments_PayrollSlipId ON PayrollPayments (PayrollSlipId);");
     }
 
     private static void SeedWorkLogs(AppDbContext context)
@@ -218,5 +316,117 @@ public static class DatabaseInitializer
             .FirstOrDefault();
 
         return rate?.HourlyRate ?? 0m;
+    }
+
+    private static void SeedTrades(AppDbContext context)
+    {
+        if (context.Trades.Any())
+        {
+            return;
+        }
+
+        var now = DateTime.Now;
+
+        var trades = new List<Trade>
+        {
+            new() { Name = "Mason", Description = "Handles brick, block, and concrete masonry work.", IsActive = true, CreatedAt = now, UpdatedAt = now },
+            new() { Name = "Electrician", Description = "Installs and maintains electrical systems.", IsActive = true, CreatedAt = now, UpdatedAt = now },
+            new() { Name = "Plumber", Description = "Installs and maintains plumbing systems.", IsActive = true, CreatedAt = now, UpdatedAt = now },
+            new() { Name = "Painter", Description = "Performs finishing and painting work.", IsActive = true, CreatedAt = now, UpdatedAt = now },
+            new() { Name = "Carpenter", Description = "Builds and installs wood and interior structures.", IsActive = true, CreatedAt = now, UpdatedAt = now }
+        };
+
+        context.Trades.AddRange(trades);
+        context.SaveChanges();
+    }
+
+    private static void BackfillWorkerTrades(AppDbContext context)
+    {
+        var tradesByName = context.Trades
+            .AsNoTracking()
+            .ToDictionary(trade => trade.Name, trade => trade.Id, StringComparer.OrdinalIgnoreCase);
+
+        var workersWithoutTrade = context.Workers
+            .Where(worker => worker.TradeId == null)
+            .ToList();
+
+        if (workersWithoutTrade.Count == 0 || !ColumnExists(context, "Workers", "Trade"))
+        {
+            return;
+        }
+
+        var legacyTradeNames = ReadLegacyWorkerTrades(context);
+
+        foreach (var worker in workersWithoutTrade)
+        {
+            if (!legacyTradeNames.TryGetValue(worker.Id, out var legacyTradeName) ||
+                string.IsNullOrWhiteSpace(legacyTradeName))
+            {
+                continue;
+            }
+
+            if (tradesByName.TryGetValue(legacyTradeName.Trim(), out var tradeId))
+            {
+                worker.TradeId = tradeId;
+            }
+        }
+
+        context.SaveChanges();
+    }
+
+    private static Dictionary<int, string> ReadLegacyWorkerTrades(AppDbContext context)
+    {
+        var result = new Dictionary<int, string>();
+
+        using var connection = new SqliteConnection(context.Database.GetConnectionString());
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT Id, Trade FROM Workers WHERE TradeId IS NULL;";
+
+        using var reader = command.ExecuteReader();
+
+        while (reader.Read())
+        {
+            var workerId = reader.GetInt32(0);
+            var tradeName = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+            result[workerId] = tradeName;
+        }
+
+        return result;
+    }
+
+    private static bool ColumnExists(AppDbContext context, string tableName, string columnName)
+    {
+        using var connection = new SqliteConnection(context.Database.GetConnectionString());
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({tableName});";
+
+        using var reader = command.ExecuteReader();
+
+        while (reader.Read())
+        {
+            if (reader.GetString(1).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IndexExists(AppDbContext context, string indexName)
+    {
+        using var connection = new SqliteConnection(context.Database.GetConnectionString());
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = $name;";
+        command.Parameters.AddWithValue("$name", indexName);
+
+        var count = Convert.ToInt32(command.ExecuteScalar());
+        return count > 0;
     }
 }

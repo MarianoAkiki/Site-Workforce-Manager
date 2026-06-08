@@ -18,4 +18,5 @@ public class WorkLog
 
     public Worker? Worker { get; set; }
     public ConstructionSite? ConstructionSite { get; set; }
+    public ICollection<PayrollSlipLine> PayrollSlipLines { get; set; } = new List<PayrollSlipLine>();
 }

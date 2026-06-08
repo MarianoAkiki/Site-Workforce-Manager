@@ -13,6 +13,12 @@
         MinWidth="1000"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
+        <DataTemplate DataType="{x:Type viewModels:DashboardViewModel}">
+            <views:DashboardView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:TradesViewModel}">
+            <views:TradesView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:WorkersViewModel}">
             <views:WorkersView />
         </DataTemplate>
@@ -24,6 +30,15 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:ReportsViewModel}">
             <views:ReportsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:PayrollViewModel}">
+            <views:PayrollView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:WorkerBalancesViewModel}">
+            <views:WorkerBalancesView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:MaintenanceViewModel}">
+            <views:MaintenanceView />
         </DataTemplate>
     </Window.Resources>
 
@@ -77,6 +92,18 @@
                                Text="NAVIGATION" />
 
                     <Button Margin="0,0,0,12"
+                            Command="{Binding ShowDashboardCommand}"
+                            Content="Dashboard"
+                            Tag="{Binding IsDashboardActive}"
+                            Style="{StaticResource SidebarButtonStyle}" />
+
+                    <Button Margin="0,0,0,12"
+                            Command="{Binding ShowTradesCommand}"
+                            Content="Trades"
+                            Tag="{Binding IsTradesActive}"
+                            Style="{StaticResource SidebarButtonStyle}" />
+
+                    <Button Margin="0,0,0,12"
                             Command="{Binding ShowWorkersCommand}"
                             Content="Workers"
                             Tag="{Binding IsWorkersActive}"
@@ -98,6 +125,24 @@
                             Command="{Binding ShowReportsCommand}"
                             Content="Reports"
                             Tag="{Binding IsReportsActive}"
+                            Style="{StaticResource SidebarButtonStyle}" />
+
+                    <Button Margin="0,12,0,0"
+                            Command="{Binding ShowPayrollCommand}"
+                            Content="Payroll"
+                            Tag="{Binding IsPayrollActive}"
+                            Style="{StaticResource SidebarButtonStyle}" />
+
+                    <Button Margin="0,12,0,0"
+                            Command="{Binding ShowWorkerBalancesCommand}"
+                            Content="Worker Balances"
+                            Tag="{Binding IsWorkerBalancesActive}"
+                            Style="{StaticResource SidebarButtonStyle}" />
+
+                    <Button Margin="0,12,0,0"
+                            Command="{Binding ShowMaintenanceCommand}"
+                            Content="Maintenance"
+                            Tag="{Binding IsMaintenanceActive}"
                             Style="{StaticResource SidebarButtonStyle}" />
                 </StackPanel>
             </Grid>

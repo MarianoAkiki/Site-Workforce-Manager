@@ -13,20 +13,54 @@ Site Workforce Manager is a desktop business application for managing workers, c
 
 # Implemented Features
 
+## Dashboard
+
+- Dashboard landing page
+- Active workers summary
+- Active construction sites summary
+- Total hours this month
+- Total labor cost this month
+- Total outstanding balance
+- Unpaid work logs count
+
+## Trades
+
+- Trade create and update
+- Trade list view
+- Trade deactivate
+- Duplicate trade name prevention
+- Inactive trades excluded from new worker selection
+
 ## Workers
 
 - Worker create and update
 - Worker list view
 - Worker deactivate
+- Trade selection from master trade list
 - Hourly rate history tracking
 - Add new hourly rate with effective date
 - View rate history per worker
+- Worker to construction site assignment management
+- Assigned sites count in worker list
+
+## Worker Rate History
+
+- Effective-dated hourly rate records per worker
+- Automatic current rate lookup by work date
+- Historical rate tracking for payroll and reporting
 
 ## Construction Sites
 
 - Construction site create and update
 - Construction site list view
 - Construction site deactivate
+
+## Worker ↔ Construction Site Assignments
+
+- Assign workers to multiple construction sites
+- Remove worker-site assignments
+- Prevent duplicate assignments
+- Prevent inactive worker or inactive site assignment
 
 ## Work Logs
 
@@ -41,6 +75,7 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Automatic amount calculation
 - Automatic hourly rate snapshot based on worker rate history and work date
 - Payment status tracking
+- Worker-based construction site filtering
 - Totals for filtered work logs excluding cancelled logs
 
 ## Reporting
@@ -48,12 +83,59 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Read-only Reports page
 - Filter by date from and date to
 - Filter by multiple workers or all workers
+- Filter by multiple trades or all trades
 - Filter by multiple construction sites or all construction sites
 - Filter by payment status: All, Paid, Unpaid, Cancelled
 - View matching work logs in a report grid
+- Summary by worker
+- Summary by trade
+- Summary by construction site
+- Summary by date
 - View total hours
 - View total amount
 - Cancelled logs are excluded from totals
+
+## Payroll Slips
+
+- Generate payroll slips from unpaid work logs
+- Worker and date-range payroll filtering
+- Snapshot payroll slip lines for historical accuracy
+- Slip history view
+- Slip detail view with included logs
+
+## Payroll Payments
+
+- Initial payment on payroll slip creation
+- Follow-up payments on partially paid slips
+- Automatic recalculation of amount paid and remaining balance
+- Automatic slip status update to Paid or PartiallyPaid
+
+## Worker Balances
+
+- Worker balance summary page
+- Balance filters by worker, trade, date range, and balance status
+- Worker-level payroll slip history view
+- Worker-level payment history view
+- Outstanding balance totals based on payroll slips and payments
+
+## Payroll Cancellation
+
+- Cancel payroll slips with no payments
+- Return cancelled slip work logs to Unpaid
+- Block direct cancellation when payments exist
+- Cancelled payroll slips remain visible for audit history
+
+## Excel Export
+
+- Export current filtered report results to Excel
+- Include detailed report rows and totals
+
+## Backup & Restore
+
+- Maintenance page
+- Backup SQLite database to selected file
+- Restore SQLite database from selected backup
+- Reload application data after restore
 
 ## UI Improvements
 
@@ -72,11 +154,19 @@ Site Workforce Manager is a desktop business application for managing workers, c
 
 ## Entities
 
+- `Trade`
+  - `Id`
+  - `Name`
+  - `Description`
+  - `IsActive`
+  - `CreatedAt`
+  - `UpdatedAt`
+
 - `Worker`
   - `Id`
   - `FirstName`
   - `LastName`
-  - `Trade`
+  - `TradeId`
   - `Status`
 
 - `WorkerRateHistory`
@@ -113,20 +203,61 @@ Site Workforce Manager is a desktop business application for managing workers, c
   - `CreatedAt`
   - `UpdatedAt`
 
+- `PayrollSlip`
+  - `Id`
+  - `SlipNumber`
+  - `WorkerId`
+  - `DateFrom`
+  - `DateTo`
+  - `TotalHours`
+  - `TotalAmount`
+  - `AmountPaid`
+  - `RemainingBalance`
+  - `Status`
+  - `CreatedAt`
+  - `Notes`
+
+- `PayrollSlipLine`
+  - `Id`
+  - `PayrollSlipId`
+  - `WorkLogId`
+  - `WorkerNameSnapshot`
+  - `TradeNameSnapshot`
+  - `ConstructionSiteNameSnapshot`
+  - `WorkDate`
+  - `StartTime`
+  - `EndTime`
+  - `DurationHours`
+  - `HourlyRateSnapshot`
+  - `TotalAmountSnapshot`
+
+- `PayrollPayment`
+  - `Id`
+  - `PayrollSlipId`
+  - `PaymentDate`
+  - `Amount`
+  - `Notes`
+
 ## Relationships
 
+- `Trade` 1-to-many `Worker`
 - `Worker` 1-to-many `WorkerRateHistory`
 - `Worker` 1-to-many `WorkerConstructionSite`
 - `ConstructionSite` 1-to-many `WorkerConstructionSite`
 - `Worker` 1-to-many `WorkLog`
 - `ConstructionSite` 1-to-many `WorkLog`
+- `Worker` 1-to-many `PayrollSlip`
+- `PayrollSlip` 1-to-many `PayrollSlipLine`
+- `WorkLog` 1-to-many `PayrollSlipLine`
+- `PayrollSlip` 1-to-many `PayrollPayment`
 - `WorkerConstructionSite` uses a composite key:
   - `WorkerId`
   - `ConstructionSiteId`
 
 # Business Rules
 
-- Worker first name, last name, and trade are required
+- Worker first name and last name are required
+- Trade name is required
 - Construction site name and location are required
 - New hourly rates are added with an effective date
 - Existing open worker rate history is closed when a later rate is added
@@ -136,36 +267,61 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - End time must be after start time
 - Work log duration is calculated automatically
 - Work log total amount is calculated automatically
-- Hourly rate snapshot is taken automatically from `WorkerRateHistory` using the selected work date
+- Work Logs are always created as Unpaid
+- Users cannot manually mark logs as Paid
+- Paid status is controlled by Payroll processing
+- Hourly rate is snapshotted on Work Log creation
 - Work logs cannot be created if no valid hourly rate exists for that worker on that date
-- New work logs are automatically created with `PaymentStatus = Unpaid`
 - Paid work logs cannot be edited
 - Cancelled work logs cannot be edited
 - Cancelled work logs remain visible in work logs and reports when included by filters
 - Cancelled work logs are excluded from totals
+- Payroll slips create historical snapshots
+- Work Logs cannot be paid twice
+- Worker balances are calculated from Payroll Slips and Payments
+- Cancelled records remain visible for audit history
+- Historical payroll records must remain unchanged
 - Reports are read-only
 - Reports do not change payment status
-- Reports do not create payroll slips
+- Payroll slips cannot be deleted
 
-# Planned Features
+# Documentation
 
-- Payroll Slips
-- Worker Balances
-- Partial Payments
-- Payment History
-- PDF Export
-- Excel Export
-- Backup / Restore
+- `PROJECT_STATUS.md`: Technical status, implemented features, architecture, schema, and future work.
+- `APPLICATION_FLOW.md`: Complete business flow and user workflow documentation.
+
+# Future Enhancements
+
+- PDF Payroll Slip Export
+- PDF Report Export
+- Advanced Dashboard Charts
+- User Authentication
+- Multi-user Support
+- Cloud Synchronization
+- Angular Web Version
+- Mobile Version
+- Arabic Language Support
 
 # Known Limitations
 
 - The application currently uses a local SQLite database file intended for single-user desktop usage
 - Work log start and end times are entered as text in `HH:mm` format rather than through a dedicated time picker
-- Payment status can be filtered and reported, but there is no dedicated payment management workflow yet
-- There is no payroll generation, balance tracking, or payment history screen yet
-- Reports support filtering and totals, but there is no export feature yet
 - Database evolution is currently handled in a simple startup-friendly way rather than through a full migration workflow
+- Restore replaces the active database file directly and is intended for local maintenance workflows
+
+# Project Status
+
+Current Phase:
+Feature Complete MVP
+
+Remaining Work:
+
+- UI/UX Refinement
+- End-to-End Testing
+- Bug Fixing
+- Deployment Packaging
+- Client Acceptance Testing
 
 # Next Development Phase
 
-The next phase should focus on financial workflow features. A strong next step would be adding payroll slips and worker balances, followed by payment history and partial payment support. After that, reporting can be extended with export options such as PDF and Excel, and the application can be strengthened further with backup and restore capabilities.
+The next phase should focus on stabilization, usability refinement, and production readiness rather than new core business modules. The main priorities are testing, packaging, UX polish, and validating the full workflow with client scenarios.

@@ -1,0 +1,108 @@
+<UserControl x:Class="Site_Workforce_Manager.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel>
+                <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                           Text="Dashboard" />
+                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                           Text="{Binding MonthLabel, StringFormat=Quick overview for {0}.}" />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Margin="0,24,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Summary" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Track workforce activity, labor totals, and outstanding balances from one place." />
+
+                    <UniformGrid Margin="0,20,0,0"
+                                 Columns="3">
+                        <Border Margin="0,0,16,16"
+                                Style="{StaticResource SummaryCardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Active Workers" />
+                                <TextBlock FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding ActiveWorkers}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,0,16,16"
+                                Style="{StaticResource SummaryCardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Active Construction Sites" />
+                                <TextBlock FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding ActiveConstructionSites}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,0,0,16"
+                                Style="{StaticResource SummaryCardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Total Hours This Month" />
+                                <TextBlock FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding TotalHoursThisMonth, StringFormat={}{0:F2}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,0,16,0"
+                                Style="{StaticResource SummaryCardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Total Labor Cost This Month" />
+                                <TextBlock FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding TotalLaborCostThisMonth, StringFormat={}{0:C}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,0,16,0"
+                                Style="{StaticResource SummaryCardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Total Outstanding Balance" />
+                                <TextBlock FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding TotalOutstandingBalance, StringFormat={}{0:C}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SummaryCardBorderStyle}">
+                            <StackPanel>
+                                <TextBlock FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Unpaid Work Logs Count" />
+                                <TextBlock FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding UnpaidWorkLogsCount}" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>
