@@ -11,4 +11,5 @@ public class WorkerListItem
     public decimal CurrentHourlyRate { get; set; }
     public int AssignedSiteCount { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
 }

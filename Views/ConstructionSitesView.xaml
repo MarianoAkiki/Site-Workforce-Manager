@@ -2,91 +2,236 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:helpers="clr-namespace:Site_Workforce_Manager.Helpers"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <UserControl.Resources>
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True" />
+        <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
 
-            <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleTextStyle}"
-                           Text="Construction Sites" />
-                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
-                           Text="Maintain active sites, update location details, and manage site status." />
-            </StackPanel>
+        <Style x:Key="TableActionButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="MinWidth" Value="64" />
+        </Style>
 
-            <Border Grid.Row="1"
-                    Margin="0,24,0,0"
-                    Style="{StaticResource CardBorderStyle}">
+        <Style x:Key="StatusToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="#64748B" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToggleBorder"
+                                Width="96"
+                                Padding="10,5"
+                                Background="#F1F5F9"
+                                BorderBrush="#CBD5E1"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <TextBlock x:Name="ToggleText"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Text="Inactive" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="Background" Value="#ECFDF5" />
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#A7F3D0" />
+                                <Setter Property="Foreground" Value="#047857" />
+                                <Setter TargetName="ToggleText" Property="Text" Value="Active" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#60A5FA" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsSiteFormVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
                 <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Site Details" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Add a new construction site or update the selected one." />
+                    <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                               Text="Construction Sites" />
+                    <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                               Text="Search, review, and manage construction sites from one clean list." />
+                </StackPanel>
 
-                    <Grid Margin="0,20,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                <Border Grid.Row="1"
+                        Margin="0,24,0,0"
+                        Style="{StaticResource CardBorderStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Margin="0,0,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Site Name" />
-                            <TextBox Text="{Binding SiteName, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Location" />
-                            <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                           Text="Construction Sites List" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Use quick search to find construction sites by name or location in the current status view." />
+                            </StackPanel>
+
+                            <Border Grid.Column="1"
+                                    Padding="12,8"
+                                    Background="#EFF6FF"
+                                    BorderBrush="{StaticResource PrimarySoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                <TextBlock FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryBrush}"
+                                           Text="{Binding StatusFilterLabel}" />
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Margin="0,20,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid>
+                                <TextBox MinHeight="42"
+                                         Padding="12,9,42,9"
+                                         VerticalContentAlignment="Center"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Search by site name or location" />
+                                <Button Margin="0,0,8,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ClearSearchCommand}"
+                                        Content="X"
+                                        Style="{StaticResource FilterClearButtonStyle}"
+                                        Visibility="{Binding SearchText, Converter={StaticResource StringToVisibilityConverter}}" />
+                            </Grid>
+
+                            <Button Grid.Column="2"
+                                    Command="{Binding ToggleStatusFilterCommand}"
+                                    Content="{Binding StatusFilterButtonText}"
+                                    Style="{StaticResource BaseButtonStyle}" />
+
+                            <Button Grid.Column="4"
+                                    MinWidth="48"
+                                    Command="{Binding OpenAddSiteFormCommand}"
+                                    Content="+"
+                                    FontSize="18"
+                                    ToolTip="Add construction site"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                        </Grid>
+
+                        <DataGrid Grid.Row="2"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  ItemsSource="{Binding FilteredConstructionSites}"
+                                  SelectedItem="{Binding SelectedConstructionSite, Mode=TwoWay}"
+                                  SelectionMode="Single">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Site Name" Width="*" />
+                                <DataGridTextColumn Binding="{Binding Location}" Header="Location" Width="*" />
+                                <DataGridTemplateColumn Header="Status" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ToggleButton HorizontalAlignment="Left"
+                                                          Command="{Binding DataContext.ToggleSiteStatusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          CommandParameter="{Binding}"
+                                                          IsChecked="{Binding Status, Converter={x:Static helpers:EntityStatusToBoolConverter.Instance}, Mode=OneWay}"
+                                                          Style="{StaticResource StatusToggleStyle}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Actions" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.OpenEditSiteFormCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="Edit"
+                                                    Style="{StaticResource TableActionButtonStyle}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
+                </Border>
+            </Grid>
+        </ScrollViewer>
 
-                    <StackPanel Margin="0,20,0,0" Orientation="Horizontal">
-                        <Button Margin="0,0,12,0"
-                                Command="{Binding AddSiteCommand}"
-                                Content="Add Site"
-                                Style="{StaticResource PrimaryButtonStyle}" />
-                        <Button Margin="0,0,12,0"
-                                Command="{Binding EditSelectedSiteCommand}"
-                                Content="Edit Selected"
-                                Style="{StaticResource BaseButtonStyle}" />
-                        <Button Command="{Binding DeactivateSelectedSiteCommand}"
-                                Content="Deactivate"
-                                Style="{StaticResource DangerButtonStyle}" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsSiteFormVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <Border Grid.Row="2"
-                    Margin="0,20,0,0"
-                    Style="{StaticResource CardBorderStyle}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Construction Sites List" />
-                    <TextBlock Margin="0,6,0,16"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Select a site to edit details or update its status." />
-
-                    <DataGrid AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True"
-                              ItemsSource="{Binding ConstructionSites}"
-                              SelectedItem="{Binding SelectedConstructionSite, Mode=TwoWay}"
-                              SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Id}" Header="Id" Width="70" />
-                            <DataGridTextColumn Binding="{Binding Name}" Header="Site Name" Width="*" />
-                            <DataGridTextColumn Binding="{Binding Location}" Header="Location" Width="*" />
-                            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="130" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                               Text="{Binding FormTitle}" />
+                    <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                               Text="{Binding FormDescription}" />
                 </StackPanel>
-            </Border>
-        </Grid>
-    </ScrollViewer>
+
+                <Border Grid.Row="1"
+                        Margin="0,24,0,0"
+                        Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                   Text="Construction Site Information" />
+
+                        <StackPanel Margin="0,20,0,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Site Name" />
+                            <TextBox MinHeight="48"
+                                     FontSize="15"
+                                     Text="{Binding SiteName, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,16,0,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Location" />
+                            <TextBox MinHeight="120"
+                                     AcceptsReturn="True"
+                                     FontSize="15"
+                                     Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top" />
+                        </StackPanel>
+
+                        <StackPanel Margin="0,24,0,0" Orientation="Horizontal">
+                            <Button Margin="0,0,12,0"
+                                    Command="{Binding SaveSiteCommand}"
+                                    Content="{Binding SaveButtonText}"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button Command="{Binding CancelSiteFormCommand}"
+                                    Content="Cancel"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

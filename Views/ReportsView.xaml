@@ -2,8 +2,57 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:helpers="clr-namespace:Site_Workforce_Manager.Helpers"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <Style x:Key="DropdownClearButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterClearButtonStyle}">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+            <Setter Property="ToolTip" Value="Clear" />
+            <Setter Property="IsTabStop" Value="False" />
+        </Style>
+        <Style x:Key="ExcelButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#217346" />
+            <Setter Property="BorderBrush" Value="#217346" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#1B5E38" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#1B5E38" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#154B2D" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#154B2D" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid>
             <Grid.RowDefinitions>
@@ -62,61 +111,94 @@
                                     Grid.Column="0"
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Workers" />
-                            <Border Style="{StaticResource FilterPanelBorderStyle}">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="130">
-                                    <ItemsControl ItemsSource="{Binding WorkerOptions}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="0,0,0,8"
-                                                          Content="{Binding Name}"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-                            </Border>
+                            <Grid>
+                                <ComboBox ItemsSource="{Binding WorkerOptions}"
+                                          helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
+                                          helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding WorkerSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Margin="0,0,18,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ClearWorkerFilterCommand}"
+                                        Content="x"
+                                        Panel.ZIndex="2"
+                                        Style="{StaticResource DropdownClearButtonStyle}"
+                                        Visibility="{Binding HasWorkerFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="{Binding WorkerSelectionSummary}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="1"
                                     Grid.Column="1"
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trades" />
-                            <Border Style="{StaticResource FilterPanelBorderStyle}">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="130">
-                                    <ItemsControl ItemsSource="{Binding TradeOptions}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="0,0,0,8"
-                                                          Content="{Binding Name}"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-                            </Border>
+                            <Grid>
+                                <ComboBox ItemsSource="{Binding TradeOptions}"
+                                          helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
+                                          helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding TradeSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Margin="0,0,18,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ClearTradeFilterCommand}"
+                                        Content="x"
+                                        Panel.ZIndex="2"
+                                        Style="{StaticResource DropdownClearButtonStyle}"
+                                        Visibility="{Binding HasTradeFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="{Binding TradeSelectionSummary}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="1"
                                     Grid.Column="2"
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Construction Sites" />
-                            <Border Style="{StaticResource FilterPanelBorderStyle}">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="130">
-                                    <ItemsControl ItemsSource="{Binding ConstructionSiteOptions}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="0,0,0,8"
-                                                          Content="{Binding Name}"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-                            </Border>
+                            <Grid>
+                                <ComboBox ItemsSource="{Binding ConstructionSiteOptions}"
+                                          helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
+                                          helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding ConstructionSiteSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding Name}"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Margin="0,0,18,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ClearConstructionSiteFilterCommand}"
+                                        Content="x"
+                                        Panel.ZIndex="2"
+                                        Style="{StaticResource DropdownClearButtonStyle}"
+                                        Visibility="{Binding HasConstructionSiteFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="{Binding ConstructionSiteSelectionSummary}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="1"
-                                    Grid.Column="4"
+                                    Grid.Column="3"
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Payment Status" />
                             <ComboBox ItemsSource="{Binding PaymentStatusOptions}"
@@ -126,13 +208,16 @@
 
                         <StackPanel Grid.Row="2"
                                     Grid.Column="0"
-                                    Margin="0,18,12,0"
+                                    Grid.ColumnSpan="4"
+                                    Margin="0,18,0,0"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Bottom">
-                            <Button Command="{Binding ApplyFiltersCommand}"
+                            <Button MinWidth="130"
+                                    Command="{Binding ApplyFiltersCommand}"
                                     Content="Apply Filters"
                                     Style="{StaticResource PrimaryButtonStyle}" />
-                            <Button Command="{Binding ClearFiltersCommand}"
+                            <Button MinWidth="96"
+                                    Command="{Binding ClearFiltersCommand}"
                                     Margin="12,0,0,0"
                                     Content="Clear"
                                     Style="{StaticResource BaseButtonStyle}" />
@@ -157,10 +242,6 @@
                         <StackPanel DockPanel.Dock="Right"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Right">
-                            <Button Margin="0,0,12,0"
-                                    Command="{Binding ExportToExcelCommand}"
-                                    Content="Export to Excel"
-                                    Style="{StaticResource BaseButtonStyle}" />
                             <Border Margin="12,0,0,0"
                                     Style="{StaticResource SummaryCardBorderStyle}">
                                 <StackPanel>
@@ -229,6 +310,72 @@
                             </Border>
                         </StackPanel>
                     </DockPanel>
+
+                    <Border Margin="0,18,0,0"
+                            Background="#F8FAFF"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="14"
+                            Padding="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Command="{Binding RequestExportToExcelCommand}"
+                                    Content="Export Current View to Excel"
+                                    Style="{StaticResource ExcelButtonStyle}" />
+
+                            <Border Grid.Column="1"
+                                    Margin="16,0,0,0"
+                                    Background="#FFF7ED"
+                                    BorderBrush="#F59E0B"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Padding="14,12"
+                                    Visibility="{Binding IsExportConfirmationVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold"
+                                               Text="Export current filtered report?" />
+                                    <TextBlock Margin="0,4,0,0"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               Text="This will export the rows and totals exactly as they are currently filtered on this page." />
+                                    <StackPanel Margin="0,12,0,0"
+                                                Orientation="Horizontal">
+                                        <Button Command="{Binding ConfirmExportToExcelCommand}"
+                                                Content="Yes, Export"
+                                                Style="{StaticResource PrimaryButtonStyle}" />
+                                        <Button Margin="12,0,0,0"
+                                                Command="{Binding CancelExportToExcelCommand}"
+                                                Content="Cancel"
+                                                Style="{StaticResource BaseButtonStyle}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1"
+                                    Margin="16,0,0,0"
+                                    Background="#EFF6FF"
+                                    BorderBrush="#93C5FD"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Padding="14,12"
+                                    Visibility="{Binding IsExportInProgress, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+                                    <ProgressBar Width="140"
+                                                 Height="10"
+                                                 IsIndeterminate="True"
+                                                 VerticalAlignment="Center" />
+                                    <TextBlock Margin="12,0,0,0"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Text="Creating Excel file..." />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
 
                     <TabControl Margin="0,18,0,0">
                         <TabItem Header="Detailed Logs">

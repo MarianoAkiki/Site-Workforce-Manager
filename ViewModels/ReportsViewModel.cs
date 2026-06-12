@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -45,6 +46,15 @@ public partial class ReportsViewModel : ObservableObject
     private PaymentStatusOption? selectedPaymentStatusOption;
 
     [ObservableProperty]
+    private string workerSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string tradeSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string constructionSiteSearchText = string.Empty;
+
+    [ObservableProperty]
     private decimal totalHours;
 
     [ObservableProperty]
@@ -61,6 +71,19 @@ public partial class ReportsViewModel : ObservableObject
 
     [ObservableProperty]
     private int numberOfLogs;
+
+    [ObservableProperty]
+    private bool isExportConfirmationVisible;
+
+    [ObservableProperty]
+    private bool isExportInProgress;
+
+    public string WorkerSelectionSummary => BuildSelectionSummary(WorkerOptions, "All workers", "worker");
+    public string TradeSelectionSummary => BuildSelectionSummary(TradeOptions, "All trades", "trade");
+    public string ConstructionSiteSelectionSummary => BuildSelectionSummary(ConstructionSiteOptions, "All construction sites", "site");
+    public bool HasWorkerFilter => !string.IsNullOrWhiteSpace(WorkerSearchText) || WorkerOptions.Any(option => option.IsSelected);
+    public bool HasTradeFilter => !string.IsNullOrWhiteSpace(TradeSearchText) || TradeOptions.Any(option => option.IsSelected);
+    public bool HasConstructionSiteFilter => !string.IsNullOrWhiteSpace(ConstructionSiteSearchText) || ConstructionSiteOptions.Any(option => option.IsSelected);
 
     public void LoadReport()
     {
@@ -91,9 +114,15 @@ public partial class ReportsViewModel : ObservableObject
         }
     }
 
+    partial void OnWorkerSearchTextChanged(string value) => OnPropertyChanged(nameof(HasWorkerFilter));
+    partial void OnTradeSearchTextChanged(string value) => OnPropertyChanged(nameof(HasTradeFilter));
+    partial void OnConstructionSiteSearchTextChanged(string value) => OnPropertyChanged(nameof(HasConstructionSiteFilter));
+
     [RelayCommand]
     private void ApplyFilters()
     {
+        IsExportConfirmationVisible = false;
+        IsExportInProgress = false;
         using var context = new AppDbContext();
 
         var selectedWorkerIds = WorkerOptions
@@ -258,8 +287,13 @@ public partial class ReportsViewModel : ObservableObject
     [RelayCommand]
     private void ClearFilters()
     {
+        IsExportConfirmationVisible = false;
+        IsExportInProgress = false;
         DateFrom = null;
         DateTo = null;
+        WorkerSearchText = string.Empty;
+        TradeSearchText = string.Empty;
+        ConstructionSiteSearchText = string.Empty;
         SelectedPaymentStatusOption = PaymentStatusOptions.FirstOrDefault();
 
         foreach (var option in WorkerOptions)
@@ -276,19 +310,68 @@ public partial class ReportsViewModel : ObservableObject
         {
             option.IsSelected = false;
         }
+
+        OnPropertyChanged(nameof(WorkerSelectionSummary));
+        OnPropertyChanged(nameof(TradeSelectionSummary));
+        OnPropertyChanged(nameof(ConstructionSiteSelectionSummary));
+        OnPropertyChanged(nameof(HasWorkerFilter));
+        OnPropertyChanged(nameof(HasTradeFilter));
+        OnPropertyChanged(nameof(HasConstructionSiteFilter));
     }
 
     [RelayCommand]
-    private void ExportToExcel()
+    private void ClearWorkerFilter()
+    {
+        WorkerSearchText = string.Empty;
+        ClearSelectedOptions(WorkerOptions);
+        OnPropertyChanged(nameof(WorkerSelectionSummary));
+        OnPropertyChanged(nameof(HasWorkerFilter));
+        ApplyFilters();
+    }
+
+    [RelayCommand]
+    private void ClearTradeFilter()
+    {
+        TradeSearchText = string.Empty;
+        ClearSelectedOptions(TradeOptions);
+        OnPropertyChanged(nameof(TradeSelectionSummary));
+        OnPropertyChanged(nameof(HasTradeFilter));
+        ApplyFilters();
+    }
+
+    [RelayCommand]
+    private void ClearConstructionSiteFilter()
+    {
+        ConstructionSiteSearchText = string.Empty;
+        ClearSelectedOptions(ConstructionSiteOptions);
+        OnPropertyChanged(nameof(ConstructionSiteSelectionSummary));
+        OnPropertyChanged(nameof(HasConstructionSiteFilter));
+        ApplyFilters();
+    }
+
+    [RelayCommand]
+    private void RequestExportToExcel()
+    {
+        if (ReportWorkLogs.Count == 0)
+        {
+            MessageBox.Show("There are no report rows to export.");
+            return;
+        }
+
+        IsExportConfirmationVisible = true;
+    }
+
+    [RelayCommand]
+    private void CancelExportToExcel()
+    {
+        IsExportConfirmationVisible = false;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmExportToExcel()
     {
         try
         {
-            if (ReportWorkLogs.Count == 0)
-            {
-                MessageBox.Show("There are no report rows to export.");
-                return;
-            }
-
             var dialog = new SaveFileDialog
             {
                 Title = "Export Reports to Excel",
@@ -302,6 +385,10 @@ public partial class ReportsViewModel : ObservableObject
             {
                 return;
             }
+
+            IsExportConfirmationVisible = false;
+            IsExportInProgress = true;
+            await Task.Yield();
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Report Results");
@@ -369,11 +456,14 @@ public partial class ReportsViewModel : ObservableObject
                 Directory.CreateDirectory(destinationDirectory);
             }
 
-            workbook.SaveAs(dialog.FileName);
+            await Task.Run(() => workbook.SaveAs(dialog.FileName));
+            IsExportInProgress = false;
             MessageBox.Show("Report exported to Excel successfully.");
         }
         catch (Exception ex)
         {
+            IsExportConfirmationVisible = false;
+            IsExportInProgress = false;
             MessageBox.Show($"Export failed: {ex.Message}");
         }
     }
@@ -389,6 +479,7 @@ public partial class ReportsViewModel : ObservableObject
 
         var workers = context.Workers
             .AsNoTracking()
+            .Where(worker => worker.Status == EntityStatus.Active)
             .OrderBy(worker => worker.FirstName)
             .ThenBy(worker => worker.LastName)
             .Select(worker => new SelectableLookupOption
@@ -400,6 +491,7 @@ public partial class ReportsViewModel : ObservableObject
 
         var trades = context.Trades
             .AsNoTracking()
+            .Where(trade => trade.IsActive)
             .OrderBy(trade => trade.Name)
             .Select(trade => new SelectableLookupOption
             {
@@ -410,6 +502,7 @@ public partial class ReportsViewModel : ObservableObject
 
         var sites = context.ConstructionSites
             .AsNoTracking()
+            .Where(site => site.Status == EntityStatus.Active)
             .OrderBy(site => site.Name)
             .Select(site => new SelectableLookupOption
             {
@@ -466,8 +559,35 @@ public partial class ReportsViewModel : ObservableObject
     {
         if (e.PropertyName == nameof(SelectableLookupOption.IsSelected) && !isInitializing)
         {
+            OnPropertyChanged(nameof(WorkerSelectionSummary));
+            OnPropertyChanged(nameof(TradeSelectionSummary));
+            OnPropertyChanged(nameof(ConstructionSiteSelectionSummary));
+            OnPropertyChanged(nameof(HasWorkerFilter));
+            OnPropertyChanged(nameof(HasTradeFilter));
+            OnPropertyChanged(nameof(HasConstructionSiteFilter));
             ApplyFilters();
         }
+    }
+
+    private void ClearSelectedOptions(IEnumerable<SelectableLookupOption> options)
+    {
+        isInitializing = true;
+
+        foreach (var option in options)
+        {
+            option.IsSelected = false;
+        }
+
+        isInitializing = false;
+    }
+
+    private static string BuildSelectionSummary(IEnumerable<SelectableLookupOption> options, string allText, string itemName)
+    {
+        var selectedCount = options.Count(option => option.IsSelected);
+
+        return selectedCount == 0
+            ? allText
+            : $"{selectedCount} {itemName}{(selectedCount == 1 ? string.Empty : "s")} selected";
     }
 
     public class ReportRow

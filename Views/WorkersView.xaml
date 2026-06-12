@@ -2,235 +2,436 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:helpers="clr-namespace:Site_Workforce_Manager.Helpers"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <UserControl.Resources>
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True" />
+        <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
 
-            <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleTextStyle}"
-                           Text="Workers" />
-                <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
-                           Text="Manage your workforce, maintain profiles, and keep rate history up to date." />
-            </StackPanel>
+        <Style x:Key="TableActionButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="MinWidth" Value="64" />
+        </Style>
 
-            <Border Grid.Row="1"
-                    Margin="0,24,0,0"
-                    Style="{StaticResource CardBorderStyle}">
+        <Style x:Key="StatusToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="#64748B" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="ToggleBorder"
+                                Width="96"
+                                Padding="10,5"
+                                Background="#F1F5F9"
+                                BorderBrush="#CBD5E1"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <TextBlock x:Name="ToggleText"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Text="Inactive" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="Background" Value="#ECFDF5" />
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#A7F3D0" />
+                                <Setter Property="Foreground" Value="#047857" />
+                                <Setter TargetName="ToggleText" Property="Text" Value="Active" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#60A5FA" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsWorkerFormVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
                 <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Worker Details" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Add a new worker or update the selected worker." />
-
-                    <Grid Margin="0,20,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Margin="0,0,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="First Name" />
-                            <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1" Margin="0,0,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Last Name" />
-                            <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trade" />
-                            <ComboBox ItemsSource="{Binding TradeOptions}"
-                                      DisplayMemberPath="Name"
-                                      SelectedItem="{Binding SelectedTradeOption, Mode=TwoWay}" />
-                        </StackPanel>
-                    </Grid>
-
-                    <StackPanel Margin="0,20,0,0" Orientation="Horizontal">
-                        <Button Margin="0,0,12,0"
-                                Command="{Binding AddWorkerCommand}"
-                                Content="Add Worker"
-                                Style="{StaticResource PrimaryButtonStyle}" />
-                        <Button Margin="0,0,12,0"
-                                Command="{Binding EditSelectedWorkerCommand}"
-                                Content="Edit Selected"
-                                Style="{StaticResource BaseButtonStyle}" />
-                        <Button Command="{Binding DeactivateSelectedWorkerCommand}"
-                                Content="Deactivate"
-                                Style="{StaticResource DangerButtonStyle}" />
-                    </StackPanel>
+                    <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                               Text="Workers" />
+                    <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                               Text="Search, review, and manage worker profiles from one clean list." />
                 </StackPanel>
-            </Border>
 
-            <Border Grid.Row="2"
-                    Margin="0,20,0,0"
-                    Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Workers List" />
-                    <TextBlock Margin="0,6,0,16"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Select a worker to edit details or view their rate history." />
-
-                    <DataGrid AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True"
-                              ItemsSource="{Binding Workers}"
-                              SelectedItem="{Binding SelectedWorker, Mode=TwoWay}"
-                              SelectionMode="Single">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker Name" Width="*" />
-                            <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade Name" Width="*" />
-                            <DataGridTextColumn Binding="{Binding CurrentHourlyRate, StringFormat={}{0:C}}" Header="Current Hourly Rate" Width="160" />
-                            <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
-                            <DataGridTextColumn Binding="{Binding Status}" Header="Status" Width="120" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Row="3"
-                    Margin="0,20,0,0"
-                    Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Hourly Rate Update" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Add a new rate for the selected worker with an effective date." />
-
-                    <Grid Margin="0,20,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="220" />
-                            <ColumnDefinition Width="220" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Margin="0,0,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="New Hourly Rate" />
-                            <TextBox Text="{Binding NewHourlyRate, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="1" Margin="0,0,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Effective Date" />
-                            <DatePicker SelectedDate="{Binding NewRateEffectiveDate, Mode=TwoWay}" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2"
-                                    VerticalAlignment="Bottom">
-                            <Button Command="{Binding AddHourlyRateCommand}"
-                                    Content="Add Hourly Rate"
-                                    Style="{StaticResource PrimaryButtonStyle}" />
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Row="4"
-                    Margin="0,20,0,0"
-                    Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Rate History" />
-                    <TextBlock Margin="0,6,0,16"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Review all hourly rates for the selected worker." />
-
-                    <DataGrid AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True"
-                              ItemsSource="{Binding SelectedWorkerRateHistory}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="*" />
-                            <DataGridTextColumn Binding="{Binding EffectiveFrom, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective From" Width="*" />
-                            <DataGridTextColumn Binding="{Binding EffectiveTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective To" Width="*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Row="5"
-                    Margin="0,20,0,0"
-                    Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Construction Site Assignments" />
-                    <TextBlock Margin="0,6,0,16"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Assign the selected worker to one or more construction sites and manage existing assignments." />
-
+                <Border Grid.Row="1"
+                        Margin="0,24,0,0"
+                        Style="{StaticResource CardBorderStyle}">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}"
-                                       Text="Available Sites" />
-                            <ListBox MinHeight="220"
-                                     ItemsSource="{Binding AvailableConstructionSites}"
-                                     SelectedItem="{Binding SelectedAvailableConstructionSite, Mode=TwoWay}">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Margin="0,2">
-                                            <TextBlock FontWeight="SemiBold"
-                                                       Text="{Binding Name}" />
-                                            <TextBlock FontSize="12"
-                                                       Foreground="{StaticResource TextMutedBrush}"
-                                                       Text="{Binding Location}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="1"
-                                    Margin="20,32"
-                                    VerticalAlignment="Center">
-                            <Button Margin="0,0,0,12"
-                                    Command="{Binding AssignSiteCommand}"
-                                    Content="Assign >"
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                           Text="Workers List" />
+                                <TextBlock Margin="0,6,0,0"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Use quick search to find workers by name or trade in the current status view." />
+                            </StackPanel>
+
+                            <Border Grid.Column="1"
+                                    Padding="12,8"
+                                    Background="#EFF6FF"
+                                    BorderBrush="{StaticResource PrimarySoftBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12">
+                                <TextBlock FontWeight="SemiBold"
+                                           Foreground="{StaticResource PrimaryBrush}"
+                                           Text="{Binding StatusFilterLabel}" />
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Margin="0,20,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid>
+                                <TextBox MinHeight="42"
+                                         Padding="12,9,42,9"
+                                         VerticalContentAlignment="Center"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Search by worker name or trade" />
+                                <Button Margin="0,0,8,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Command="{Binding ClearSearchCommand}"
+                                        Content="X"
+                                        Style="{StaticResource FilterClearButtonStyle}"
+                                        Visibility="{Binding SearchText, Converter={StaticResource StringToVisibilityConverter}}" />
+                            </Grid>
+
+                            <Button Grid.Column="2"
+                                    Command="{Binding ToggleStatusFilterCommand}"
+                                    Content="{Binding StatusFilterButtonText}"
+                                    Style="{StaticResource BaseButtonStyle}" />
+
+                            <Button Grid.Column="4"
+                                    MinWidth="48"
+                                    Command="{Binding OpenAddWorkerFormCommand}"
+                                    Content="+"
+                                    FontSize="18"
+                                    ToolTip="Add worker"
                                     Style="{StaticResource PrimaryButtonStyle}" />
-                            <Button Command="{Binding RemoveAssignmentCommand}"
-                                    Content="&lt; Remove"
+                        </Grid>
+
+                        <DataGrid Grid.Row="2"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  ItemsSource="{Binding FilteredWorkers}"
+                                  SelectedItem="{Binding SelectedWorker, Mode=TwoWay}"
+                                  SelectionMode="Single">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker Name" Width="*" />
+                                <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade Name" Width="*" />
+                                <DataGridTextColumn Binding="{Binding CurrentHourlyRate, StringFormat={}{0:C}}" Header="Current Hourly Rate" Width="160" />
+                                <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
+                                <DataGridTemplateColumn Header="Status" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ToggleButton HorizontalAlignment="Left"
+                                                          Command="{Binding DataContext.ToggleWorkerStatusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          CommandParameter="{Binding}"
+                                                          IsChecked="{Binding IsActive, Mode=OneWay}"
+                                                          Style="{StaticResource StatusToggleStyle}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Actions" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.OpenEditWorkerFormCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Content="Edit"
+                                                    Style="{StaticResource TableActionButtonStyle}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding IsWorkerFormVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitleTextStyle}"
+                               Text="{Binding FormTitle}" />
+                    <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
+                               Text="{Binding FormDescription}" />
+                </StackPanel>
+
+                <Border Grid.Row="1"
+                        Margin="0,24,0,0"
+                        Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                   Text="Worker Details" />
+
+                        <Grid Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="First Name" />
+                                <TextBox MinHeight="48"
+                                         FontSize="15"
+                                         Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Last Name" />
+                                <TextBox MinHeight="48"
+                                         FontSize="15"
+                                         Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trade" />
+                                <ComboBox MinHeight="48"
+                                          FontSize="15"
+                                          ItemsSource="{Binding TradeOptions}"
+                                          DisplayMemberPath="Name"
+                                          SelectedItem="{Binding SelectedTradeOption, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Margin="0,24,0,0" Orientation="Horizontal">
+                            <Button Margin="0,0,12,0"
+                                    Command="{Binding SaveWorkerCommand}"
+                                    Content="{Binding SaveButtonText}"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button Command="{Binding CancelWorkerFormCommand}"
+                                    Content="Back to List"
                                     Style="{StaticResource BaseButtonStyle}" />
                         </StackPanel>
+                    </StackPanel>
+                </Border>
 
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}"
-                                       Text="Assigned Sites" />
-                            <ListBox MinHeight="220"
-                                     ItemsSource="{Binding AssignedConstructionSites}"
-                                     SelectedItem="{Binding SelectedAssignedConstructionSite, Mode=TwoWay}">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Margin="0,2">
-                                            <TextBlock FontWeight="SemiBold"
-                                                       Text="{Binding Name}" />
-                                            <TextBlock FontSize="12"
-                                                       Foreground="{StaticResource TextMutedBrush}"
-                                                       Text="{Binding Location}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                <Border Grid.Row="2"
+                        Margin="0,20,0,0"
+                        Style="{StaticResource CardBorderStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                       Text="Hourly Rates" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Add new hourly rates and review the selected worker's rate history." />
                         </StackPanel>
+
+                        <Grid Grid.Row="1" Margin="0,20,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="New Hourly Rate" />
+                                <TextBox MinHeight="44"
+                                         Text="{Binding NewHourlyRate, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Effective Date" />
+                                <DatePicker MinHeight="44"
+                                            SelectedDate="{Binding NewRateEffectiveDate, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2"
+                                        VerticalAlignment="Bottom">
+                                <Button Command="{Binding AddHourlyRateCommand}"
+                                        Content="Add Hourly Rate"
+                                        Style="{StaticResource PrimaryButtonStyle}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="2"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  ItemsSource="{Binding SelectedWorkerRateHistory}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="*" />
+                                <DataGridTextColumn Binding="{Binding EffectiveFrom, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective From" Width="*" />
+                                <DataGridTextColumn Binding="{Binding EffectiveTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective To" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
-                </StackPanel>
-            </Border>
-        </Grid>
-    </ScrollViewer>
+                </Border>
+
+                <Border Grid.Row="3"
+                        Margin="0,20,0,0"
+                        Style="{StaticResource CardBorderStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                       Text="Construction Site Assignments" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Filter sites and assign or remove them directly from the tables." />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" Margin="0,20,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}"
+                                           Text="Available Sites" />
+                                <Grid Grid.Row="1" Margin="0,0,0,12">
+                                    <TextBox MinHeight="40"
+                                             Padding="12,9,42,9"
+                                             Text="{Binding AvailableSiteSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Search available construction sites" />
+                                    <Button Margin="0,0,8,0"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ClearAvailableSiteSearchCommand}"
+                                            Content="X"
+                                            Style="{StaticResource FilterClearButtonStyle}"
+                                            Visibility="{Binding AvailableSiteSearchText, Converter={StaticResource StringToVisibilityConverter}}" />
+                                </Grid>
+
+                                <DataGrid Grid.Row="2"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True"
+                                          ItemsSource="{Binding FilteredAvailableConstructionSites}"
+                                          MinHeight="260"
+                                          SelectedItem="{Binding SelectedAvailableConstructionSite, Mode=TwoWay}"
+                                          SelectionMode="Single">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Name}" Header="Site Name" Width="*" />
+                                        <DataGridTextColumn Binding="{Binding Location}" Header="Location" Width="*" />
+                                        <DataGridTemplateColumn Header="Action" Width="90">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Command="{Binding DataContext.AssignSiteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="Assign"
+                                                            Style="{StaticResource TableActionButtonStyle}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <Grid Grid.Column="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}"
+                                           Text="Assigned Sites" />
+                                <Grid Grid.Row="1" Margin="0,0,0,12">
+                                    <TextBox MinHeight="40"
+                                             Padding="12,9,42,9"
+                                             Text="{Binding AssignedSiteSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Search assigned construction sites" />
+                                    <Button Margin="0,0,8,0"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ClearAssignedSiteSearchCommand}"
+                                            Content="X"
+                                            Style="{StaticResource FilterClearButtonStyle}"
+                                            Visibility="{Binding AssignedSiteSearchText, Converter={StaticResource StringToVisibilityConverter}}" />
+                                </Grid>
+
+                                <DataGrid Grid.Row="2"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True"
+                                          ItemsSource="{Binding FilteredAssignedConstructionSites}"
+                                          MinHeight="260"
+                                          SelectedItem="{Binding SelectedAssignedConstructionSite, Mode=TwoWay}"
+                                          SelectionMode="Single">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Name}" Header="Site Name" Width="*" />
+                                        <DataGridTextColumn Binding="{Binding Location}" Header="Location" Width="*" />
+                                        <DataGridTemplateColumn Header="Action" Width="90">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Command="{Binding DataContext.RemoveAssignmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="Remove"
+                                                            Style="{StaticResource TableActionButtonStyle}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

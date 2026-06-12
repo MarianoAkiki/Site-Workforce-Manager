@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:helpers="clr-namespace:Site_Workforce_Manager.Helpers"
         xmlns:viewModels="clr-namespace:Site_Workforce_Manager.ViewModels"
         xmlns:views="clr-namespace:Site_Workforce_Manager.Views"
         mc:Ignorable="d"
@@ -60,91 +61,87 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel>
-                    <Border Width="48"
-                            Height="48"
-                            Background="#1D4ED8"
-                            CornerRadius="12"
-                            HorizontalAlignment="Left">
-                        <TextBlock HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   Foreground="White"
-                                   Text="SW" />
-                    </Border>
-
-                    <TextBlock Margin="0,18,0,4"
+                    <TextBlock Margin="0,0,0,4"
                                FontSize="24"
                                FontWeight="SemiBold"
                                Foreground="White"
                                Text="Site Workforce" />
-
-                    <TextBlock FontSize="13"
-                               Foreground="#CBD5E1"
-                               Text="Business dashboard for workers and construction sites" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Margin="0,36,0,0">
-                    <TextBlock Margin="0,0,0,12"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="#94A3B8"
-                               Text="NAVIGATION" />
+                <ScrollViewer Grid.Row="1"
+                              Margin="0,20,0,0"
+                              HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,0,10,0">
+                        <TextBlock Margin="0,0,0,12"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#94A3B8"
+                                   Text="NAVIGATION" />
 
-                    <Button Margin="0,0,0,12"
-                            Command="{Binding ShowDashboardCommand}"
-                            Content="Dashboard"
-                            Tag="{Binding IsDashboardActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowDashboardCommand}"
+                                Content="Dashboard"
+                                helpers:NavigationState.IsActive="{Binding IsDashboardActive}"
+                                Tag="Dashboard"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,0,0,12"
-                            Command="{Binding ShowTradesCommand}"
-                            Content="Trades"
-                            Tag="{Binding IsTradesActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowTradesCommand}"
+                                Content="Trades"
+                                helpers:NavigationState.IsActive="{Binding IsTradesActive}"
+                                Tag="Trades"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,0,0,12"
-                            Command="{Binding ShowWorkersCommand}"
-                            Content="Workers"
-                            Tag="{Binding IsWorkersActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowWorkersCommand}"
+                                Content="Workers"
+                                helpers:NavigationState.IsActive="{Binding IsWorkersActive}"
+                                Tag="Workers"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,0,0,12"
-                            Command="{Binding ShowConstructionSitesCommand}"
-                            Content="Construction Sites"
-                            Tag="{Binding IsConstructionSitesActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowConstructionSitesCommand}"
+                                Content="Construction Sites"
+                                helpers:NavigationState.IsActive="{Binding IsConstructionSitesActive}"
+                                Tag="ConstructionSites"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,12,0,0"
-                            Command="{Binding ShowWorkLogsCommand}"
-                            Content="Work Logs"
-                            Tag="{Binding IsWorkLogsActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowWorkLogsCommand}"
+                                Content="Work Logs"
+                                helpers:NavigationState.IsActive="{Binding IsWorkLogsActive}"
+                                Tag="WorkLogs"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,12,0,0"
-                            Command="{Binding ShowReportsCommand}"
-                            Content="Reports"
-                            Tag="{Binding IsReportsActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowReportsCommand}"
+                                Content="Reports"
+                                helpers:NavigationState.IsActive="{Binding IsReportsActive}"
+                                Tag="Reports"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,12,0,0"
-                            Command="{Binding ShowPayrollCommand}"
-                            Content="Payroll"
-                            Tag="{Binding IsPayrollActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowPayrollCommand}"
+                                Content="Payroll"
+                                helpers:NavigationState.IsActive="{Binding IsPayrollActive}"
+                                Tag="Payroll"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,12,0,0"
-                            Command="{Binding ShowWorkerBalancesCommand}"
-                            Content="Worker Balances"
-                            Tag="{Binding IsWorkerBalancesActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowWorkerBalancesCommand}"
+                                Content="Worker Balances"
+                                helpers:NavigationState.IsActive="{Binding IsWorkerBalancesActive}"
+                                Tag="WorkerBalances"
+                                Style="{StaticResource SidebarButtonStyle}" />
 
-                    <Button Margin="0,12,0,0"
-                            Command="{Binding ShowMaintenanceCommand}"
-                            Content="Maintenance"
-                            Tag="{Binding IsMaintenanceActive}"
-                            Style="{StaticResource SidebarButtonStyle}" />
-                </StackPanel>
+                        <Button Command="{Binding ShowMaintenanceCommand}"
+                                Content="Maintenance"
+                                helpers:NavigationState.IsActive="{Binding IsMaintenanceActive}"
+                                Tag="Maintenance"
+                                Style="{StaticResource SidebarButtonStyle}" />
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </Border>
 

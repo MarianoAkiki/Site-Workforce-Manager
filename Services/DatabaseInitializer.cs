@@ -313,6 +313,7 @@ public static class DatabaseInitializer
                            item.EffectiveFrom <= workDate &&
                            (item.EffectiveTo == null || item.EffectiveTo >= workDate))
             .OrderByDescending(item => item.EffectiveFrom)
+            .ThenByDescending(item => item.Id)
             .FirstOrDefault();
 
         return rate?.HourlyRate ?? 0m;

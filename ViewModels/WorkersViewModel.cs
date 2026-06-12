@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
 using Site_Workforce_Manager.Helpers;
 using Site_Workforce_Manager.Models;
+using Site_Workforce_Manager.Services;
 using System.Windows;
 
 namespace Site_Workforce_Manager.ViewModels;
@@ -19,9 +20,12 @@ public partial class WorkersViewModel : ObservableObject
     }
 
     public ObservableCollection<WorkerListItem> Workers { get; } = new();
+    public ObservableCollection<WorkerListItem> FilteredWorkers { get; } = new();
     public ObservableCollection<WorkerRateHistory> SelectedWorkerRateHistory { get; } = new();
     public ObservableCollection<ConstructionSite> AvailableConstructionSites { get; } = new();
     public ObservableCollection<ConstructionSite> AssignedConstructionSites { get; } = new();
+    public ObservableCollection<ConstructionSite> FilteredAvailableConstructionSites { get; } = new();
+    public ObservableCollection<ConstructionSite> FilteredAssignedConstructionSites { get; } = new();
     public ObservableCollection<LookupOption> TradeOptions { get; } = new();
 
     [ObservableProperty]
@@ -48,6 +52,32 @@ public partial class WorkersViewModel : ObservableObject
     [ObservableProperty]
     private DateTime? newRateEffectiveDate;
 
+    [ObservableProperty]
+    private string availableSiteSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string assignedSiteSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string searchText = string.Empty;
+
+    [ObservableProperty]
+    private bool isWorkerFormVisible;
+
+    [ObservableProperty]
+    private bool showActiveWorkers = true;
+
+    [ObservableProperty]
+    private string formTitle = "Add Worker";
+
+    [ObservableProperty]
+    private string formDescription = "Create a worker profile and manage workforce details.";
+
+    [ObservableProperty]
+    private string saveButtonText = "Save Worker";
+
+    private int? editingWorkerId;
+
     partial void OnSelectedWorkerChanged(WorkerListItem? value)
     {
         if (value is null)
@@ -56,6 +86,8 @@ public partial class WorkersViewModel : ObservableObject
             SelectedWorkerRateHistory.Clear();
             AvailableConstructionSites.Clear();
             AssignedConstructionSites.Clear();
+            FilteredAvailableConstructionSites.Clear();
+            FilteredAssignedConstructionSites.Clear();
             return;
         }
 
@@ -66,6 +98,31 @@ public partial class WorkersViewModel : ObservableObject
         LoadRateHistory(value.Id);
         LoadConstructionSiteAssignments(value.Id);
     }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        ApplyWorkerFilter();
+    }
+
+    partial void OnAvailableSiteSearchTextChanged(string value)
+    {
+        ApplyConstructionSiteAssignmentFilters();
+    }
+
+    partial void OnAssignedSiteSearchTextChanged(string value)
+    {
+        ApplyConstructionSiteAssignmentFilters();
+    }
+
+    partial void OnShowActiveWorkersChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StatusFilterButtonText));
+        OnPropertyChanged(nameof(StatusFilterLabel));
+        ApplyWorkerFilter();
+    }
+
+    public string StatusFilterButtonText => ShowActiveWorkers ? "Show Inactive" : "Show Active";
+    public string StatusFilterLabel => ShowActiveWorkers ? "Active workers" : "Inactive workers";
 
     public void LoadWorkers()
     {
@@ -86,12 +143,15 @@ public partial class WorkersViewModel : ObservableObject
                 TradeId = worker.TradeId,
                 TradeName = worker.Trade != null ? worker.Trade.Name : "No Trade",
                 CurrentHourlyRate = worker.RateHistory
-                    .Where(rate => rate.EffectiveTo == null)
+                    .Where(rate => rate.EffectiveFrom <= DateTime.Today &&
+                                   (rate.EffectiveTo == null || rate.EffectiveTo >= DateTime.Today))
                     .OrderByDescending(rate => rate.EffectiveFrom)
+                    .ThenByDescending(rate => rate.Id)
                     .Select(rate => rate.HourlyRate)
                     .FirstOrDefault(),
                 AssignedSiteCount = worker.WorkerConstructionSites.Count,
-                Status = worker.Status.ToString()
+                Status = worker.Status.ToString(),
+                IsActive = worker.Status == EntityStatus.Active
             })
             .ToList();
 
@@ -102,14 +162,100 @@ public partial class WorkersViewModel : ObservableObject
             Workers.Add(worker);
         }
 
+        ApplyWorkerFilter();
+
         if (SelectedWorker is not null)
         {
-            SelectedWorker = Workers.FirstOrDefault(worker => worker.Id == SelectedWorker.Id);
+            SelectedWorker = FilteredWorkers.FirstOrDefault(worker => worker.Id == SelectedWorker.Id);
         }
     }
 
     [RelayCommand]
-    private void AddWorker()
+    private void ToggleStatusFilter()
+    {
+        ShowActiveWorkers = !ShowActiveWorkers;
+        SelectedWorker = null;
+    }
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+    }
+
+    [RelayCommand]
+    private void ClearAvailableSiteSearch()
+    {
+        AvailableSiteSearchText = string.Empty;
+    }
+
+    [RelayCommand]
+    private void ClearAssignedSiteSearch()
+    {
+        AssignedSiteSearchText = string.Empty;
+    }
+
+    [RelayCommand]
+    private void OpenAddWorkerForm()
+    {
+        editingWorkerId = null;
+        SelectedWorker = null;
+        ClearWorkerForm();
+        SelectedWorkerRateHistory.Clear();
+        AvailableConstructionSites.Clear();
+        AssignedConstructionSites.Clear();
+        FilteredAvailableConstructionSites.Clear();
+        FilteredAssignedConstructionSites.Clear();
+        FormTitle = "Add Worker";
+        FormDescription = "Create a worker profile. Hourly rates and site assignments can be added after saving.";
+        SaveButtonText = "Save Worker";
+        IsWorkerFormVisible = true;
+    }
+
+    [RelayCommand]
+    private void OpenEditWorkerForm(WorkerListItem? worker)
+    {
+        if (worker is null)
+        {
+            MessageBox.Show("Please select a worker to edit.");
+            return;
+        }
+
+        editingWorkerId = worker.Id;
+        SelectedWorker = worker;
+        FormTitle = "Worker Information";
+        FormDescription = "Update worker details, hourly rates, and construction site assignments.";
+        SaveButtonText = "Save Changes";
+        IsWorkerFormVisible = true;
+    }
+
+    [RelayCommand]
+    private void CancelWorkerForm()
+    {
+        IsWorkerFormVisible = false;
+        editingWorkerId = null;
+        ClearWorkerForm();
+        SelectedWorker = null;
+        SelectedWorkerRateHistory.Clear();
+        AvailableConstructionSites.Clear();
+        AssignedConstructionSites.Clear();
+        FilteredAvailableConstructionSites.Clear();
+        FilteredAssignedConstructionSites.Clear();
+    }
+
+    [RelayCommand]
+    private void SaveWorker()
+    {
+        if (editingWorkerId.HasValue)
+        {
+            UpdateWorker(editingWorkerId.Value);
+            return;
+        }
+
+        CreateWorker();
+    }
+
+    private void CreateWorker()
     {
         if (string.IsNullOrWhiteSpace(FirstName) ||
             string.IsNullOrWhiteSpace(LastName))
@@ -137,19 +283,17 @@ public partial class WorkersViewModel : ObservableObject
         context.Workers.Add(worker);
         context.SaveChanges();
 
+        ShowActiveWorkers = true;
         LoadWorkers();
-        SelectedWorker = Workers.FirstOrDefault(item => item.Id == worker.Id);
+        SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == worker.Id);
+        editingWorkerId = worker.Id;
+        FormTitle = "Worker Information";
+        FormDescription = "Update worker details, hourly rates, and construction site assignments.";
+        SaveButtonText = "Save Changes";
     }
 
-    [RelayCommand]
-    private void EditSelectedWorker()
+    private void UpdateWorker(int workerId)
     {
-        if (SelectedWorker is null)
-        {
-            MessageBox.Show("Please select a worker to edit.");
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(FirstName) ||
             string.IsNullOrWhiteSpace(LastName))
         {
@@ -165,7 +309,7 @@ public partial class WorkersViewModel : ObservableObject
 
         using var context = new AppDbContext();
 
-        var worker = context.Workers.FirstOrDefault(item => item.Id == SelectedWorker.Id);
+        var worker = context.Workers.FirstOrDefault(item => item.Id == workerId);
 
         if (worker is null)
         {
@@ -180,21 +324,21 @@ public partial class WorkersViewModel : ObservableObject
         context.SaveChanges();
 
         LoadWorkers();
-        SelectedWorker = Workers.FirstOrDefault(item => item.Id == worker.Id);
+        SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == worker.Id);
     }
 
     [RelayCommand]
-    private void DeactivateSelectedWorker()
+    private void ToggleWorkerStatus(WorkerListItem? selectedWorker)
     {
-        if (SelectedWorker is null)
+        if (selectedWorker is null)
         {
-            MessageBox.Show("Please select a worker to deactivate.");
+            MessageBox.Show("Please select a worker to update.");
             return;
         }
 
         using var context = new AppDbContext();
 
-        var worker = context.Workers.FirstOrDefault(item => item.Id == SelectedWorker.Id);
+        var worker = context.Workers.FirstOrDefault(item => item.Id == selectedWorker.Id);
 
         if (worker is null)
         {
@@ -202,11 +346,28 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
-        worker.Status = EntityStatus.Inactive;
+        var isDeactivating = worker.Status == EntityStatus.Active;
+        var confirmed = ConfirmationDialogService.Show(
+            isDeactivating ? "Deactivate worker?" : "Activate worker?",
+            isDeactivating
+                ? $"Are you sure you want to deactivate \"{worker.FirstName} {worker.LastName}\"? They will remain visible in history, but should not be used for new work."
+                : $"Are you sure you want to activate \"{worker.FirstName} {worker.LastName}\"? They will become available again.",
+            isDeactivating ? "Deactivate" : "Activate",
+            "Cancel",
+            isDeactivating);
+
+        if (!confirmed)
+        {
+            LoadWorkers();
+            return;
+        }
+
+        worker.Status = isDeactivating ? EntityStatus.Inactive : EntityStatus.Active;
         context.SaveChanges();
 
+        var updatedWorkerId = worker.Id;
         LoadWorkers();
-        SelectedWorker = Workers.FirstOrDefault(item => item.Id == worker.Id);
+        SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == updatedWorkerId);
     }
 
     [RelayCommand]
@@ -224,6 +385,12 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
+        if (hourlyRate <= 0)
+        {
+            MessageBox.Show("Hourly rate must be greater than zero.");
+            return;
+        }
+
         if (NewRateEffectiveDate is null)
         {
             MessageBox.Show("Please choose an effective date.");
@@ -232,21 +399,65 @@ public partial class WorkersViewModel : ObservableObject
 
         using var context = new AppDbContext();
 
-        var existingOpenRate = context.WorkerRateHistories
-            .Where(rate => rate.WorkerId == SelectedWorker.Id && rate.EffectiveTo == null)
+        var workerId = SelectedWorker.Id;
+        var effectiveDate = NewRateEffectiveDate.Value.Date;
+        var rateHistory = context.WorkerRateHistories
+            .Where(rate => rate.WorkerId == workerId)
+            .OrderBy(rate => rate.EffectiveFrom)
+            .ThenBy(rate => rate.Id)
+            .ToList();
+
+        var sameDateRate = rateHistory
+            .FirstOrDefault(rate => rate.EffectiveFrom.Date == effectiveDate);
+
+        if (sameDateRate is not null)
+        {
+            MessageBox.Show("A rate already exists for this worker on the selected effective date. Please choose a different date.");
+            return;
+        }
+
+        var previousRate = rateHistory
+            .Where(rate => rate.EffectiveFrom.Date < effectiveDate)
             .OrderByDescending(rate => rate.EffectiveFrom)
+            .ThenByDescending(rate => rate.Id)
             .FirstOrDefault();
 
-        if (existingOpenRate is not null && existingOpenRate.EffectiveFrom < NewRateEffectiveDate.Value)
+        var nextRate = rateHistory
+            .Where(rate => rate.EffectiveFrom.Date > effectiveDate)
+            .OrderBy(rate => rate.EffectiveFrom)
+            .ThenBy(rate => rate.Id)
+            .FirstOrDefault();
+
+        var newRateEffectiveTo = nextRate?.EffectiveFrom.Date.AddDays(-1);
+        var previousRateMessage = previousRate is null
+            ? "There is no previous rate to close."
+            : $"The previous rate ({previousRate.HourlyRate:C}) will end on {effectiveDate.AddDays(-1):yyyy-MM-dd}.";
+        var newRateRangeMessage = newRateEffectiveTo is null
+            ? $"The new rate ({hourlyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} onward."
+            : $"The new rate ({hourlyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} to {newRateEffectiveTo:yyyy-MM-dd}.";
+
+        var confirmed = ConfirmationDialogService.Show(
+            "Add hourly rate?",
+            $"{previousRateMessage}\n\n{newRateRangeMessage}\n\nOnly one hourly rate is allowed per worker per effective date.",
+            "Add Rate",
+            "Cancel");
+
+        if (!confirmed)
         {
-            existingOpenRate.EffectiveTo = NewRateEffectiveDate.Value.AddDays(-1);
+            return;
+        }
+
+        if (previousRate is not null)
+        {
+            previousRate.EffectiveTo = effectiveDate.AddDays(-1);
         }
 
         var newRate = new WorkerRateHistory
         {
-            WorkerId = SelectedWorker.Id,
+            WorkerId = workerId,
             HourlyRate = hourlyRate,
-            EffectiveFrom = NewRateEffectiveDate.Value
+            EffectiveFrom = effectiveDate,
+            EffectiveTo = newRateEffectiveTo
         };
 
         context.WorkerRateHistories.Add(newRate);
@@ -254,11 +465,13 @@ public partial class WorkersViewModel : ObservableObject
 
         NewHourlyRate = string.Empty;
         NewRateEffectiveDate = DateTime.Today;
-        LoadRateHistory(SelectedWorker.Id);
+        LoadRateHistory(workerId);
+        LoadWorkers();
+        SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == workerId);
     }
 
     [RelayCommand]
-    private void AssignSite()
+    private void AssignSite(ConstructionSite? siteToAssign)
     {
         if (SelectedWorker is null)
         {
@@ -266,7 +479,7 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
-        if (SelectedAvailableConstructionSite is null)
+        if (siteToAssign is null)
         {
             MessageBox.Show("Please select an available construction site.");
             return;
@@ -277,7 +490,7 @@ public partial class WorkersViewModel : ObservableObject
         var existingAssignment = context.WorkerConstructionSites
             .FirstOrDefault(item =>
                 item.WorkerId == SelectedWorker.Id &&
-                item.ConstructionSiteId == SelectedAvailableConstructionSite.Id);
+                item.ConstructionSiteId == siteToAssign.Id);
 
         if (existingAssignment is not null)
         {
@@ -286,7 +499,7 @@ public partial class WorkersViewModel : ObservableObject
         }
 
         var worker = context.Workers.FirstOrDefault(item => item.Id == SelectedWorker.Id);
-        var site = context.ConstructionSites.FirstOrDefault(item => item.Id == SelectedAvailableConstructionSite.Id);
+        var site = context.ConstructionSites.FirstOrDefault(item => item.Id == siteToAssign.Id);
 
         if (worker is null || worker.Status != EntityStatus.Active)
         {
@@ -303,7 +516,7 @@ public partial class WorkersViewModel : ObservableObject
         var assignment = new WorkerConstructionSite
         {
             WorkerId = SelectedWorker.Id,
-            ConstructionSiteId = SelectedAvailableConstructionSite.Id,
+            ConstructionSiteId = siteToAssign.Id,
             AssignedDate = DateTime.Today,
             Status = EntityStatus.Active
         };
@@ -315,7 +528,7 @@ public partial class WorkersViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void RemoveAssignment()
+    private void RemoveAssignment(ConstructionSite? siteToRemove)
     {
         if (SelectedWorker is null)
         {
@@ -323,7 +536,7 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
-        if (SelectedAssignedConstructionSite is null)
+        if (siteToRemove is null)
         {
             MessageBox.Show("Please select an assigned construction site to remove.");
             return;
@@ -334,7 +547,7 @@ public partial class WorkersViewModel : ObservableObject
         var assignment = context.WorkerConstructionSites
             .FirstOrDefault(item =>
                 item.WorkerId == SelectedWorker.Id &&
-                item.ConstructionSiteId == SelectedAssignedConstructionSite.Id);
+                item.ConstructionSiteId == siteToRemove.Id);
 
         if (assignment is null)
         {
@@ -445,6 +658,7 @@ public partial class WorkersViewModel : ObservableObject
             AvailableConstructionSites.Add(site);
         }
 
+        ApplyConstructionSiteAssignmentFilters();
         SelectedAssignedConstructionSite = AssignedConstructionSites.FirstOrDefault();
         SelectedAvailableConstructionSite = AvailableConstructionSites.FirstOrDefault();
     }
@@ -453,7 +667,67 @@ public partial class WorkersViewModel : ObservableObject
     {
         FirstName = string.Empty;
         LastName = string.Empty;
+        AvailableSiteSearchText = string.Empty;
+        AssignedSiteSearchText = string.Empty;
         LoadTradeOptions();
         SelectedTradeOption = null;
+    }
+
+    private void ApplyWorkerFilter()
+    {
+        var search = SearchText.Trim();
+        var filteredWorkers = Workers
+            .Where(worker => worker.IsActive == ShowActiveWorkers)
+            .AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            filteredWorkers = filteredWorkers.Where(worker =>
+                worker.WorkerName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                worker.TradeName.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        FilteredWorkers.Clear();
+
+        foreach (var worker in filteredWorkers.OrderBy(worker => worker.WorkerName))
+        {
+            FilteredWorkers.Add(worker);
+        }
+    }
+
+    private void ApplyConstructionSiteAssignmentFilters()
+    {
+        var availableSearch = AvailableSiteSearchText.Trim();
+        var assignedSearch = AssignedSiteSearchText.Trim();
+
+        var availableSites = AvailableConstructionSites.AsEnumerable();
+        var assignedSites = AssignedConstructionSites.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(availableSearch))
+        {
+            availableSites = availableSites.Where(site =>
+                site.Name.Contains(availableSearch, StringComparison.OrdinalIgnoreCase) ||
+                site.Location.Contains(availableSearch, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(assignedSearch))
+        {
+            assignedSites = assignedSites.Where(site =>
+                site.Name.Contains(assignedSearch, StringComparison.OrdinalIgnoreCase) ||
+                site.Location.Contains(assignedSearch, StringComparison.OrdinalIgnoreCase));
+        }
+
+        FilteredAvailableConstructionSites.Clear();
+        FilteredAssignedConstructionSites.Clear();
+
+        foreach (var site in availableSites.OrderBy(site => site.Name))
+        {
+            FilteredAvailableConstructionSites.Add(site);
+        }
+
+        foreach (var site in assignedSites.OrderBy(site => site.Name))
+        {
+            FilteredAssignedConstructionSites.Add(site);
+        }
     }
 }

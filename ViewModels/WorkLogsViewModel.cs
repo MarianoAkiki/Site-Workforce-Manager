@@ -12,6 +12,7 @@ namespace Site_Workforce_Manager.ViewModels;
 public partial class WorkLogsViewModel : ObservableObject
 {
     private bool isUpdatingForm;
+    private readonly List<LookupOption> allWorkerOptions = new();
     private readonly List<LookupOption> allConstructionSiteOptions = new();
 
     public WorkLogsViewModel()
@@ -76,6 +77,18 @@ public partial class WorkLogsViewModel : ObservableObject
     private PaymentStatusOption? selectedFilterPaymentStatusOption;
 
     [ObservableProperty]
+    private string workerSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string constructionSiteSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string filterWorkerSearchText = string.Empty;
+
+    [ObservableProperty]
+    private string filterConstructionSiteSearchText = string.Empty;
+
+    [ObservableProperty]
     private decimal filteredTotalHours;
 
     [ObservableProperty]
@@ -83,6 +96,26 @@ public partial class WorkLogsViewModel : ObservableObject
 
     [ObservableProperty]
     private string constructionSiteSelectionMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool isWorkLogFormVisible;
+
+    [ObservableProperty]
+    private bool showActiveWorkLogs = true;
+
+    [ObservableProperty]
+    private string formTitle = "Add Work Log";
+
+    [ObservableProperty]
+    private string formDescription = "Create a new unpaid work log.";
+
+    [ObservableProperty]
+    private string saveButtonText = "Save Work Log";
+
+    [ObservableProperty]
+    private DateTime? filterWorkDate;
+
+    private int? editingWorkLogId;
 
     partial void OnSelectedWorkLogChanged(WorkLog? value)
     {
@@ -142,9 +175,41 @@ public partial class WorkLogsViewModel : ObservableObject
 
     partial void OnFilterStartDateChanged(DateTime? value) => LoadWorkLogs();
     partial void OnFilterEndDateChanged(DateTime? value) => LoadWorkLogs();
+    partial void OnFilterWorkDateChanged(DateTime? value) => LoadWorkLogs();
     partial void OnSelectedFilterWorkerOptionChanged(LookupOption? value) => LoadWorkLogs();
     partial void OnSelectedFilterConstructionSiteOptionChanged(LookupOption? value) => LoadWorkLogs();
     partial void OnSelectedFilterPaymentStatusOptionChanged(PaymentStatusOption? value) => LoadWorkLogs();
+    partial void OnWorkerSearchTextChanged(string value) => RefreshWorkerOptions();
+    partial void OnConstructionSiteSearchTextChanged(string value) => FilterConstructionSitesForSelectedWorker();
+    partial void OnFilterWorkerSearchTextChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            SelectedFilterWorkerOption = null;
+        }
+
+        RefreshWorkerFilterOptions();
+    }
+
+    partial void OnFilterConstructionSiteSearchTextChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            SelectedFilterConstructionSiteOption = null;
+        }
+
+        RefreshConstructionSiteFilterOptions();
+    }
+
+    partial void OnShowActiveWorkLogsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StatusFilterButtonText));
+        OnPropertyChanged(nameof(StatusFilterLabel));
+        LoadWorkLogs();
+    }
+
+    public string StatusFilterButtonText => ShowActiveWorkLogs ? "Show Cancelled" : "Show Active";
+    public string StatusFilterLabel => ShowActiveWorkLogs ? "Active work logs" : "Cancelled work logs";
 
     public void LoadWorkLogs()
     {
@@ -168,6 +233,12 @@ public partial class WorkLogsViewModel : ObservableObject
             query = query.Where(workLog => workLog.WorkDate <= endDate);
         }
 
+        if (FilterWorkDate.HasValue)
+        {
+            var selectedDate = FilterWorkDate.Value.Date;
+            query = query.Where(workLog => workLog.WorkDate == selectedDate);
+        }
+
         if (SelectedFilterWorkerOption?.Id is int workerId)
         {
             query = query.Where(workLog => workLog.WorkerId == workerId);
@@ -182,6 +253,10 @@ public partial class WorkLogsViewModel : ObservableObject
         {
             query = query.Where(workLog => workLog.PaymentStatus == paymentStatus);
         }
+
+        query = ShowActiveWorkLogs
+            ? query.Where(workLog => workLog.PaymentStatus != PaymentStatus.Cancelled)
+            : query.Where(workLog => workLog.PaymentStatus == PaymentStatus.Cancelled);
 
         var workLogs = query
             .OrderByDescending(workLog => workLog.WorkDate)
@@ -210,7 +285,75 @@ public partial class WorkLogsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddWorkLog()
+    private void ToggleStatusFilter()
+    {
+        ShowActiveWorkLogs = !ShowActiveWorkLogs;
+        SelectedWorkLog = null;
+    }
+
+    [RelayCommand]
+    private void OpenAddWorkLogForm()
+    {
+        editingWorkLogId = null;
+        SelectedWorkLog = null;
+        ClearForm();
+        FormTitle = "Add Work Log";
+        FormDescription = "Create a new unpaid work log. Payment status is controlled by payroll.";
+        SaveButtonText = "Save Work Log";
+        IsWorkLogFormVisible = true;
+    }
+
+    [RelayCommand]
+    private void OpenEditWorkLogForm(WorkLog? workLog)
+    {
+        if (workLog is null)
+        {
+            MessageBox.Show("Please select a work log to edit.");
+            return;
+        }
+
+        if (workLog.PaymentStatus == PaymentStatus.Paid)
+        {
+            MessageBox.Show("Paid work logs cannot be edited.");
+            return;
+        }
+
+        if (workLog.PaymentStatus == PaymentStatus.Cancelled)
+        {
+            MessageBox.Show("Cancelled work logs cannot be edited.");
+            return;
+        }
+
+        editingWorkLogId = workLog.Id;
+        SelectedWorkLog = workLog;
+        FormTitle = "Edit Work Log";
+        FormDescription = "Update an unpaid work log.";
+        SaveButtonText = "Save Changes";
+        IsWorkLogFormVisible = true;
+    }
+
+    [RelayCommand]
+    private void CancelWorkLogForm()
+    {
+        IsWorkLogFormVisible = false;
+        editingWorkLogId = null;
+        SelectedWorkLog = null;
+        ClearForm();
+    }
+
+    [RelayCommand]
+    private void SaveWorkLog()
+    {
+        if (editingWorkLogId.HasValue)
+        {
+            UpdateWorkLog(editingWorkLogId.Value);
+            return;
+        }
+
+        CreateWorkLog();
+    }
+
+    private void CreateWorkLog()
     {
         if (!TryBuildWorkLogValues(out var values))
         {
@@ -239,31 +382,14 @@ public partial class WorkLogsViewModel : ObservableObject
         context.WorkLogs.Add(workLog);
         context.SaveChanges();
 
+        ShowActiveWorkLogs = true;
         LoadWorkLogs();
         SelectedWorkLog = WorkLogs.FirstOrDefault(item => item.Id == workLog.Id);
+        IsWorkLogFormVisible = false;
     }
 
-    [RelayCommand]
-    private void EditSelectedWorkLog()
+    private void UpdateWorkLog(int workLogId)
     {
-        if (SelectedWorkLog is null)
-        {
-            MessageBox.Show("Please select a work log to edit.");
-            return;
-        }
-
-        if (SelectedWorkLog.PaymentStatus == PaymentStatus.Paid)
-        {
-            MessageBox.Show("Paid work logs cannot be edited.");
-            return;
-        }
-
-        if (SelectedWorkLog.PaymentStatus == PaymentStatus.Cancelled)
-        {
-            MessageBox.Show("Cancelled work logs cannot be edited.");
-            return;
-        }
-
         if (!TryBuildWorkLogValues(out var values))
         {
             return;
@@ -271,7 +397,7 @@ public partial class WorkLogsViewModel : ObservableObject
 
         using var context = new AppDbContext();
 
-        var workLog = context.WorkLogs.FirstOrDefault(item => item.Id == SelectedWorkLog.Id);
+        var workLog = context.WorkLogs.FirstOrDefault(item => item.Id == workLogId);
 
         if (workLog is null)
         {
@@ -300,33 +426,8 @@ public partial class WorkLogsViewModel : ObservableObject
 
         LoadWorkLogs();
         SelectedWorkLog = WorkLogs.FirstOrDefault(item => item.Id == workLog.Id);
-    }
-
-    [RelayCommand]
-    private void CancelSelectedWorkLog()
-    {
-        if (SelectedWorkLog is null)
-        {
-            MessageBox.Show("Please select a work log to cancel.");
-            return;
-        }
-
-        using var context = new AppDbContext();
-
-        var workLog = context.WorkLogs.FirstOrDefault(item => item.Id == SelectedWorkLog.Id);
-
-        if (workLog is null)
-        {
-            MessageBox.Show("The selected work log could not be found.");
-            return;
-        }
-
-        workLog.PaymentStatus = PaymentStatus.Cancelled;
-        workLog.UpdatedAt = DateTime.Now;
-        context.SaveChanges();
-
-        LoadWorkLogs();
-        SelectedWorkLog = WorkLogs.FirstOrDefault(item => item.Id == workLog.Id);
+        IsWorkLogFormVisible = false;
+        editingWorkLogId = null;
     }
 
     [RelayCommand]
@@ -335,8 +436,11 @@ public partial class WorkLogsViewModel : ObservableObject
         isUpdatingForm = true;
         FilterStartDate = null;
         FilterEndDate = null;
-        SelectedFilterWorkerOption = WorkerFilterOptions.FirstOrDefault();
-        SelectedFilterConstructionSiteOption = ConstructionSiteFilterOptions.FirstOrDefault();
+        FilterWorkDate = null;
+        FilterWorkerSearchText = string.Empty;
+        FilterConstructionSiteSearchText = string.Empty;
+        SelectedFilterWorkerOption = null;
+        SelectedFilterConstructionSiteOption = null;
         SelectedFilterPaymentStatusOption = PaymentStatusFilterOptions.FirstOrDefault();
         isUpdatingForm = false;
 
@@ -349,6 +453,7 @@ public partial class WorkLogsViewModel : ObservableObject
 
         var workers = context.Workers
             .AsNoTracking()
+            .Where(worker => worker.Status == EntityStatus.Active)
             .OrderBy(worker => worker.FirstName)
             .ThenBy(worker => worker.LastName)
             .Select(worker => new LookupOption
@@ -360,6 +465,7 @@ public partial class WorkLogsViewModel : ObservableObject
 
         var sites = context.ConstructionSites
             .AsNoTracking()
+            .Where(site => site.Status == EntityStatus.Active)
             .OrderBy(site => site.Name)
             .Select(site => new LookupOption
             {
@@ -370,23 +476,19 @@ public partial class WorkLogsViewModel : ObservableObject
 
         WorkerOptions.Clear();
         ConstructionSiteOptions.Clear();
+        allWorkerOptions.Clear();
         allConstructionSiteOptions.Clear();
         WorkerFilterOptions.Clear();
         ConstructionSiteFilterOptions.Clear();
 
-        WorkerFilterOptions.Add(new LookupOption { Id = null, Name = "All Workers" });
-        ConstructionSiteFilterOptions.Add(new LookupOption { Id = null, Name = "All Sites" });
-
         foreach (var worker in workers)
         {
-            WorkerOptions.Add(worker);
-            WorkerFilterOptions.Add(new LookupOption { Id = worker.Id, Name = worker.Name });
+            allWorkerOptions.Add(worker);
         }
 
         foreach (var site in sites)
         {
             allConstructionSiteOptions.Add(site);
-            ConstructionSiteFilterOptions.Add(new LookupOption { Id = site.Id, Name = site.Name });
         }
 
         PaymentStatusFilterOptions.Clear();
@@ -395,8 +497,12 @@ public partial class WorkLogsViewModel : ObservableObject
         PaymentStatusFilterOptions.Add(new PaymentStatusOption { Value = PaymentStatus.Paid, Name = "Paid" });
         PaymentStatusFilterOptions.Add(new PaymentStatusOption { Value = PaymentStatus.Cancelled, Name = "Cancelled" });
 
-        SelectedFilterWorkerOption = WorkerFilterOptions.FirstOrDefault();
-        SelectedFilterConstructionSiteOption = ConstructionSiteFilterOptions.FirstOrDefault();
+        RefreshWorkerOptions();
+        RefreshWorkerFilterOptions();
+        RefreshConstructionSiteFilterOptions();
+
+        SelectedFilterWorkerOption = null;
+        SelectedFilterConstructionSiteOption = null;
         SelectedFilterPaymentStatusOption = PaymentStatusFilterOptions.FirstOrDefault();
         SelectedWorkerOption = WorkerOptions.FirstOrDefault();
         FilterConstructionSitesForSelectedWorker();
@@ -517,6 +623,9 @@ public partial class WorkLogsViewModel : ObservableObject
     private void ClearForm()
     {
         isUpdatingForm = true;
+        WorkerSearchText = string.Empty;
+        ConstructionSiteSearchText = string.Empty;
+        RefreshWorkerOptions();
         SelectedWorkerOption = WorkerOptions.FirstOrDefault();
         FilterConstructionSitesForSelectedWorker();
         WorkDate = DateTime.Today;
@@ -535,6 +644,7 @@ public partial class WorkLogsViewModel : ObservableObject
                            item.EffectiveFrom <= workDate &&
                            (item.EffectiveTo == null || item.EffectiveTo >= workDate))
             .OrderByDescending(item => item.EffectiveFrom)
+            .ThenByDescending(item => item.Id)
             .FirstOrDefault();
 
         return rate?.HourlyRate ?? 0m;
@@ -563,8 +673,18 @@ public partial class WorkLogsViewModel : ObservableObject
 
         var filteredSites = allConstructionSiteOptions
             .Where(site => site.Id.HasValue && assignedSiteIds.Contains(site.Id.Value))
+            .Where(site => MatchesSearch(site, ConstructionSiteSearchText))
             .OrderBy(site => site.Name)
             .ToList();
+
+        var selectedSite = allConstructionSiteOptions.FirstOrDefault(site => site.Id == selectedSiteId);
+        if (selectedSite is not null &&
+            selectedSite.Id.HasValue &&
+            assignedSiteIds.Contains(selectedSite.Id.Value) &&
+            filteredSites.All(site => site.Id != selectedSite.Id))
+        {
+            filteredSites.Insert(0, selectedSite);
+        }
 
         foreach (var site in filteredSites)
         {
@@ -582,6 +702,109 @@ public partial class WorkLogsViewModel : ObservableObject
         {
             ConstructionSiteSelectionMessage = string.Empty;
         }
+    }
+
+    private void RefreshWorkerOptions()
+    {
+        var selectedWorkerId = SelectedWorkerOption?.Id;
+        var filteredWorkers = allWorkerOptions
+            .Where(worker => MatchesSearch(worker, WorkerSearchText))
+            .OrderBy(worker => worker.Name)
+            .ToList();
+
+        var selectedWorker = allWorkerOptions.FirstOrDefault(worker => worker.Id == selectedWorkerId);
+        if (selectedWorker is not null && filteredWorkers.All(worker => worker.Id != selectedWorker.Id))
+        {
+            filteredWorkers.Insert(0, selectedWorker);
+        }
+
+        WorkerOptions.Clear();
+        foreach (var worker in filteredWorkers)
+        {
+            WorkerOptions.Add(worker);
+        }
+
+        SelectedWorkerOption = WorkerOptions.FirstOrDefault(worker => worker.Id == selectedWorkerId);
+    }
+
+    private void RefreshWorkerFilterOptions()
+    {
+        var selectedWorkerId = SelectedFilterWorkerOption?.Id;
+        var filteredWorkers = allWorkerOptions
+            .Where(worker => MatchesSearch(worker, FilterWorkerSearchText))
+            .OrderBy(worker => worker.Name)
+            .ToList();
+
+        WorkerFilterOptions.Clear();
+
+        foreach (var worker in filteredWorkers)
+        {
+            WorkerFilterOptions.Add(new LookupOption { Id = worker.Id, Name = worker.Name });
+        }
+
+        SelectedFilterWorkerOption = WorkerFilterOptions.FirstOrDefault(worker => worker.Id == selectedWorkerId);
+    }
+
+    private void RefreshConstructionSiteFilterOptions()
+    {
+        var selectedSiteId = SelectedFilterConstructionSiteOption?.Id;
+        var filteredSites = allConstructionSiteOptions
+            .Where(site => MatchesSearch(site, FilterConstructionSiteSearchText))
+            .OrderBy(site => site.Name)
+            .ToList();
+
+        ConstructionSiteFilterOptions.Clear();
+
+        foreach (var site in filteredSites)
+        {
+            ConstructionSiteFilterOptions.Add(new LookupOption { Id = site.Id, Name = site.Name });
+        }
+
+        SelectedFilterConstructionSiteOption = ConstructionSiteFilterOptions.FirstOrDefault(site => site.Id == selectedSiteId);
+    }
+
+    private static bool MatchesSearch(LookupOption option, string searchText)
+    {
+        return string.IsNullOrWhiteSpace(searchText) ||
+               option.Name.Contains(searchText.Trim(), StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    [RelayCommand]
+    private void ClearWorkerSearch()
+    {
+        SelectedWorkerOption = null;
+        SelectedConstructionSiteOption = null;
+        WorkerSearchText = string.Empty;
+        ConstructionSiteSearchText = string.Empty;
+        RefreshWorkerOptions();
+        FilterConstructionSitesForSelectedWorker();
+        UpdateRateAndTotals();
+    }
+
+    [RelayCommand]
+    private void ClearConstructionSiteSearch()
+    {
+        SelectedConstructionSiteOption = null;
+        ConstructionSiteSearchText = string.Empty;
+        FilterConstructionSitesForSelectedWorker();
+    }
+
+    [RelayCommand]
+    private void ClearFilterWorkerSearch()
+    {
+        SelectedFilterWorkerOption = null;
+        FilterWorkerSearchText = string.Empty;
+        RefreshWorkerFilterOptions();
+        LoadWorkLogs();
+    }
+
+    [RelayCommand]
+    private void ClearFilterConstructionSiteSearch()
+    {
+        SelectedFilterConstructionSiteOption = null;
+        FilterConstructionSiteSearchText = string.Empty;
+        RefreshConstructionSiteFilterOptions();
+        LoadWorkLogs();
     }
 
     private class WorkLogFormValues

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
 using Site_Workforce_Manager.Models;
+using Site_Workforce_Manager.Services;
 
 namespace Site_Workforce_Manager.ViewModels;
 
@@ -16,6 +17,7 @@ public partial class TradesViewModel : ObservableObject
     }
 
     public ObservableCollection<Trade> Trades { get; } = new();
+    public ObservableCollection<Trade> FilteredTrades { get; } = new();
 
     [ObservableProperty]
     private Trade? selectedTrade;
@@ -26,18 +28,48 @@ public partial class TradesViewModel : ObservableObject
     [ObservableProperty]
     private string description = string.Empty;
 
+    [ObservableProperty]
+    private string searchText = string.Empty;
+
+    [ObservableProperty]
+    private bool isTradeFormVisible;
+
+    [ObservableProperty]
+    private bool showActiveTrades = true;
+
+    [ObservableProperty]
+    private string formTitle = "Add Trade";
+
+    [ObservableProperty]
+    private string formDescription = "Create a new trade for workers.";
+
+    [ObservableProperty]
+    private string saveButtonText = "Save Trade";
+
+    private int? editingTradeId;
+
     partial void OnSelectedTradeChanged(Trade? value)
     {
         if (value is null)
         {
-            TradeName = string.Empty;
-            Description = string.Empty;
             return;
         }
-
-        TradeName = value.Name;
-        Description = value.Description ?? string.Empty;
     }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        ApplyTradeFilter();
+    }
+
+    partial void OnShowActiveTradesChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StatusFilterButtonText));
+        OnPropertyChanged(nameof(StatusFilterLabel));
+        ApplyTradeFilter();
+    }
+
+    public string StatusFilterButtonText => ShowActiveTrades ? "Show Inactive" : "Show Active";
+    public string StatusFilterLabel => ShowActiveTrades ? "Active trades" : "Inactive trades";
 
     public void LoadTrades()
     {
@@ -55,14 +87,81 @@ public partial class TradesViewModel : ObservableObject
             Trades.Add(trade);
         }
 
+        ApplyTradeFilter();
+
         if (SelectedTrade is not null)
         {
-            SelectedTrade = Trades.FirstOrDefault(item => item.Id == SelectedTrade.Id);
+            SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == SelectedTrade.Id);
         }
     }
 
     [RelayCommand]
-    private void AddTrade()
+    private void ToggleStatusFilter()
+    {
+        ShowActiveTrades = !ShowActiveTrades;
+        SelectedTrade = null;
+    }
+
+    [RelayCommand]
+    private void ClearSearch()
+    {
+        SearchText = string.Empty;
+    }
+
+    [RelayCommand]
+    private void OpenAddTradeForm()
+    {
+        editingTradeId = null;
+        SelectedTrade = null;
+        TradeName = string.Empty;
+        Description = string.Empty;
+        FormTitle = "Add Trade";
+        FormDescription = "Create a new trade and make it available for worker forms.";
+        SaveButtonText = "Save Trade";
+        IsTradeFormVisible = true;
+    }
+
+    [RelayCommand]
+    private void OpenEditTradeForm(Trade? trade)
+    {
+        if (trade is null)
+        {
+            MessageBox.Show("Please select a trade to edit.");
+            return;
+        }
+
+        editingTradeId = trade.Id;
+        SelectedTrade = trade;
+        TradeName = trade.Name;
+        Description = trade.Description ?? string.Empty;
+        FormTitle = "Edit Trade";
+        FormDescription = "Update the trade name or description.";
+        SaveButtonText = "Save Changes";
+        IsTradeFormVisible = true;
+    }
+
+    [RelayCommand]
+    private void CancelTradeForm()
+    {
+        IsTradeFormVisible = false;
+        editingTradeId = null;
+        TradeName = string.Empty;
+        Description = string.Empty;
+    }
+
+    [RelayCommand]
+    private void SaveTrade()
+    {
+        if (editingTradeId.HasValue)
+        {
+            UpdateTrade(editingTradeId.Value);
+            return;
+        }
+
+        CreateTrade();
+    }
+
+    private void CreateTrade()
     {
         if (string.IsNullOrWhiteSpace(TradeName))
         {
@@ -95,19 +194,14 @@ public partial class TradesViewModel : ObservableObject
         context.Trades.Add(trade);
         context.SaveChanges();
 
+        ShowActiveTrades = true;
         LoadTrades();
-        SelectedTrade = Trades.FirstOrDefault(item => item.Id == trade.Id);
+        SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == trade.Id);
+        IsTradeFormVisible = false;
     }
 
-    [RelayCommand]
-    private void EditSelectedTrade()
+    private void UpdateTrade(int tradeId)
     {
-        if (SelectedTrade is null)
-        {
-            MessageBox.Show("Please select a trade to edit.");
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(TradeName))
         {
             MessageBox.Show("Trade name is required.");
@@ -118,7 +212,7 @@ public partial class TradesViewModel : ObservableObject
 
         var normalizedName = TradeName.Trim();
         var duplicateExists = context.Trades
-            .Any(trade => trade.Id != SelectedTrade.Id && trade.Name.ToLower() == normalizedName.ToLower());
+            .Any(trade => trade.Id != tradeId && trade.Name.ToLower() == normalizedName.ToLower());
 
         if (duplicateExists)
         {
@@ -126,7 +220,7 @@ public partial class TradesViewModel : ObservableObject
             return;
         }
 
-        var trade = context.Trades.FirstOrDefault(item => item.Id == SelectedTrade.Id);
+        var trade = context.Trades.FirstOrDefault(item => item.Id == tradeId);
 
         if (trade is null)
         {
@@ -140,21 +234,23 @@ public partial class TradesViewModel : ObservableObject
         context.SaveChanges();
 
         LoadTrades();
-        SelectedTrade = Trades.FirstOrDefault(item => item.Id == trade.Id);
+        SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == trade.Id);
+        IsTradeFormVisible = false;
+        editingTradeId = null;
     }
 
     [RelayCommand]
-    private void DeactivateSelectedTrade()
+    private void ToggleTradeStatus(Trade? selectedTrade)
     {
-        if (SelectedTrade is null)
+        if (selectedTrade is null)
         {
-            MessageBox.Show("Please select a trade to deactivate.");
+            MessageBox.Show("Please select a trade to update.");
             return;
         }
 
         using var context = new AppDbContext();
 
-        var trade = context.Trades.FirstOrDefault(item => item.Id == SelectedTrade.Id);
+        var trade = context.Trades.FirstOrDefault(item => item.Id == selectedTrade.Id);
 
         if (trade is null)
         {
@@ -162,11 +258,50 @@ public partial class TradesViewModel : ObservableObject
             return;
         }
 
-        trade.IsActive = false;
+        var isDeactivating = trade.IsActive;
+        var confirmed = ConfirmationDialogService.Show(
+            isDeactivating ? "Deactivate trade?" : "Activate trade?",
+            isDeactivating
+                ? $"Are you sure you want to deactivate \"{trade.Name}\"? Existing workers will keep this trade, but it will not appear for new worker assignments."
+                : $"Are you sure you want to activate \"{trade.Name}\"? It will become available again for worker assignments.",
+            isDeactivating ? "Deactivate" : "Activate",
+            "Cancel",
+            isDeactivating);
+
+        if (!confirmed)
+        {
+            LoadTrades();
+            return;
+        }
+
+        trade.IsActive = !trade.IsActive;
         trade.UpdatedAt = DateTime.Now;
         context.SaveChanges();
 
+        var updatedTradeId = trade.Id;
         LoadTrades();
-        SelectedTrade = Trades.FirstOrDefault(item => item.Id == trade.Id);
+        SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == updatedTradeId);
+    }
+
+    private void ApplyTradeFilter()
+    {
+        var search = SearchText.Trim();
+        var filteredTrades = Trades
+            .Where(trade => trade.IsActive == ShowActiveTrades)
+            .AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            filteredTrades = filteredTrades.Where(trade =>
+                trade.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (trade.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        FilteredTrades.Clear();
+
+        foreach (var trade in filteredTrades.OrderBy(trade => trade.Name))
+        {
+            FilteredTrades.Add(trade);
+        }
     }
 }
