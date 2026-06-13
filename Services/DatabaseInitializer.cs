@@ -17,6 +17,7 @@ public static class DatabaseInitializer
         EnsurePayrollTablesExist(context);
         SeedTrades(context);
         BackfillWorkerTrades(context);
+        RemoveLegacyWorkerTradeColumn(context);
 
         if (context.Workers.Any())
         {
@@ -373,6 +374,16 @@ public static class DatabaseInitializer
         }
 
         context.SaveChanges();
+    }
+
+    private static void RemoveLegacyWorkerTradeColumn(AppDbContext context)
+    {
+        if (!ColumnExists(context, "Workers", "Trade"))
+        {
+            return;
+        }
+
+        context.Database.ExecuteSqlRaw("ALTER TABLE Workers DROP COLUMN Trade;");
     }
 
     private static Dictionary<int, string> ReadLegacyWorkerTrades(AppDbContext context)

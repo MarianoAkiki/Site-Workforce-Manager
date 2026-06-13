@@ -252,6 +252,7 @@
 
                 <Border Grid.Row="2"
                         Margin="0,20,0,0"
+                        Visibility="{Binding CanManageWorkerDetails, Converter={StaticResource BoolToVisibilityConverter}}"
                         Style="{StaticResource CardBorderStyle}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -311,6 +312,7 @@
 
                 <Border Grid.Row="3"
                         Margin="0,20,0,0"
+                        Visibility="{Binding CanManageWorkerDetails, Converter={StaticResource BoolToVisibilityConverter}}"
                         Style="{StaticResource CardBorderStyle}">
                     <Grid>
                         <Grid.RowDefinitions>

@@ -18,15 +18,24 @@ public partial class PayrollViewModel : ObservableObject
         DateFrom = DateTime.Today.AddDays(-14);
         DateTo = DateTime.Today;
         PaymentDate = DateTime.Today;
+        LoadPayrollStatusOptions();
         LoadWorkerOptions();
         LoadPayrollData();
     }
 
     public ObservableCollection<LookupOption> WorkerOptions { get; } = new();
+    public ObservableCollection<LookupOption> HistoryWorkerOptions { get; } = new();
+    public ObservableCollection<PayrollSlipStatusOption> PayrollStatusOptions { get; } = new();
     public ObservableCollection<PayrollWorkLogRow> AvailableWorkLogs { get; } = new();
     public ObservableCollection<PayrollSlipHistoryRow> PayrollSlips { get; } = new();
     public ObservableCollection<PayrollSlipLineRow> SelectedSlipLines { get; } = new();
     public ObservableCollection<PayrollPaymentRow> SelectedSlipPayments { get; } = new();
+
+    [ObservableProperty]
+    private bool isPayrollFormVisible;
+
+    [ObservableProperty]
+    private bool isPayrollDetailVisible;
 
     [ObservableProperty]
     private LookupOption? selectedWorkerOption;
@@ -36,6 +45,21 @@ public partial class PayrollViewModel : ObservableObject
 
     [ObservableProperty]
     private DateTime? dateTo;
+
+    [ObservableProperty]
+    private string historyWorkerSearchText = string.Empty;
+
+    [ObservableProperty]
+    private LookupOption? selectedHistoryWorkerOption;
+
+    [ObservableProperty]
+    private DateTime? historyDateFrom;
+
+    [ObservableProperty]
+    private DateTime? historyDateTo;
+
+    [ObservableProperty]
+    private PayrollSlipStatusOption? selectedPayrollStatusOption;
 
     [ObservableProperty]
     private DateTime paymentDate;
@@ -91,6 +115,21 @@ public partial class PayrollViewModel : ObservableObject
         SelectedPayrollSlip is not null &&
         !string.Equals(SelectedSlipStatusText, PayrollSlipStatus.Cancelled.ToString(), StringComparison.OrdinalIgnoreCase);
 
+    public bool IsPayrollHistoryVisible => !IsPayrollFormVisible && !IsPayrollDetailVisible;
+
+    public bool HasHistoryWorkerFilter =>
+        !string.IsNullOrWhiteSpace(HistoryWorkerSearchText) || SelectedHistoryWorkerOption is not null;
+
+    partial void OnIsPayrollFormVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsPayrollHistoryVisible));
+    }
+
+    partial void OnIsPayrollDetailVisibleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsPayrollHistoryVisible));
+    }
+
     partial void OnSelectedWorkerOptionChanged(LookupOption? value)
     {
         if (!isUpdatingFilters)
@@ -115,6 +154,45 @@ public partial class PayrollViewModel : ObservableObject
         }
     }
 
+    partial void OnHistoryWorkerSearchTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasHistoryWorkerFilter));
+    }
+
+    partial void OnSelectedHistoryWorkerOptionChanged(LookupOption? value)
+    {
+        OnPropertyChanged(nameof(HasHistoryWorkerFilter));
+
+        if (!isUpdatingFilters)
+        {
+            LoadPayrollHistory();
+        }
+    }
+
+    partial void OnHistoryDateFromChanged(DateTime? value)
+    {
+        if (!isUpdatingFilters)
+        {
+            LoadPayrollHistory();
+        }
+    }
+
+    partial void OnHistoryDateToChanged(DateTime? value)
+    {
+        if (!isUpdatingFilters)
+        {
+            LoadPayrollHistory();
+        }
+    }
+
+    partial void OnSelectedPayrollStatusOptionChanged(PayrollSlipStatusOption? value)
+    {
+        if (!isUpdatingFilters)
+        {
+            LoadPayrollHistory();
+        }
+    }
+
     partial void OnSelectedPayrollSlipChanged(PayrollSlipHistoryRow? value)
     {
         LoadSelectedSlipDetails();
@@ -124,6 +202,8 @@ public partial class PayrollViewModel : ObservableObject
 
     public void LoadPayrollPage()
     {
+        IsPayrollFormVisible = false;
+        IsPayrollDetailVisible = false;
         LoadWorkerOptions();
         LoadPayrollData();
     }
@@ -133,6 +213,35 @@ public partial class PayrollViewModel : ObservableObject
     {
         LoadAvailableWorkLogs();
         LoadPayrollHistory();
+    }
+
+    [RelayCommand]
+    private void OpenAddPayrollSlipForm()
+    {
+        IsPayrollDetailVisible = false;
+        IsPayrollFormVisible = true;
+        LoadAvailableWorkLogs();
+    }
+
+    [RelayCommand]
+    private void BackToPayrollHistory()
+    {
+        IsPayrollFormVisible = false;
+        IsPayrollDetailVisible = false;
+        LoadPayrollHistory();
+    }
+
+    [RelayCommand]
+    private void ViewPayrollSlipDetails(PayrollSlipHistoryRow? slip)
+    {
+        if (slip is null)
+        {
+            return;
+        }
+
+        SelectedPayrollSlip = slip;
+        IsPayrollFormVisible = false;
+        IsPayrollDetailVisible = true;
     }
 
     [RelayCommand]
@@ -276,6 +385,7 @@ public partial class PayrollViewModel : ObservableObject
         ClearEntryFields();
         LoadPayrollData();
         SelectedPayrollSlip = PayrollSlips.FirstOrDefault(item => item.Id == payrollSlip.Id);
+        IsPayrollFormVisible = false;
     }
 
     [RelayCommand]
@@ -287,7 +397,31 @@ public partial class PayrollViewModel : ObservableObject
         DateTo = DateTime.Today;
         isUpdatingFilters = false;
 
-        LoadPayrollData();
+        LoadAvailableWorkLogs();
+    }
+
+    [RelayCommand]
+    private void ClearPayrollHistoryFilters()
+    {
+        isUpdatingFilters = true;
+        SelectedHistoryWorkerOption = null;
+        HistoryWorkerSearchText = string.Empty;
+        HistoryDateFrom = null;
+        HistoryDateTo = null;
+        SelectedPayrollStatusOption = PayrollStatusOptions.FirstOrDefault();
+        isUpdatingFilters = false;
+
+        OnPropertyChanged(nameof(HasHistoryWorkerFilter));
+        LoadPayrollHistory();
+    }
+
+    [RelayCommand]
+    private void ClearHistoryWorkerFilter()
+    {
+        SelectedHistoryWorkerOption = null;
+        HistoryWorkerSearchText = string.Empty;
+        OnPropertyChanged(nameof(HasHistoryWorkerFilter));
+        LoadPayrollHistory();
     }
 
     [RelayCommand]
@@ -433,11 +567,23 @@ public partial class PayrollViewModel : ObservableObject
         SelectedPayrollSlip = PayrollSlips.FirstOrDefault(item => item.Id == slip.Id);
     }
 
+    private void LoadPayrollStatusOptions()
+    {
+        PayrollStatusOptions.Clear();
+        PayrollStatusOptions.Add(new PayrollSlipStatusOption { Name = "All Statuses" });
+        PayrollStatusOptions.Add(new PayrollSlipStatusOption { Value = PayrollSlipStatus.Paid, Name = "Paid" });
+        PayrollStatusOptions.Add(new PayrollSlipStatusOption { Value = PayrollSlipStatus.PartiallyPaid, Name = "Partially Paid" });
+        PayrollStatusOptions.Add(new PayrollSlipStatusOption { Value = PayrollSlipStatus.Cancelled, Name = "Cancelled" });
+
+        SelectedPayrollStatusOption = PayrollStatusOptions.FirstOrDefault();
+    }
+
     private void LoadWorkerOptions()
     {
         using var context = new AppDbContext();
 
         var existingSelection = SelectedWorkerOption?.Id;
+        var existingHistorySelection = SelectedHistoryWorkerOption?.Id;
 
         var workerOptions = context.Workers
             .AsNoTracking()
@@ -459,8 +605,16 @@ public partial class PayrollViewModel : ObservableObject
             WorkerOptions.Add(worker);
         }
 
+        HistoryWorkerOptions.Clear();
+
+        foreach (var worker in workerOptions)
+        {
+            HistoryWorkerOptions.Add(worker);
+        }
+
         isUpdatingFilters = true;
         SelectedWorkerOption = WorkerOptions.FirstOrDefault(option => option.Id == existingSelection) ?? WorkerOptions.FirstOrDefault();
+        SelectedHistoryWorkerOption = HistoryWorkerOptions.FirstOrDefault(option => option.Id == existingHistorySelection);
         isUpdatingFilters = false;
     }
 
@@ -550,21 +704,26 @@ public partial class PayrollViewModel : ObservableObject
             .Include(slip => slip.Worker)
             .AsQueryable();
 
-        if (SelectedWorkerOption?.Id is int workerId)
+        if (SelectedHistoryWorkerOption?.Id is int workerId)
         {
             query = query.Where(slip => slip.WorkerId == workerId);
         }
 
-        if (DateFrom.HasValue)
+        if (HistoryDateFrom.HasValue)
         {
-            var startDate = DateFrom.Value.Date;
+            var startDate = HistoryDateFrom.Value.Date;
             query = query.Where(slip => slip.DateTo >= startDate);
         }
 
-        if (DateTo.HasValue)
+        if (HistoryDateTo.HasValue)
         {
-            var endDate = DateTo.Value.Date;
+            var endDate = HistoryDateTo.Value.Date;
             query = query.Where(slip => slip.DateFrom <= endDate);
+        }
+
+        if (SelectedPayrollStatusOption?.Value is PayrollSlipStatus selectedStatus)
+        {
+            query = query.Where(slip => slip.Status == selectedStatus);
         }
 
         var selectedSlipId = SelectedPayrollSlip?.Id;
@@ -737,5 +896,11 @@ public partial class PayrollViewModel : ObservableObject
         public DateTime PaymentDate { get; set; }
         public decimal Amount { get; set; }
         public string Notes { get; set; } = string.Empty;
+    }
+
+    public class PayrollSlipStatusOption
+    {
+        public PayrollSlipStatus? Value { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

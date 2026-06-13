@@ -70,7 +70,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ShowTrades()
     {
-        TradesViewModel.LoadTrades();
+        TradesViewModel.ShowListPage();
         CurrentPageKey = "Trades";
         CurrentViewModel = TradesViewModel;
     }
@@ -78,7 +78,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ShowWorkers()
     {
-        WorkersViewModel.LoadWorkers();
+        WorkersViewModel.ShowListPage();
         CurrentPageKey = "Workers";
         CurrentViewModel = WorkersViewModel;
     }
@@ -86,7 +86,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ShowConstructionSites()
     {
-        ConstructionSitesViewModel.LoadConstructionSites();
+        ConstructionSitesViewModel.ShowListPage();
         CurrentPageKey = "ConstructionSites";
         CurrentViewModel = ConstructionSitesViewModel;
     }
@@ -94,7 +94,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ShowWorkLogs()
     {
-        WorkLogsViewModel.LoadWorkLogs();
+        WorkLogsViewModel.ShowListPage();
         CurrentPageKey = "WorkLogs";
         CurrentViewModel = WorkLogsViewModel;
     }

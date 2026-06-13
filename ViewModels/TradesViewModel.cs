@@ -95,6 +95,16 @@ public partial class TradesViewModel : ObservableObject
         }
     }
 
+    public void ShowListPage()
+    {
+        IsTradeFormVisible = false;
+        editingTradeId = null;
+        SelectedTrade = null;
+        TradeName = string.Empty;
+        Description = string.Empty;
+        LoadTrades();
+    }
+
     [RelayCommand]
     private void ToggleStatusFilter()
     {

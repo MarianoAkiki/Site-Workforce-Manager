@@ -65,6 +65,9 @@ public partial class WorkersViewModel : ObservableObject
     private bool isWorkerFormVisible;
 
     [ObservableProperty]
+    private bool canManageWorkerDetails;
+
+    [ObservableProperty]
     private bool showActiveWorkers = true;
 
     [ObservableProperty]
@@ -170,6 +173,21 @@ public partial class WorkersViewModel : ObservableObject
         }
     }
 
+    public void ShowListPage()
+    {
+        IsWorkerFormVisible = false;
+        CanManageWorkerDetails = false;
+        editingWorkerId = null;
+        SelectedWorker = null;
+        SelectedWorkerRateHistory.Clear();
+        AvailableConstructionSites.Clear();
+        AssignedConstructionSites.Clear();
+        FilteredAvailableConstructionSites.Clear();
+        FilteredAssignedConstructionSites.Clear();
+        ClearWorkerForm();
+        LoadWorkers();
+    }
+
     [RelayCommand]
     private void ToggleStatusFilter()
     {
@@ -209,6 +227,7 @@ public partial class WorkersViewModel : ObservableObject
         FormTitle = "Add Worker";
         FormDescription = "Create a worker profile. Hourly rates and site assignments can be added after saving.";
         SaveButtonText = "Save Worker";
+        CanManageWorkerDetails = false;
         IsWorkerFormVisible = true;
     }
 
@@ -226,6 +245,7 @@ public partial class WorkersViewModel : ObservableObject
         FormTitle = "Worker Information";
         FormDescription = "Update worker details, hourly rates, and construction site assignments.";
         SaveButtonText = "Save Changes";
+        CanManageWorkerDetails = true;
         IsWorkerFormVisible = true;
     }
 
@@ -233,6 +253,7 @@ public partial class WorkersViewModel : ObservableObject
     private void CancelWorkerForm()
     {
         IsWorkerFormVisible = false;
+        CanManageWorkerDetails = false;
         editingWorkerId = null;
         ClearWorkerForm();
         SelectedWorker = null;
@@ -290,6 +311,8 @@ public partial class WorkersViewModel : ObservableObject
         FormTitle = "Worker Information";
         FormDescription = "Update worker details, hourly rates, and construction site assignments.";
         SaveButtonText = "Save Changes";
+        CanManageWorkerDetails = true;
+        ToastNotificationService.ShowSuccess("Worker added successfully. You can now add hourly rates and assign construction sites.");
     }
 
     private void UpdateWorker(int workerId)

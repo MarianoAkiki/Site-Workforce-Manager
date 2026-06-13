@@ -284,6 +284,15 @@ public partial class WorkLogsViewModel : ObservableObject
         }
     }
 
+    public void ShowListPage()
+    {
+        IsWorkLogFormVisible = false;
+        editingWorkLogId = null;
+        SelectedWorkLog = null;
+        ClearForm();
+        LoadWorkLogs();
+    }
+
     [RelayCommand]
     private void ToggleStatusFilter()
     {

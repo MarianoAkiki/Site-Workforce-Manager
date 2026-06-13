@@ -100,6 +100,16 @@ public partial class ConstructionSitesViewModel : ObservableObject
         }
     }
 
+    public void ShowListPage()
+    {
+        IsSiteFormVisible = false;
+        editingSiteId = null;
+        SelectedConstructionSite = null;
+        SiteName = string.Empty;
+        Location = string.Empty;
+        LoadConstructionSites();
+    }
+
     [RelayCommand]
     private void ToggleStatusFilter()
     {
