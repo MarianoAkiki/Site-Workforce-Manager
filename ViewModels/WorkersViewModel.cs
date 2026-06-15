@@ -12,6 +12,8 @@ namespace Site_Workforce_Manager.ViewModels;
 
 public partial class WorkersViewModel : ObservableObject
 {
+    private const int FirstWorkerNumber = 1001;
+
     public WorkersViewModel()
     {
         NewRateEffectiveDate = DateTime.Today;
@@ -140,6 +142,7 @@ public partial class WorkersViewModel : ObservableObject
             .Select(worker => new WorkerListItem
             {
                 Id = worker.Id,
+                WorkerNumber = worker.WorkerNumber,
                 FirstName = worker.FirstName,
                 LastName = worker.LastName,
                 WorkerName = worker.FirstName + " " + worker.LastName,
@@ -295,6 +298,7 @@ public partial class WorkersViewModel : ObservableObject
 
         var worker = new Worker
         {
+            WorkerNumber = GetNextWorkerNumber(context),
             FirstName = FirstName.Trim(),
             LastName = LastName.Trim(),
             TradeId = tradeId,
@@ -348,6 +352,15 @@ public partial class WorkersViewModel : ObservableObject
 
         LoadWorkers();
         SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == worker.Id);
+    }
+
+    private static int GetNextWorkerNumber(AppDbContext context)
+    {
+        var maxWorkerNumber = context.Workers.Any()
+            ? context.Workers.Max(worker => worker.WorkerNumber)
+            : 0;
+
+        return Math.Max(FirstWorkerNumber, maxWorkerNumber + 1);
     }
 
     [RelayCommand]
@@ -706,6 +719,7 @@ public partial class WorkersViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(search))
         {
             filteredWorkers = filteredWorkers.Where(worker =>
+                worker.WorkerNumber.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) ||
                 worker.WorkerName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                 worker.TradeName.Contains(search, StringComparison.OrdinalIgnoreCase));
         }

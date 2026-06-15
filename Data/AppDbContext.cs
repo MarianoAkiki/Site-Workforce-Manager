@@ -33,8 +33,10 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<Worker>(entity =>
         {
+            entity.Property(worker => worker.WorkerNumber).IsRequired();
             entity.Property(worker => worker.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(worker => worker.LastName).IsRequired().HasMaxLength(100);
+            entity.HasIndex(worker => worker.WorkerNumber).IsUnique();
 
             entity.HasOne(worker => worker.Trade)
                 .WithMany(trade => trade.Workers)

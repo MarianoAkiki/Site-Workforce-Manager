@@ -3,6 +3,7 @@ namespace Site_Workforce_Manager.Helpers;
 public class WorkerListItem
 {
     public int Id { get; set; }
+    public int WorkerNumber { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string WorkerName { get; set; } = string.Empty;

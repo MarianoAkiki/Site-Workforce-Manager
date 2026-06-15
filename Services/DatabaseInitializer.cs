@@ -7,125 +7,75 @@ namespace Site_Workforce_Manager.Services;
 
 public static class DatabaseInitializer
 {
+    private const int FirstWorkerNumber = 1001;
+
     public static void Initialize()
     {
         using var context = new AppDbContext();
 
         context.Database.EnsureCreated();
+        EnsureWorkerNumberSchemaExists(context);
         EnsureTradesSchemaExists(context);
         EnsureWorkLogsTableExists(context);
         EnsurePayrollTablesExist(context);
-        SeedTrades(context);
+        EnsureLegacyTradesExist(context);
         BackfillWorkerTrades(context);
         RemoveLegacyWorkerTradeColumn(context);
+    }
 
-        if (context.Workers.Any())
+    private static void EnsureWorkerNumberSchemaExists(AppDbContext context)
+    {
+        if (!ColumnExists(context, "Workers", "WorkerNumber"))
         {
-            SeedWorkLogs(context);
-            return;
+            context.Database.ExecuteSqlRaw("ALTER TABLE Workers ADD COLUMN WorkerNumber INTEGER NOT NULL DEFAULT 0;");
         }
 
-        var electricianTrade = context.Trades.First(trade => trade.Name == "Electrician");
-        var carpenterTrade = context.Trades.First(trade => trade.Name == "Carpenter");
-        var plumberTrade = context.Trades.First(trade => trade.Name == "Plumber");
+        BackfillWorkerNumbers(context);
 
-        var workers = new List<Worker>
+        if (!IndexExists(context, "IX_Workers_WorkerNumber"))
         {
-            new()
-            {
-                FirstName = "Ahmed",
-                LastName = "Hassan",
-                TradeId = electricianTrade.Id,
-                Status = EntityStatus.Active
-            },
-            new()
-            {
-                FirstName = "John",
-                LastName = "Miller",
-                TradeId = carpenterTrade.Id,
-                Status = EntityStatus.Active
-            },
-            new()
-            {
-                FirstName = "Maria",
-                LastName = "Santos",
-                TradeId = plumberTrade.Id,
-                Status = EntityStatus.Active
-            }
-        };
+            context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IX_Workers_WorkerNumber ON Workers (WorkerNumber);");
+        }
+    }
 
-        var constructionSites = new List<ConstructionSite>
+    private static void BackfillWorkerNumbers(AppDbContext context)
+    {
+        using var connection = new SqliteConnection(context.Database.GetConnectionString());
+        connection.Open();
+
+        var nextWorkerNumber = Math.Max(FirstWorkerNumber, GetMaxWorkerNumber(connection) + 1);
+        var workerIds = new List<int>();
+
+        using (var command = connection.CreateCommand())
         {
-            new()
+            command.CommandText = "SELECT Id FROM Workers WHERE WorkerNumber <= 0 ORDER BY Id;";
+
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
             {
-                Name = "Downtown Tower",
-                Location = "Beirut Central District",
-                Status = EntityStatus.Active
-            },
-            new()
-            {
-                Name = "Harbor Residences",
-                Location = "Beirut Waterfront",
-                Status = EntityStatus.Active
+                workerIds.Add(reader.GetInt32(0));
             }
-        };
+        }
 
-        context.Workers.AddRange(workers);
-        context.ConstructionSites.AddRange(constructionSites);
-        context.SaveChanges();
-
-        var rateHistories = new List<WorkerRateHistory>
+        foreach (var workerId in workerIds)
         {
-            new()
-            {
-                WorkerId = workers[0].Id,
-                HourlyRate = 18.50m,
-                EffectiveFrom = new DateTime(2025, 1, 1)
-            },
-            new()
-            {
-                WorkerId = workers[1].Id,
-                HourlyRate = 16.75m,
-                EffectiveFrom = new DateTime(2025, 2, 1)
-            },
-            new()
-            {
-                WorkerId = workers[2].Id,
-                HourlyRate = 17.25m,
-                EffectiveFrom = new DateTime(2025, 3, 1)
-            }
-        };
+            using var updateCommand = connection.CreateCommand();
+            updateCommand.CommandText = "UPDATE Workers SET WorkerNumber = $workerNumber WHERE Id = $workerId;";
+            updateCommand.Parameters.AddWithValue("$workerNumber", nextWorkerNumber);
+            updateCommand.Parameters.AddWithValue("$workerId", workerId);
+            updateCommand.ExecuteNonQuery();
 
-        var workerSiteAssignments = new List<WorkerConstructionSite>
-        {
-            new()
-            {
-                WorkerId = workers[0].Id,
-                ConstructionSiteId = constructionSites[0].Id,
-                AssignedDate = new DateTime(2025, 4, 1),
-                Status = EntityStatus.Active
-            },
-            new()
-            {
-                WorkerId = workers[1].Id,
-                ConstructionSiteId = constructionSites[0].Id,
-                AssignedDate = new DateTime(2025, 4, 5),
-                Status = EntityStatus.Active
-            },
-            new()
-            {
-                WorkerId = workers[2].Id,
-                ConstructionSiteId = constructionSites[1].Id,
-                AssignedDate = new DateTime(2025, 4, 10),
-                Status = EntityStatus.Active
-            }
-        };
+            nextWorkerNumber++;
+        }
+    }
 
-        context.WorkerRateHistories.AddRange(rateHistories);
-        context.WorkerConstructionSites.AddRange(workerSiteAssignments);
-        context.SaveChanges();
+    private static int GetMaxWorkerNumber(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COALESCE(MAX(WorkerNumber), 0) FROM Workers;";
 
-        SeedWorkLogs(context);
+        return Convert.ToInt32(command.ExecuteScalar());
     }
 
     private static void EnsureTradesSchemaExists(AppDbContext context)
@@ -320,25 +270,39 @@ public static class DatabaseInitializer
         return rate?.HourlyRate ?? 0m;
     }
 
-    private static void SeedTrades(AppDbContext context)
+    private static void EnsureLegacyTradesExist(AppDbContext context)
     {
-        if (context.Trades.Any())
+        if (!ColumnExists(context, "Workers", "Trade"))
         {
             return;
         }
 
         var now = DateTime.Now;
+        var legacyTradeNames = ReadLegacyWorkerTrades(context)
+            .Values
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-        var trades = new List<Trade>
+        foreach (var legacyTradeName in legacyTradeNames)
         {
-            new() { Name = "Mason", Description = "Handles brick, block, and concrete masonry work.", IsActive = true, CreatedAt = now, UpdatedAt = now },
-            new() { Name = "Electrician", Description = "Installs and maintains electrical systems.", IsActive = true, CreatedAt = now, UpdatedAt = now },
-            new() { Name = "Plumber", Description = "Installs and maintains plumbing systems.", IsActive = true, CreatedAt = now, UpdatedAt = now },
-            new() { Name = "Painter", Description = "Performs finishing and painting work.", IsActive = true, CreatedAt = now, UpdatedAt = now },
-            new() { Name = "Carpenter", Description = "Builds and installs wood and interior structures.", IsActive = true, CreatedAt = now, UpdatedAt = now }
-        };
+            var tradeExists = context.Trades.Any(trade => trade.Name.ToLower() == legacyTradeName.ToLower());
 
-        context.Trades.AddRange(trades);
+            if (tradeExists)
+            {
+                continue;
+            }
+
+            context.Trades.Add(new Trade
+            {
+                Name = legacyTradeName,
+                IsActive = true,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+
         context.SaveChanges();
     }
 

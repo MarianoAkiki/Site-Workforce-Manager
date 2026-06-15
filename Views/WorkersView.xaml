@@ -151,6 +151,7 @@
                                   SelectedItem="{Binding SelectedWorker, Mode=TwoWay}"
                                   SelectionMode="Single">
                             <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding WorkerNumber}" Header="Worker #" Width="100" />
                                 <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker Name" Width="*" />
                                 <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade Name" Width="*" />
                                 <DataGridTextColumn Binding="{Binding CurrentHourlyRate, StringFormat={}{0:C}}" Header="Current Hourly Rate" Width="160" />
