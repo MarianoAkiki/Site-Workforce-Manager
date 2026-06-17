@@ -20,8 +20,7 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Active construction sites summary
 - Total hours this month
 - Total labor cost this month
-- Total outstanding balance
-- Unpaid work logs count
+- Work logs count
 
 ## Trades
 
@@ -37,17 +36,17 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Worker list view
 - Worker deactivate
 - Trade selection from master trade list
-- Hourly rate history tracking
-- Add new hourly rate with effective date
+- Daily rate history tracking
+- Add new daily rate with effective date
 - View rate history per worker
 - Worker to construction site assignment management
 - Assigned sites count in worker list
 
 ## Worker Rate History
 
-- Effective-dated hourly rate records per worker
+- Effective-dated daily rate records per worker
 - Automatic current rate lookup by work date
-- Historical rate tracking for payroll and reporting
+- Historical rate tracking for reporting
 
 ## Construction Sites
 
@@ -64,19 +63,15 @@ Site Workforce Manager is a desktop business application for managing workers, c
 
 ## Work Logs
 
-- Create work log
-- Edit unpaid work log
-- Cancel work log
+- Weekly work entry by trade
+- Create and update work logs from the weekly entry page
 - Filter work logs by date range
 - Filter work logs by worker
 - Filter work logs by construction site
-- Filter work logs by payment status
-- Automatic hour calculation from start and end time
 - Automatic amount calculation
-- Automatic hourly rate snapshot based on worker rate history and work date
-- Payment status tracking
+- Automatic daily rate snapshot based on worker rate history and work date
 - Worker-based construction site filtering
-- Totals for filtered work logs excluding cancelled logs
+- Totals for filtered work logs
 
 ## Reporting
 
@@ -85,7 +80,6 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Filter by multiple workers or all workers
 - Filter by multiple trades or all trades
 - Filter by multiple construction sites or all construction sites
-- Filter by payment status: All, Paid, Unpaid, Cancelled
 - View matching work logs in a report grid
 - Summary by worker
 - Summary by trade
@@ -93,37 +87,6 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Summary by date
 - View total hours
 - View total amount
-- Cancelled logs are excluded from totals
-
-## Payroll Slips
-
-- Generate payroll slips from unpaid work logs
-- Worker and date-range payroll filtering
-- Snapshot payroll slip lines for historical accuracy
-- Slip history view
-- Slip detail view with included logs
-
-## Payroll Payments
-
-- Initial payment on payroll slip creation
-- Follow-up payments on partially paid slips
-- Automatic recalculation of amount paid and remaining balance
-- Automatic slip status update to Paid or PartiallyPaid
-
-## Worker Balances
-
-- Worker balance summary page
-- Balance filters by worker, trade, date range, and balance status
-- Worker-level payroll slip history view
-- Worker-level payment history view
-- Outstanding balance totals based on payroll slips and payments
-
-## Payroll Cancellation
-
-- Cancel payroll slips with no payments
-- Return cancelled slip work logs to Unpaid
-- Block direct cancellation when payments exist
-- Cancelled payroll slips remain visible for audit history
 
 ## Excel Export
 
@@ -172,7 +135,7 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - `WorkerRateHistory`
   - `Id`
   - `WorkerId`
-  - `HourlyRate`
+  - `DailyRate`
   - `EffectiveFrom`
   - `EffectiveTo`
 
@@ -193,50 +156,12 @@ Site Workforce Manager is a desktop business application for managing workers, c
   - `WorkerId`
   - `ConstructionSiteId`
   - `WorkDate`
-  - `StartTime`
-  - `EndTime`
   - `DurationHours`
-  - `HourlyRateSnapshot`
+  - `DailyRateSnapshot`
   - `TotalAmount`
-  - `PaymentStatus`
   - `Notes`
   - `CreatedAt`
   - `UpdatedAt`
-
-- `PayrollSlip`
-  - `Id`
-  - `SlipNumber`
-  - `WorkerId`
-  - `DateFrom`
-  - `DateTo`
-  - `TotalHours`
-  - `TotalAmount`
-  - `AmountPaid`
-  - `RemainingBalance`
-  - `Status`
-  - `CreatedAt`
-  - `Notes`
-
-- `PayrollSlipLine`
-  - `Id`
-  - `PayrollSlipId`
-  - `WorkLogId`
-  - `WorkerNameSnapshot`
-  - `TradeNameSnapshot`
-  - `ConstructionSiteNameSnapshot`
-  - `WorkDate`
-  - `StartTime`
-  - `EndTime`
-  - `DurationHours`
-  - `HourlyRateSnapshot`
-  - `TotalAmountSnapshot`
-
-- `PayrollPayment`
-  - `Id`
-  - `PayrollSlipId`
-  - `PaymentDate`
-  - `Amount`
-  - `Notes`
 
 ## Relationships
 
@@ -246,10 +171,6 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - `ConstructionSite` 1-to-many `WorkerConstructionSite`
 - `Worker` 1-to-many `WorkLog`
 - `ConstructionSite` 1-to-many `WorkLog`
-- `Worker` 1-to-many `PayrollSlip`
-- `PayrollSlip` 1-to-many `PayrollSlipLine`
-- `WorkLog` 1-to-many `PayrollSlipLine`
-- `PayrollSlip` 1-to-many `PayrollPayment`
 - `WorkerConstructionSite` uses a composite key:
   - `WorkerId`
   - `ConstructionSiteId`
@@ -259,31 +180,17 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Worker first name and last name are required
 - Trade name is required
 - Construction site name and location are required
-- New hourly rates are added with an effective date
+- New daily rates are added with an effective date
 - Existing open worker rate history is closed when a later rate is added
 - Worker is required for a work log
 - Construction site is required for a work log
 - Work date is required for a work log
-- End time must be after start time
-- Work log duration is calculated automatically
+- Work log duration is entered in hours on the weekly entry page
 - Work log total amount is calculated automatically
-- Work Logs are always created as Unpaid
-- Users cannot manually mark logs as Paid
-- Paid status is controlled by Payroll processing
-- Hourly rate is snapshotted on Work Log creation
-- Work logs cannot be created if no valid hourly rate exists for that worker on that date
-- Paid work logs cannot be edited
-- Cancelled work logs cannot be edited
-- Cancelled work logs remain visible in work logs and reports when included by filters
-- Cancelled work logs are excluded from totals
-- Payroll slips create historical snapshots
-- Work Logs cannot be paid twice
-- Worker balances are calculated from Payroll Slips and Payments
-- Cancelled records remain visible for audit history
-- Historical payroll records must remain unchanged
+- Daily rate is snapshotted on Work Log creation
+- Work log total amount uses `DailyRateSnapshot / 8 * DurationHours`
+- Work logs cannot be created if no valid daily rate exists for that worker on that date
 - Reports are read-only
-- Reports do not change payment status
-- Payroll slips cannot be deleted
 
 # Documentation
 
@@ -292,7 +199,8 @@ Site Workforce Manager is a desktop business application for managing workers, c
 
 # Future Enhancements
 
-- PDF Payroll Slip Export
+- Payroll module redesign
+- Worker balances redesign
 - PDF Report Export
 - Advanced Dashboard Charts
 - User Authentication
@@ -305,7 +213,7 @@ Site Workforce Manager is a desktop business application for managing workers, c
 # Known Limitations
 
 - The application currently uses a local SQLite database file intended for single-user desktop usage
-- Work log start and end times are entered as text in `HH:mm` format rather than through a dedicated time picker
+- Work logs are entered through a weekly grid rather than individual start/end time records
 - Database evolution is currently handled in a simple startup-friendly way rather than through a full migration workflow
 - Restore replaces the active database file directly and is intended for local maintenance workflows
 

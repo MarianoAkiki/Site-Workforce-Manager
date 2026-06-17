@@ -34,16 +34,12 @@ public partial class ReportsViewModel : ObservableObject
     public ObservableCollection<SelectableLookupOption> WorkerOptions { get; } = new();
     public ObservableCollection<SelectableLookupOption> TradeOptions { get; } = new();
     public ObservableCollection<SelectableLookupOption> ConstructionSiteOptions { get; } = new();
-    public ObservableCollection<PaymentStatusOption> PaymentStatusOptions { get; } = new();
 
     [ObservableProperty]
     private DateTime? dateFrom;
 
     [ObservableProperty]
     private DateTime? dateTo;
-
-    [ObservableProperty]
-    private PaymentStatusOption? selectedPaymentStatusOption;
 
     [ObservableProperty]
     private string workerSearchText = string.Empty;
@@ -99,14 +95,6 @@ public partial class ReportsViewModel : ObservableObject
     }
 
     partial void OnDateToChanged(DateTime? value)
-    {
-        if (!isInitializing)
-        {
-            ApplyFilters();
-        }
-    }
-
-    partial void OnSelectedPaymentStatusOptionChanged(PaymentStatusOption? value)
     {
         if (!isInitializing)
         {
@@ -172,23 +160,10 @@ public partial class ReportsViewModel : ObservableObject
             query = query.Where(workLog => selectedSiteIds.Contains(workLog.ConstructionSiteId));
         }
 
-        if (SelectedPaymentStatusOption?.Value is PaymentStatus paymentStatus)
-        {
-            query = query.Where(workLog => workLog.PaymentStatus == paymentStatus);
-        }
-        else
-        {
-            query = query.Where(workLog => workLog.PaymentStatus != PaymentStatus.Cancelled);
-        }
-
         var workLogs = query
             .OrderByDescending(workLog => workLog.WorkDate)
             .ThenBy(workLog => workLog.Worker!.FirstName)
             .ThenBy(workLog => workLog.Worker!.LastName)
-            .ToList();
-
-        var nonCancelledLogs = workLogs
-            .Where(workLog => workLog.PaymentStatus != PaymentStatus.Cancelled)
             .ToList();
 
         ReportWorkLogs.Clear();
@@ -205,16 +180,13 @@ public partial class ReportsViewModel : ObservableObject
                 Trade = workLog.Worker?.Trade?.Name ?? "Unassigned",
                 ConstructionSite = workLog.ConstructionSite?.Name ?? string.Empty,
                 WorkDate = workLog.WorkDate,
-                StartTime = workLog.StartTime,
-                EndTime = workLog.EndTime,
                 DurationHours = workLog.DurationHours,
-                HourlyRate = workLog.HourlyRateSnapshot,
-                TotalAmount = workLog.TotalAmount,
-                PaymentStatus = workLog.PaymentStatus
+                DailyRate = workLog.DailyRateSnapshot,
+                TotalAmount = workLog.TotalAmount
             });
         }
 
-        foreach (var summary in nonCancelledLogs
+        foreach (var summary in workLogs
                      .GroupBy(workLog => workLog.Worker?.Trade?.Name ?? "Unassigned")
                      .OrderBy(group => group.Key))
         {
@@ -227,7 +199,7 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
-        foreach (var summary in nonCancelledLogs
+        foreach (var summary in workLogs
                      .GroupBy(workLog => $"{workLog.Worker?.FirstName} {workLog.Worker?.LastName}".Trim())
                      .OrderBy(group => group.Key))
         {
@@ -240,7 +212,7 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
-        foreach (var summary in nonCancelledLogs
+        foreach (var summary in workLogs
                      .GroupBy(workLog => workLog.ConstructionSite?.Name ?? string.Empty)
                      .OrderBy(group => group.Key))
         {
@@ -253,7 +225,7 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
-        foreach (var summary in nonCancelledLogs
+        foreach (var summary in workLogs
                      .GroupBy(workLog => workLog.WorkDate.Date)
                      .OrderBy(group => group.Key))
         {
@@ -266,8 +238,8 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
-        TotalHours = Math.Round(nonCancelledLogs.Sum(workLog => workLog.DurationHours), 2);
-        TotalAmount = Math.Round(nonCancelledLogs.Sum(workLog => workLog.TotalAmount), 2);
+        TotalHours = Math.Round(workLogs.Sum(workLog => workLog.DurationHours), 2);
+        TotalAmount = Math.Round(workLogs.Sum(workLog => workLog.TotalAmount), 2);
         NumberOfWorkers = workLogs
             .Select(workLog => workLog.WorkerId)
             .Distinct()
@@ -294,8 +266,6 @@ public partial class ReportsViewModel : ObservableObject
         WorkerSearchText = string.Empty;
         TradeSearchText = string.Empty;
         ConstructionSiteSearchText = string.Empty;
-        SelectedPaymentStatusOption = PaymentStatusOptions.FirstOrDefault();
-
         foreach (var option in WorkerOptions)
         {
             option.IsSelected = false;
@@ -399,12 +369,9 @@ public partial class ReportsViewModel : ObservableObject
                 "Trade",
                 "Construction Site",
                 "Work Date",
-                "Start Time",
-                "End Time",
                 "Duration Hours",
-                "Hourly Rate",
-                "Total Amount",
-                "Payment Status"
+                "Daily Rate",
+                "Total Amount"
             };
 
             for (var column = 0; column < headers.Length; column++)
@@ -424,12 +391,9 @@ public partial class ReportsViewModel : ObservableObject
                 worksheet.Cell(rowIndex, 3).Value = row.ConstructionSite;
                 worksheet.Cell(rowIndex, 4).Value = row.WorkDate;
                 worksheet.Cell(rowIndex, 4).Style.DateFormat.Format = "yyyy-mm-dd";
-                worksheet.Cell(rowIndex, 5).Value = row.StartTime.ToString(@"hh\:mm");
-                worksheet.Cell(rowIndex, 6).Value = row.EndTime.ToString(@"hh\:mm");
-                worksheet.Cell(rowIndex, 7).Value = row.DurationHours;
-                worksheet.Cell(rowIndex, 8).Value = row.HourlyRate;
-                worksheet.Cell(rowIndex, 9).Value = row.TotalAmount;
-                worksheet.Cell(rowIndex, 10).Value = row.PaymentStatus.ToString();
+                worksheet.Cell(rowIndex, 5).Value = row.DurationHours;
+                worksheet.Cell(rowIndex, 6).Value = row.DailyRate;
+                worksheet.Cell(rowIndex, 7).Value = row.TotalAmount;
                 rowIndex++;
             }
 
@@ -440,9 +404,9 @@ public partial class ReportsViewModel : ObservableObject
             worksheet.Cell(rowIndex + 2, 1).Style.Font.Bold = true;
             worksheet.Cell(rowIndex + 2, 2).Value = TotalAmount;
 
-            worksheet.Column(7).Style.NumberFormat.Format = "0.00";
-            worksheet.Column(8).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Column(9).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Column(5).Style.NumberFormat.Format = "0.00";
+            worksheet.Column(6).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Column(7).Style.NumberFormat.Format = "$#,##0.00";
             worksheet.Cell(rowIndex + 1, 2).Style.NumberFormat.Format = "0.00";
             worksheet.Cell(rowIndex + 2, 2).Style.NumberFormat.Format = "$#,##0.00";
 
@@ -475,7 +439,6 @@ public partial class ReportsViewModel : ObservableObject
         WorkerOptions.Clear();
         TradeOptions.Clear();
         ConstructionSiteOptions.Clear();
-        PaymentStatusOptions.Clear();
 
         var workers = context.Workers
             .AsNoTracking()
@@ -529,12 +492,6 @@ public partial class ReportsViewModel : ObservableObject
             ConstructionSiteOptions.Add(site);
         }
 
-        PaymentStatusOptions.Add(new PaymentStatusOption { Value = null, Name = "All" });
-        PaymentStatusOptions.Add(new PaymentStatusOption { Value = PaymentStatus.Paid, Name = "Paid" });
-        PaymentStatusOptions.Add(new PaymentStatusOption { Value = PaymentStatus.Unpaid, Name = "Unpaid" });
-        PaymentStatusOptions.Add(new PaymentStatusOption { Value = PaymentStatus.Cancelled, Name = "Cancelled" });
-
-        SelectedPaymentStatusOption = PaymentStatusOptions.FirstOrDefault();
     }
 
     public ReportExportData BuildExportData()
@@ -596,12 +553,9 @@ public partial class ReportsViewModel : ObservableObject
         public string Trade { get; set; } = string.Empty;
         public string ConstructionSite { get; set; } = string.Empty;
         public DateTime WorkDate { get; set; }
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
         public decimal DurationHours { get; set; }
-        public decimal HourlyRate { get; set; }
+        public decimal DailyRate { get; set; }
         public decimal TotalAmount { get; set; }
-        public PaymentStatus PaymentStatus { get; set; }
     }
 
     public class WorkerSummaryRow

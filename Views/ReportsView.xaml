@@ -76,7 +76,7 @@
                                Text="Report Filters" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource TextMutedBrush}"
-                               Text="Choose a date range, one or more workers, trades, and sites, plus the payment status you want to analyze." />
+                               Text="Choose a date range, one or more workers, trades, and sites to analyze." />
 
                     <Grid Margin="0,20,0,0">
                         <Grid.RowDefinitions>
@@ -90,7 +90,6 @@
                             <ColumnDefinition Width="220" />
                             <ColumnDefinition Width="220" />
                             <ColumnDefinition Width="220" />
-                            <ColumnDefinition Width="180" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Row="0"
@@ -197,18 +196,9 @@
                                        Text="{Binding ConstructionSiteSelectionSummary}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="3"
-                                    Margin="0,18,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Payment Status" />
-                            <ComboBox ItemsSource="{Binding PaymentStatusOptions}"
-                                      DisplayMemberPath="Name"
-                                      SelectedItem="{Binding SelectedPaymentStatusOption, Mode=TwoWay}" />
-                        </StackPanel>
-
                         <StackPanel Grid.Row="2"
                                     Grid.Column="0"
-                                    Grid.ColumnSpan="4"
+                                    Grid.ColumnSpan="3"
                                     Margin="0,18,0,0"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Bottom">
@@ -236,7 +226,7 @@
                                        Text="Report Results" />
                             <TextBlock Margin="0,6,0,0"
                                        Foreground="{StaticResource TextMutedBrush}"
-                                       Text="Cancelled logs appear only when that status is selected, and they are excluded from totals." />
+                                       Text="The table reflects the current filters and weekly work log entries." />
                         </StackPanel>
 
                         <StackPanel DockPanel.Dock="Right"
@@ -388,12 +378,9 @@
                                     <DataGridTextColumn Binding="{Binding Trade}" Header="Trade Name" Width="140" />
                                     <DataGridTextColumn Binding="{Binding ConstructionSite}" Header="Construction Site" Width="180" />
                                     <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
-                                    <DataGridTextColumn Binding="{Binding StartTime}" Header="Start Time" Width="90" />
-                                    <DataGridTextColumn Binding="{Binding EndTime}" Header="End Time" Width="90" />
                                     <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Duration Hours" Width="110" />
-                                    <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="100" />
+                                    <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}" Header="Daily Rate" Width="100" />
                                     <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="110" />
-                                    <DataGridTextColumn Binding="{Binding PaymentStatus}" Header="Payment Status" Width="110" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>

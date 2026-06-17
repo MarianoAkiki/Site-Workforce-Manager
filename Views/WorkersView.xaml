@@ -151,10 +151,10 @@
                                   SelectedItem="{Binding SelectedWorker, Mode=TwoWay}"
                                   SelectionMode="Single">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Binding="{Binding WorkerNumber}" Header="Worker #" Width="100" />
+                                <DataGridTextColumn Binding="{Binding Id}" Header="ID" Width="80" />
                                 <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker Name" Width="*" />
                                 <DataGridTextColumn Binding="{Binding TradeName}" Header="Trade Name" Width="*" />
-                                <DataGridTextColumn Binding="{Binding CurrentHourlyRate, StringFormat={}{0:C}}" Header="Current Hourly Rate" Width="160" />
+                                <DataGridTextColumn Binding="{Binding CurrentDailyRate, StringFormat={}{0:C}}" Header="Current Daily Rate" Width="160" />
                                 <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
                                 <DataGridTemplateColumn Header="Status" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -264,10 +264,10 @@
 
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                       Text="Hourly Rates" />
+                                       Text="Daily Rates" />
                             <TextBlock Margin="0,6,0,0"
                                        Foreground="{StaticResource TextMutedBrush}"
-                                       Text="Add new hourly rates and review the selected worker's rate history." />
+                                       Text="Add new daily rates and review the selected worker's rate history." />
                         </StackPanel>
 
                         <Grid Grid.Row="1" Margin="0,20,0,16">
@@ -278,9 +278,9 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Margin="0,0,16,0">
-                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="New Hourly Rate" />
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="New Daily Rate" />
                                 <TextBox MinHeight="44"
-                                         Text="{Binding NewHourlyRate, UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding NewDailyRate, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Margin="0,0,16,0">
@@ -291,8 +291,8 @@
 
                             <StackPanel Grid.Column="2"
                                         VerticalAlignment="Bottom">
-                                <Button Command="{Binding AddHourlyRateCommand}"
-                                        Content="Add Hourly Rate"
+                                <Button Command="{Binding AddDailyRateCommand}"
+                                        Content="Add Daily Rate"
                                         Style="{StaticResource PrimaryButtonStyle}" />
                             </StackPanel>
                         </Grid>
@@ -303,7 +303,7 @@
                                   IsReadOnly="True"
                                   ItemsSource="{Binding SelectedWorkerRateHistory}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Binding="{Binding HourlyRate, StringFormat={}{0:C}}" Header="Hourly Rate" Width="*" />
+                                <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}" Header="Daily Rate" Width="*" />
                                 <DataGridTextColumn Binding="{Binding EffectiveFrom, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective From" Width="*" />
                                 <DataGridTextColumn Binding="{Binding EffectiveTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective To" Width="*" />
                             </DataGrid.Columns>

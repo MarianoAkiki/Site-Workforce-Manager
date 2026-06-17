@@ -11,10 +11,8 @@ public partial class MainViewModel : ObservableObject
         TradesViewModel = new TradesViewModel();
         WorkersViewModel = new WorkersViewModel();
         ConstructionSitesViewModel = new ConstructionSitesViewModel();
-        WorkLogsViewModel = new WorkLogsViewModel();
+        WeeklyWorkEntryViewModel = new WeeklyWorkEntryViewModel();
         ReportsViewModel = new ReportsViewModel();
-        PayrollViewModel = new PayrollViewModel();
-        WorkerBalancesViewModel = new WorkerBalancesViewModel();
         MaintenanceViewModel = new MaintenanceViewModel();
         CurrentPageKey = "Dashboard";
         CurrentViewModel = DashboardViewModel;
@@ -24,10 +22,8 @@ public partial class MainViewModel : ObservableObject
     public TradesViewModel TradesViewModel { get; }
     public WorkersViewModel WorkersViewModel { get; }
     public ConstructionSitesViewModel ConstructionSitesViewModel { get; }
-    public WorkLogsViewModel WorkLogsViewModel { get; }
+    public WeeklyWorkEntryViewModel WeeklyWorkEntryViewModel { get; }
     public ReportsViewModel ReportsViewModel { get; }
-    public PayrollViewModel PayrollViewModel { get; }
-    public WorkerBalancesViewModel WorkerBalancesViewModel { get; }
     public MaintenanceViewModel MaintenanceViewModel { get; }
 
     [ObservableProperty]
@@ -40,10 +36,8 @@ public partial class MainViewModel : ObservableObject
     public bool IsDashboardActive => CurrentPageKey == "Dashboard";
     public bool IsWorkersActive => CurrentPageKey == "Workers";
     public bool IsConstructionSitesActive => CurrentPageKey == "ConstructionSites";
-    public bool IsWorkLogsActive => CurrentPageKey == "WorkLogs";
+    public bool IsWeeklyWorkEntryActive => CurrentPageKey == "WeeklyWorkEntry";
     public bool IsReportsActive => CurrentPageKey == "Reports";
-    public bool IsPayrollActive => CurrentPageKey == "Payroll";
-    public bool IsWorkerBalancesActive => CurrentPageKey == "WorkerBalances";
     public bool IsMaintenanceActive => CurrentPageKey == "Maintenance";
 
     partial void OnCurrentPageKeyChanged(string value)
@@ -52,10 +46,8 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsTradesActive));
         OnPropertyChanged(nameof(IsWorkersActive));
         OnPropertyChanged(nameof(IsConstructionSitesActive));
-        OnPropertyChanged(nameof(IsWorkLogsActive));
+        OnPropertyChanged(nameof(IsWeeklyWorkEntryActive));
         OnPropertyChanged(nameof(IsReportsActive));
-        OnPropertyChanged(nameof(IsPayrollActive));
-        OnPropertyChanged(nameof(IsWorkerBalancesActive));
         OnPropertyChanged(nameof(IsMaintenanceActive));
     }
 
@@ -92,11 +84,11 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowWorkLogs()
+    private void ShowWeeklyWorkEntry()
     {
-        WorkLogsViewModel.ShowListPage();
-        CurrentPageKey = "WorkLogs";
-        CurrentViewModel = WorkLogsViewModel;
+        WeeklyWorkEntryViewModel.LoadWeeklyEntryPage();
+        CurrentPageKey = "WeeklyWorkEntry";
+        CurrentViewModel = WeeklyWorkEntryViewModel;
     }
 
     [RelayCommand]
@@ -105,22 +97,6 @@ public partial class MainViewModel : ObservableObject
         ReportsViewModel.LoadReport();
         CurrentPageKey = "Reports";
         CurrentViewModel = ReportsViewModel;
-    }
-
-    [RelayCommand]
-    private void ShowPayroll()
-    {
-        PayrollViewModel.LoadPayrollPage();
-        CurrentPageKey = "Payroll";
-        CurrentViewModel = PayrollViewModel;
-    }
-
-    [RelayCommand]
-    private void ShowWorkerBalances()
-    {
-        WorkerBalancesViewModel.LoadWorkerBalances();
-        CurrentPageKey = "WorkerBalances";
-        CurrentViewModel = WorkerBalancesViewModel;
     }
 
     [RelayCommand]

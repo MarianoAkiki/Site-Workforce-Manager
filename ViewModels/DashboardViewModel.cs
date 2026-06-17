@@ -20,10 +20,7 @@ public partial class DashboardViewModel : ObservableObject
     private decimal totalLaborCostThisMonth;
 
     [ObservableProperty]
-    private decimal totalOutstandingBalance;
-
-    [ObservableProperty]
-    private int unpaidWorkLogsCount;
+    private int workLogsCount;
 
     [ObservableProperty]
     private string monthLabel = string.Empty;
@@ -43,13 +40,7 @@ public partial class DashboardViewModel : ObservableObject
         var monthlyLogs = context.WorkLogs
             .AsNoTracking()
             .Where(workLog => workLog.WorkDate >= monthStart &&
-                              workLog.WorkDate <= monthEnd &&
-                              workLog.PaymentStatus != PaymentStatus.Cancelled)
-            .ToList();
-
-        var activePayrollSlips = context.PayrollSlips
-            .AsNoTracking()
-            .Where(slip => slip.Status != PayrollSlipStatus.Cancelled)
+                              workLog.WorkDate <= monthEnd)
             .ToList();
 
         ActiveWorkers = context.Workers
@@ -62,10 +53,9 @@ public partial class DashboardViewModel : ObservableObject
 
         TotalHoursThisMonth = Math.Round(monthlyLogs.Sum(workLog => workLog.DurationHours), 2);
         TotalLaborCostThisMonth = Math.Round(monthlyLogs.Sum(workLog => workLog.TotalAmount), 2);
-        TotalOutstandingBalance = Math.Round(activePayrollSlips.Sum(slip => slip.RemainingBalance), 2);
-        UnpaidWorkLogsCount = context.WorkLogs
+        WorkLogsCount = context.WorkLogs
             .AsNoTracking()
-            .Count(workLog => workLog.PaymentStatus == PaymentStatus.Unpaid);
+            .Count();
         MonthLabel = monthStart.ToString("MMMM yyyy");
     }
 }

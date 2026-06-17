@@ -17,9 +17,6 @@ public class AppDbContext : DbContext
     public DbSet<ConstructionSite> ConstructionSites => Set<ConstructionSite>();
     public DbSet<WorkerConstructionSite> WorkerConstructionSites => Set<WorkerConstructionSite>();
     public DbSet<WorkLog> WorkLogs => Set<WorkLog>();
-    public DbSet<PayrollSlip> PayrollSlips => Set<PayrollSlip>();
-    public DbSet<PayrollSlipLine> PayrollSlipLines => Set<PayrollSlipLine>();
-    public DbSet<PayrollPayment> PayrollPayments => Set<PayrollPayment>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -33,10 +30,8 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<Worker>(entity =>
         {
-            entity.Property(worker => worker.WorkerNumber).IsRequired();
             entity.Property(worker => worker.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(worker => worker.LastName).IsRequired().HasMaxLength(100);
-            entity.HasIndex(worker => worker.WorkerNumber).IsUnique();
 
             entity.HasOne(worker => worker.Trade)
                 .WithMany(trade => trade.Workers)
@@ -59,7 +54,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<WorkerRateHistory>(entity =>
         {
-            entity.Property(rate => rate.HourlyRate).HasColumnType("decimal(18,2)");
+            entity.Property(rate => rate.DailyRate).HasColumnType("decimal(18,2)");
 
             entity.HasOne(rate => rate.Worker)
                 .WithMany(worker => worker.RateHistory)
@@ -85,7 +80,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WorkLog>(entity =>
         {
             entity.Property(workLog => workLog.DurationHours).HasColumnType("decimal(18,2)");
-            entity.Property(workLog => workLog.HourlyRateSnapshot).HasColumnType("decimal(18,2)");
+            entity.Property(workLog => workLog.DailyRateSnapshot).HasColumnType("decimal(18,2)");
             entity.Property(workLog => workLog.TotalAmount).HasColumnType("decimal(18,2)");
             entity.Property(workLog => workLog.Notes).HasMaxLength(500);
 
@@ -100,52 +95,5 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<PayrollSlip>(entity =>
-        {
-            entity.Property(slip => slip.SlipNumber).IsRequired().HasMaxLength(50);
-            entity.Property(slip => slip.TotalHours).HasColumnType("decimal(18,2)");
-            entity.Property(slip => slip.TotalAmount).HasColumnType("decimal(18,2)");
-            entity.Property(slip => slip.AmountPaid).HasColumnType("decimal(18,2)");
-            entity.Property(slip => slip.RemainingBalance).HasColumnType("decimal(18,2)");
-            entity.Property(slip => slip.Notes).HasMaxLength(500);
-            entity.HasIndex(slip => slip.SlipNumber).IsUnique();
-
-            entity.HasOne(slip => slip.Worker)
-                .WithMany(worker => worker.PayrollSlips)
-                .HasForeignKey(slip => slip.WorkerId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<PayrollSlipLine>(entity =>
-        {
-            entity.Property(line => line.WorkerNameSnapshot).IsRequired().HasMaxLength(150);
-            entity.Property(line => line.TradeNameSnapshot).HasMaxLength(100);
-            entity.Property(line => line.ConstructionSiteNameSnapshot).IsRequired().HasMaxLength(150);
-            entity.Property(line => line.DurationHours).HasColumnType("decimal(18,2)");
-            entity.Property(line => line.HourlyRateSnapshot).HasColumnType("decimal(18,2)");
-            entity.Property(line => line.TotalAmountSnapshot).HasColumnType("decimal(18,2)");
-            entity.HasIndex(line => line.WorkLogId).IsUnique();
-
-            entity.HasOne(line => line.PayrollSlip)
-                .WithMany(slip => slip.PayrollSlipLines)
-                .HasForeignKey(line => line.PayrollSlipId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(line => line.WorkLog)
-                .WithMany(workLog => workLog.PayrollSlipLines)
-                .HasForeignKey(line => line.WorkLogId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<PayrollPayment>(entity =>
-        {
-            entity.Property(payment => payment.Amount).HasColumnType("decimal(18,2)");
-            entity.Property(payment => payment.Notes).HasMaxLength(500);
-
-            entity.HasOne(payment => payment.PayrollSlip)
-                .WithMany(slip => slip.PayrollPayments)
-                .HasForeignKey(payment => payment.PayrollSlipId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
     }
 }

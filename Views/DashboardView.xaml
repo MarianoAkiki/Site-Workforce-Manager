@@ -26,10 +26,10 @@
                                Text="Summary" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource TextMutedBrush}"
-                               Text="Track workforce activity, labor totals, and outstanding balances from one place." />
+                               Text="Track workforce activity and labor totals from one place." />
 
                     <UniformGrid Margin="0,20,0,0"
-                                 Columns="3">
+                                 Columns="2">
                         <Border Margin="0,0,16,16"
                                 Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
@@ -78,26 +78,14 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Margin="0,0,16,0"
-                                Style="{StaticResource SummaryCardBorderStyle}">
-                            <StackPanel>
-                                <TextBlock FontSize="12"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Total Outstanding Balance" />
-                                <TextBlock FontSize="26"
-                                           FontWeight="SemiBold"
-                                           Text="{Binding TotalOutstandingBalance, StringFormat={}{0:C}}" />
-                            </StackPanel>
-                        </Border>
-
                         <Border Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
                                 <TextBlock FontSize="12"
                                            Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Unpaid Work Logs Count" />
+                                           Text="Work Logs Count" />
                                 <TextBlock FontSize="26"
                                            FontWeight="SemiBold"
-                                           Text="{Binding UnpaidWorkLogsCount}" />
+                                           Text="{Binding WorkLogsCount}" />
                             </StackPanel>
                         </Border>
                     </UniformGrid>

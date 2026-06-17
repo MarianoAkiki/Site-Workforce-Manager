@@ -7,75 +7,19 @@ namespace Site_Workforce_Manager.Services;
 
 public static class DatabaseInitializer
 {
-    private const int FirstWorkerNumber = 1001;
-
     public static void Initialize()
     {
         using var context = new AppDbContext();
 
         context.Database.EnsureCreated();
-        EnsureWorkerNumberSchemaExists(context);
         EnsureTradesSchemaExists(context);
+        EnsureDailyRateHistorySchema(context);
         EnsureWorkLogsTableExists(context);
-        EnsurePayrollTablesExist(context);
         EnsureLegacyTradesExist(context);
         BackfillWorkerTrades(context);
         RemoveLegacyWorkerTradeColumn(context);
-    }
-
-    private static void EnsureWorkerNumberSchemaExists(AppDbContext context)
-    {
-        if (!ColumnExists(context, "Workers", "WorkerNumber"))
-        {
-            context.Database.ExecuteSqlRaw("ALTER TABLE Workers ADD COLUMN WorkerNumber INTEGER NOT NULL DEFAULT 0;");
-        }
-
-        BackfillWorkerNumbers(context);
-
-        if (!IndexExists(context, "IX_Workers_WorkerNumber"))
-        {
-            context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IX_Workers_WorkerNumber ON Workers (WorkerNumber);");
-        }
-    }
-
-    private static void BackfillWorkerNumbers(AppDbContext context)
-    {
-        using var connection = new SqliteConnection(context.Database.GetConnectionString());
-        connection.Open();
-
-        var nextWorkerNumber = Math.Max(FirstWorkerNumber, GetMaxWorkerNumber(connection) + 1);
-        var workerIds = new List<int>();
-
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText = "SELECT Id FROM Workers WHERE WorkerNumber <= 0 ORDER BY Id;";
-
-            using var reader = command.ExecuteReader();
-
-            while (reader.Read())
-            {
-                workerIds.Add(reader.GetInt32(0));
-            }
-        }
-
-        foreach (var workerId in workerIds)
-        {
-            using var updateCommand = connection.CreateCommand();
-            updateCommand.CommandText = "UPDATE Workers SET WorkerNumber = $workerNumber WHERE Id = $workerId;";
-            updateCommand.Parameters.AddWithValue("$workerNumber", nextWorkerNumber);
-            updateCommand.Parameters.AddWithValue("$workerId", workerId);
-            updateCommand.ExecuteNonQuery();
-
-            nextWorkerNumber++;
-        }
-    }
-
-    private static int GetMaxWorkerNumber(SqliteConnection connection)
-    {
-        using var command = connection.CreateCommand();
-        command.CommandText = "SELECT COALESCE(MAX(WorkerNumber), 0) FROM Workers;";
-
-        return Convert.ToInt32(command.ExecuteScalar());
+        RemoveLegacyWorkerNumberColumn(context);
+        RemoveLegacyPayrollTables(context);
     }
 
     private static void EnsureTradesSchemaExists(AppDbContext context)
@@ -107,6 +51,72 @@ public static class DatabaseInitializer
 
     private static void EnsureWorkLogsTableExists(AppDbContext context)
     {
+        if (TableExists(context, "WorkLogs") &&
+            (ColumnExists(context, "WorkLogs", "StartTime") ||
+             ColumnExists(context, "WorkLogs", "EndTime") ||
+             ColumnExists(context, "WorkLogs", "HourlyRateSnapshot") ||
+             ColumnExists(context, "WorkLogs", "PaymentStatus") ||
+             !ColumnExists(context, "WorkLogs", "DailyRateSnapshot")))
+        {
+            var dailyRateExpression = ColumnExists(context, "WorkLogs", "DailyRateSnapshot")
+                ? "DailyRateSnapshot"
+                : "CAST(HourlyRateSnapshot AS REAL) * 8";
+
+            context.Database.ExecuteSqlRaw(
+                """
+                CREATE TABLE WorkLogs_New (
+                    Id INTEGER NOT NULL CONSTRAINT PK_WorkLogs PRIMARY KEY AUTOINCREMENT,
+                    WorkerId INTEGER NOT NULL,
+                    ConstructionSiteId INTEGER NOT NULL,
+                    WorkDate TEXT NOT NULL,
+                    DurationHours TEXT NOT NULL,
+                    DailyRateSnapshot TEXT NOT NULL,
+                    TotalAmount TEXT NOT NULL,
+                    Notes TEXT NOT NULL DEFAULT '',
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NOT NULL,
+                    FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT,
+                    FOREIGN KEY (ConstructionSiteId) REFERENCES ConstructionSites (Id) ON DELETE RESTRICT
+                );
+                """);
+
+            var copyWorkLogsSql = string.Concat(
+                """
+                INSERT INTO WorkLogs_New (
+                    Id,
+                    WorkerId,
+                    ConstructionSiteId,
+                    WorkDate,
+                    DurationHours,
+                    DailyRateSnapshot,
+                    TotalAmount,
+                    Notes,
+                    CreatedAt,
+                    UpdatedAt
+                )
+                SELECT
+                    Id,
+                    WorkerId,
+                    ConstructionSiteId,
+                    WorkDate,
+                    DurationHours,
+                """,
+                dailyRateExpression,
+                """
+                    ,
+                    TotalAmount,
+                    Notes,
+                    CreatedAt,
+                    UpdatedAt
+                FROM WorkLogs;
+                """);
+
+            context.Database.ExecuteSqlRaw(copyWorkLogsSql);
+
+            context.Database.ExecuteSqlRaw("DROP TABLE WorkLogs;");
+            context.Database.ExecuteSqlRaw("ALTER TABLE WorkLogs_New RENAME TO WorkLogs;");
+        }
+
         context.Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS WorkLogs (
@@ -114,12 +124,9 @@ public static class DatabaseInitializer
                 WorkerId INTEGER NOT NULL,
                 ConstructionSiteId INTEGER NOT NULL,
                 WorkDate TEXT NOT NULL,
-                StartTime TEXT NOT NULL,
-                EndTime TEXT NOT NULL,
                 DurationHours TEXT NOT NULL,
-                HourlyRateSnapshot TEXT NOT NULL,
+                DailyRateSnapshot TEXT NOT NULL,
                 TotalAmount TEXT NOT NULL,
-                PaymentStatus INTEGER NOT NULL,
                 Notes TEXT NOT NULL DEFAULT '',
                 CreatedAt TEXT NOT NULL,
                 UpdatedAt TEXT NOT NULL,
@@ -133,66 +140,73 @@ public static class DatabaseInitializer
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_WorkDate ON WorkLogs (WorkDate);");
     }
 
-    private static void EnsurePayrollTablesExist(AppDbContext context)
+    private static void EnsureDailyRateHistorySchema(AppDbContext context)
+    {
+        if (!TableExists(context, "WorkerRateHistories"))
+        {
+            return;
+        }
+
+        var hasDailyRate = ColumnExists(context, "WorkerRateHistories", "DailyRate");
+        var hasHourlyRate = ColumnExists(context, "WorkerRateHistories", "HourlyRate");
+
+        if (hasDailyRate && hasHourlyRate)
+        {
+            RebuildWorkerRateHistoriesWithoutHourlyRate(context);
+            return;
+        }
+
+        if (hasDailyRate)
+        {
+            return;
+        }
+
+        if (hasHourlyRate)
+        {
+            context.Database.ExecuteSqlRaw("ALTER TABLE WorkerRateHistories ADD COLUMN DailyRate TEXT NOT NULL DEFAULT '0';");
+            context.Database.ExecuteSqlRaw("UPDATE WorkerRateHistories SET DailyRate = CAST(HourlyRate AS REAL) * 8;");
+            RebuildWorkerRateHistoriesWithoutHourlyRate(context);
+            return;
+        }
+
+        context.Database.ExecuteSqlRaw("ALTER TABLE WorkerRateHistories ADD COLUMN DailyRate TEXT NOT NULL DEFAULT '0';");
+    }
+
+    private static void RebuildWorkerRateHistoriesWithoutHourlyRate(AppDbContext context)
     {
         context.Database.ExecuteSqlRaw(
             """
-            CREATE TABLE IF NOT EXISTS PayrollSlips (
-                Id INTEGER NOT NULL CONSTRAINT PK_PayrollSlips PRIMARY KEY AUTOINCREMENT,
-                SlipNumber TEXT NOT NULL,
+            CREATE TABLE WorkerRateHistories_New (
+                Id INTEGER NOT NULL CONSTRAINT PK_WorkerRateHistories PRIMARY KEY AUTOINCREMENT,
                 WorkerId INTEGER NOT NULL,
-                DateFrom TEXT NOT NULL,
-                DateTo TEXT NOT NULL,
-                TotalHours TEXT NOT NULL,
-                TotalAmount TEXT NOT NULL,
-                AmountPaid TEXT NOT NULL,
-                RemainingBalance TEXT NOT NULL,
-                Status INTEGER NOT NULL,
-                CreatedAt TEXT NOT NULL,
-                Notes TEXT NOT NULL DEFAULT '',
-                FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT
+                DailyRate TEXT NOT NULL,
+                EffectiveFrom TEXT NOT NULL,
+                EffectiveTo TEXT NULL,
+                FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE CASCADE
             );
             """);
 
         context.Database.ExecuteSqlRaw(
             """
-            CREATE TABLE IF NOT EXISTS PayrollSlipLines (
-                Id INTEGER NOT NULL CONSTRAINT PK_PayrollSlipLines PRIMARY KEY AUTOINCREMENT,
-                PayrollSlipId INTEGER NOT NULL,
-                WorkLogId INTEGER NOT NULL,
-                WorkerNameSnapshot TEXT NOT NULL,
-                TradeNameSnapshot TEXT NOT NULL DEFAULT '',
-                ConstructionSiteNameSnapshot TEXT NOT NULL,
-                WorkDate TEXT NOT NULL,
-                StartTime TEXT NOT NULL,
-                EndTime TEXT NOT NULL,
-                DurationHours TEXT NOT NULL,
-                HourlyRateSnapshot TEXT NOT NULL,
-                TotalAmountSnapshot TEXT NOT NULL,
-                FOREIGN KEY (PayrollSlipId) REFERENCES PayrollSlips (Id) ON DELETE CASCADE,
-                FOREIGN KEY (WorkLogId) REFERENCES WorkLogs (Id) ON DELETE RESTRICT
-            );
+            INSERT INTO WorkerRateHistories_New (
+                Id,
+                WorkerId,
+                DailyRate,
+                EffectiveFrom,
+                EffectiveTo
+            )
+            SELECT
+                Id,
+                WorkerId,
+                DailyRate,
+                EffectiveFrom,
+                EffectiveTo
+            FROM WorkerRateHistories;
             """);
 
-        context.Database.ExecuteSqlRaw(
-            """
-            CREATE TABLE IF NOT EXISTS PayrollPayments (
-                Id INTEGER NOT NULL CONSTRAINT PK_PayrollPayments PRIMARY KEY AUTOINCREMENT,
-                PayrollSlipId INTEGER NOT NULL,
-                PaymentDate TEXT NOT NULL,
-                Amount TEXT NOT NULL,
-                Notes TEXT NOT NULL DEFAULT '',
-                FOREIGN KEY (PayrollSlipId) REFERENCES PayrollSlips (Id) ON DELETE CASCADE
-            );
-            """);
-
-        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_PayrollSlips_SlipNumber ON PayrollSlips (SlipNumber);");
-        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlips_WorkerId ON PayrollSlips (WorkerId);");
-        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlips_DateFrom ON PayrollSlips (DateFrom);");
-        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlips_DateTo ON PayrollSlips (DateTo);");
-        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollSlipLines_PayrollSlipId ON PayrollSlipLines (PayrollSlipId);");
-        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_PayrollSlipLines_WorkLogId ON PayrollSlipLines (WorkLogId);");
-        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_PayrollPayments_PayrollSlipId ON PayrollPayments (PayrollSlipId);");
+        context.Database.ExecuteSqlRaw("DROP TABLE WorkerRateHistories;");
+        context.Database.ExecuteSqlRaw("ALTER TABLE WorkerRateHistories_New RENAME TO WorkerRateHistories;");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerRateHistories_WorkerId ON WorkerRateHistories (WorkerId);");
     }
 
     private static void SeedWorkLogs(AppDbContext context)
@@ -217,9 +231,9 @@ public static class DatabaseInitializer
 
         var sampleLogs = new List<WorkLog>
         {
-            CreateSampleWorkLog(context, workers[0].Id, constructionSites[0].Id, new DateTime(2025, 4, 15), new TimeSpan(8, 0, 0), new TimeSpan(16, 0, 0), PaymentStatus.Unpaid, "Electrical setup for level 2."),
-            CreateSampleWorkLog(context, workers[1].Id, constructionSites[0].Id, new DateTime(2025, 4, 16), new TimeSpan(7, 30, 0), new TimeSpan(15, 30, 0), PaymentStatus.Paid, "Installed interior wood framing."),
-            CreateSampleWorkLog(context, workers[2].Id, constructionSites[1].Id, new DateTime(2025, 4, 17), new TimeSpan(9, 0, 0), new TimeSpan(14, 30, 0), PaymentStatus.Cancelled, "Cancelled due to material delivery delay.")
+            CreateSampleWorkLog(context, workers[0].Id, constructionSites[0].Id, new DateTime(2025, 4, 15), 8m, "Electrical setup for level 2."),
+            CreateSampleWorkLog(context, workers[1].Id, constructionSites[0].Id, new DateTime(2025, 4, 16), 8m, "Installed interior wood framing."),
+            CreateSampleWorkLog(context, workers[2].Id, constructionSites[1].Id, new DateTime(2025, 4, 17), 5.5m, "Material delivery delay.")
         };
 
         context.WorkLogs.AddRange(sampleLogs);
@@ -231,13 +245,10 @@ public static class DatabaseInitializer
         int workerId,
         int constructionSiteId,
         DateTime workDate,
-        TimeSpan startTime,
-        TimeSpan endTime,
-        PaymentStatus paymentStatus,
+        decimal durationHours,
         string notes)
     {
-        var durationHours = Math.Round((decimal)(endTime - startTime).TotalHours, 2);
-        var hourlyRate = GetHourlyRateForDate(context, workerId, workDate);
+        var dailyRate = GetDailyRateForDate(context, workerId, workDate);
         var now = DateTime.Now;
 
         return new WorkLog
@@ -245,19 +256,16 @@ public static class DatabaseInitializer
             WorkerId = workerId,
             ConstructionSiteId = constructionSiteId,
             WorkDate = workDate,
-            StartTime = startTime,
-            EndTime = endTime,
-            DurationHours = durationHours,
-            HourlyRateSnapshot = hourlyRate,
-            TotalAmount = Math.Round(durationHours * hourlyRate, 2),
-            PaymentStatus = paymentStatus,
+            DurationHours = Math.Round(durationHours, 2),
+            DailyRateSnapshot = dailyRate,
+            TotalAmount = Math.Round(durationHours * (dailyRate / 8m), 2),
             Notes = notes,
             CreatedAt = now,
             UpdatedAt = now
         };
     }
 
-    private static decimal GetHourlyRateForDate(AppDbContext context, int workerId, DateTime workDate)
+    private static decimal GetDailyRateForDate(AppDbContext context, int workerId, DateTime workDate)
     {
         var rate = context.WorkerRateHistories
             .Where(item => item.WorkerId == workerId &&
@@ -267,7 +275,20 @@ public static class DatabaseInitializer
             .ThenByDescending(item => item.Id)
             .FirstOrDefault();
 
-        return rate?.HourlyRate ?? 0m;
+        return rate?.DailyRate ?? 0m;
+    }
+
+    private static bool TableExists(AppDbContext context, string tableName)
+    {
+        using var connection = new SqliteConnection(context.Database.GetConnectionString());
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name;";
+        command.Parameters.AddWithValue("$name", tableName);
+
+        var count = Convert.ToInt32(command.ExecuteScalar());
+        return count > 0;
     }
 
     private static void EnsureLegacyTradesExist(AppDbContext context)
@@ -348,6 +369,28 @@ public static class DatabaseInitializer
         }
 
         context.Database.ExecuteSqlRaw("ALTER TABLE Workers DROP COLUMN Trade;");
+    }
+
+    private static void RemoveLegacyWorkerNumberColumn(AppDbContext context)
+    {
+        if (!ColumnExists(context, "Workers", "WorkerNumber"))
+        {
+            return;
+        }
+
+        if (IndexExists(context, "IX_Workers_WorkerNumber"))
+        {
+            context.Database.ExecuteSqlRaw("DROP INDEX IX_Workers_WorkerNumber;");
+        }
+
+        context.Database.ExecuteSqlRaw("ALTER TABLE Workers DROP COLUMN WorkerNumber;");
+    }
+
+    private static void RemoveLegacyPayrollTables(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS PayrollPayments;");
+        context.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS PayrollSlipLines;");
+        context.Database.ExecuteSqlRaw("DROP TABLE IF EXISTS PayrollSlips;");
     }
 
     private static Dictionary<int, string> ReadLegacyWorkerTrades(AppDbContext context)

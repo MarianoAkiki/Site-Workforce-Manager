@@ -12,8 +12,6 @@ namespace Site_Workforce_Manager.ViewModels;
 
 public partial class WorkersViewModel : ObservableObject
 {
-    private const int FirstWorkerNumber = 1001;
-
     public WorkersViewModel()
     {
         NewRateEffectiveDate = DateTime.Today;
@@ -49,7 +47,7 @@ public partial class WorkersViewModel : ObservableObject
     private string lastName = string.Empty;
 
     [ObservableProperty]
-    private string newHourlyRate = string.Empty;
+    private string newDailyRate = string.Empty;
 
     [ObservableProperty]
     private DateTime? newRateEffectiveDate;
@@ -142,18 +140,17 @@ public partial class WorkersViewModel : ObservableObject
             .Select(worker => new WorkerListItem
             {
                 Id = worker.Id,
-                WorkerNumber = worker.WorkerNumber,
                 FirstName = worker.FirstName,
                 LastName = worker.LastName,
                 WorkerName = worker.FirstName + " " + worker.LastName,
                 TradeId = worker.TradeId,
                 TradeName = worker.Trade != null ? worker.Trade.Name : "No Trade",
-                CurrentHourlyRate = worker.RateHistory
+                CurrentDailyRate = worker.RateHistory
                     .Where(rate => rate.EffectiveFrom <= DateTime.Today &&
                                    (rate.EffectiveTo == null || rate.EffectiveTo >= DateTime.Today))
                     .OrderByDescending(rate => rate.EffectiveFrom)
                     .ThenByDescending(rate => rate.Id)
-                    .Select(rate => rate.HourlyRate)
+                    .Select(rate => rate.DailyRate)
                     .FirstOrDefault(),
                 AssignedSiteCount = worker.WorkerConstructionSites.Count,
                 Status = worker.Status.ToString(),
@@ -246,7 +243,7 @@ public partial class WorkersViewModel : ObservableObject
         editingWorkerId = worker.Id;
         SelectedWorker = worker;
         FormTitle = "Worker Information";
-        FormDescription = "Update worker details, hourly rates, and construction site assignments.";
+        FormDescription = "Update worker details, daily rates, and construction site assignments.";
         SaveButtonText = "Save Changes";
         CanManageWorkerDetails = true;
         IsWorkerFormVisible = true;
@@ -298,7 +295,6 @@ public partial class WorkersViewModel : ObservableObject
 
         var worker = new Worker
         {
-            WorkerNumber = GetNextWorkerNumber(context),
             FirstName = FirstName.Trim(),
             LastName = LastName.Trim(),
             TradeId = tradeId,
@@ -313,10 +309,10 @@ public partial class WorkersViewModel : ObservableObject
         SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == worker.Id);
         editingWorkerId = worker.Id;
         FormTitle = "Worker Information";
-        FormDescription = "Update worker details, hourly rates, and construction site assignments.";
+        FormDescription = "Update worker details, daily rates, and construction site assignments.";
         SaveButtonText = "Save Changes";
         CanManageWorkerDetails = true;
-        ToastNotificationService.ShowSuccess("Worker added successfully. You can now add hourly rates and assign construction sites.");
+        ToastNotificationService.ShowSuccess("Worker added successfully. You can now add daily rates and assign construction sites.");
     }
 
     private void UpdateWorker(int workerId)
@@ -352,15 +348,6 @@ public partial class WorkersViewModel : ObservableObject
 
         LoadWorkers();
         SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == worker.Id);
-    }
-
-    private static int GetNextWorkerNumber(AppDbContext context)
-    {
-        var maxWorkerNumber = context.Workers.Any()
-            ? context.Workers.Max(worker => worker.WorkerNumber)
-            : 0;
-
-        return Math.Max(FirstWorkerNumber, maxWorkerNumber + 1);
     }
 
     [RelayCommand]
@@ -407,7 +394,7 @@ public partial class WorkersViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void AddHourlyRate()
+    private void AddDailyRate()
     {
         if (SelectedWorker is null)
         {
@@ -415,15 +402,15 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
-        if (!decimal.TryParse(NewHourlyRate, out var hourlyRate))
+        if (!decimal.TryParse(NewDailyRate, out var dailyRate))
         {
-            MessageBox.Show("Please enter a valid hourly rate.");
+            MessageBox.Show("Please enter a valid daily rate.");
             return;
         }
 
-        if (hourlyRate <= 0)
+        if (dailyRate <= 0)
         {
-            MessageBox.Show("Hourly rate must be greater than zero.");
+            MessageBox.Show("Daily rate must be greater than zero.");
             return;
         }
 
@@ -467,14 +454,14 @@ public partial class WorkersViewModel : ObservableObject
         var newRateEffectiveTo = nextRate?.EffectiveFrom.Date.AddDays(-1);
         var previousRateMessage = previousRate is null
             ? "There is no previous rate to close."
-            : $"The previous rate ({previousRate.HourlyRate:C}) will end on {effectiveDate.AddDays(-1):yyyy-MM-dd}.";
+            : $"The previous rate ({previousRate.DailyRate:C}) will end on {effectiveDate.AddDays(-1):yyyy-MM-dd}.";
         var newRateRangeMessage = newRateEffectiveTo is null
-            ? $"The new rate ({hourlyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} onward."
-            : $"The new rate ({hourlyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} to {newRateEffectiveTo:yyyy-MM-dd}.";
+            ? $"The new rate ({dailyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} onward."
+            : $"The new rate ({dailyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} to {newRateEffectiveTo:yyyy-MM-dd}.";
 
         var confirmed = ConfirmationDialogService.Show(
-            "Add hourly rate?",
-            $"{previousRateMessage}\n\n{newRateRangeMessage}\n\nOnly one hourly rate is allowed per worker per effective date.",
+            "Add daily rate?",
+            $"{previousRateMessage}\n\n{newRateRangeMessage}\n\nOnly one daily rate is allowed per worker per effective date.",
             "Add Rate",
             "Cancel");
 
@@ -491,7 +478,7 @@ public partial class WorkersViewModel : ObservableObject
         var newRate = new WorkerRateHistory
         {
             WorkerId = workerId,
-            HourlyRate = hourlyRate,
+            DailyRate = dailyRate,
             EffectiveFrom = effectiveDate,
             EffectiveTo = newRateEffectiveTo
         };
@@ -499,7 +486,7 @@ public partial class WorkersViewModel : ObservableObject
         context.WorkerRateHistories.Add(newRate);
         context.SaveChanges();
 
-        NewHourlyRate = string.Empty;
+        NewDailyRate = string.Empty;
         NewRateEffectiveDate = DateTime.Today;
         LoadRateHistory(workerId);
         LoadWorkers();
@@ -719,7 +706,7 @@ public partial class WorkersViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(search))
         {
             filteredWorkers = filteredWorkers.Where(worker =>
-                worker.WorkerNumber.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                worker.Id.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) ||
                 worker.WorkerName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                 worker.TradeName.Contains(search, StringComparison.OrdinalIgnoreCase));
         }
