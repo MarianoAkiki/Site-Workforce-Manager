@@ -15,6 +15,7 @@ public static class DatabaseInitializer
         EnsureTradesSchemaExists(context);
         EnsureDailyRateHistorySchema(context);
         EnsureWorkLogsTableExists(context);
+        EnsureWorkerPaymentsTableExists(context);
         EnsureLegacyTradesExist(context);
         BackfillWorkerTrades(context);
         RemoveLegacyWorkerTradeColumn(context);
@@ -170,6 +171,26 @@ public static class DatabaseInitializer
         }
 
         context.Database.ExecuteSqlRaw("ALTER TABLE WorkerRateHistories ADD COLUMN DailyRate TEXT NOT NULL DEFAULT '0';");
+    }
+
+    private static void EnsureWorkerPaymentsTableExists(AppDbContext context)
+    {
+        context.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS WorkerPayments (
+                Id INTEGER NOT NULL CONSTRAINT PK_WorkerPayments PRIMARY KEY AUTOINCREMENT,
+                WorkerId INTEGER NOT NULL,
+                PaymentDate TEXT NOT NULL,
+                Amount TEXT NOT NULL,
+                Notes TEXT NOT NULL DEFAULT '',
+                CreatedAt TEXT NOT NULL,
+                UpdatedAt TEXT NOT NULL,
+                FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT
+            );
+            """);
+
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_WorkerId ON WorkerPayments (WorkerId);");
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_PaymentDate ON WorkerPayments (PaymentDate);");
     }
 
     private static void RebuildWorkerRateHistoriesWithoutHourlyRate(AppDbContext context)

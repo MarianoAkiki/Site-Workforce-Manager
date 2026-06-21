@@ -6,24 +6,23 @@ using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
 using Site_Workforce_Manager.Helpers;
 using Site_Workforce_Manager.Models;
-using Site_Workforce_Manager.Services;
 
 namespace Site_Workforce_Manager.ViewModels;
 
 public partial class WeeklyWorkEntryViewModel : ObservableObject
 {
-    private readonly DateTime latestFullWeekStart;
+    private readonly List<WeeklyWorkerRow> allWorkerRows = new();
 
     public WeeklyWorkEntryViewModel()
     {
-        latestFullWeekStart = GetLatestFullWeekStart(DateTime.Today);
-        WeekStart = latestFullWeekStart;
+        WeekStart = GetCurrentWeekStart(DateTime.Today);
         LoadWeeklyEntryPage();
     }
 
     public ObservableCollection<LookupOption> TradeOptions { get; } = new();
     public ObservableCollection<WeekDayColumn> WeekDays { get; } = new();
     public ObservableCollection<WeeklyWorkerRow> WorkerRows { get; } = new();
+    public ObservableCollection<WeeklyWorkerRow> FilteredWorkerRows { get; } = new();
 
     [ObservableProperty]
     private LookupOption? selectedTradeOption;
@@ -34,9 +33,16 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
     [ObservableProperty]
     private string statusMessage = string.Empty;
 
+    [ObservableProperty]
+    private string workerIdFilterText = string.Empty;
+
+    [ObservableProperty]
+    private string workerNameFilterText = string.Empty;
+
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
     public DateTime WeekEnd => WeekStart.AddDays(6);
-    public bool CanGoNextWeek => WeekStart < latestFullWeekStart;
+    public bool CanGoNextWeek => WeekStart < GetCurrentWeekStart(DateTime.Today);
+    public bool CanEditSelectedWeek => true;
 
     partial void OnSelectedTradeOptionChanged(LookupOption? value)
     {
@@ -48,12 +54,25 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         OnPropertyChanged(nameof(WeekEnd));
         OnPropertyChanged(nameof(WeekRangeText));
         OnPropertyChanged(nameof(CanGoNextWeek));
+        OnPropertyChanged(nameof(CanEditSelectedWeek));
         LoadWeekDays();
         LoadWorkerRows();
     }
 
+    partial void OnWorkerIdFilterTextChanged(string value)
+    {
+        RefreshFilteredWorkerRows();
+    }
+
+    partial void OnWorkerNameFilterTextChanged(string value)
+    {
+        RefreshFilteredWorkerRows();
+    }
+
     public void LoadWeeklyEntryPage()
     {
+        WorkerIdFilterText = string.Empty;
+        WorkerNameFilterText = string.Empty;
         LoadTradeOptions();
         LoadWeekDays();
         LoadWorkerRows();
@@ -74,111 +93,6 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         }
 
         WeekStart = WeekStart.AddDays(7);
-    }
-
-    [RelayCommand]
-    private void SaveWeek()
-    {
-        if (SelectedTradeOption?.Id is not int)
-        {
-            MessageBox.Show("Please select a trade first.");
-            return;
-        }
-
-        using var context = new AppDbContext();
-        using var transaction = context.Database.BeginTransaction();
-
-        var savedCount = 0;
-
-        foreach (var row in WorkerRows)
-        {
-            foreach (var cell in row.Cells)
-            {
-                if (string.IsNullOrWhiteSpace(cell.DurationHoursText))
-                {
-                    continue;
-                }
-
-                if (!decimal.TryParse(cell.DurationHoursText, out var durationHours))
-                {
-                    MessageBox.Show($"Please enter a valid duration for {row.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
-                    return;
-                }
-
-                if (durationHours <= 0)
-                {
-                    continue;
-                }
-
-                if (durationHours > 16)
-                {
-                    MessageBox.Show($"Duration cannot exceed 16 hours for {row.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
-                    return;
-                }
-
-                if (cell.SelectedConstructionSiteOption?.Id is not int constructionSiteId)
-                {
-                    MessageBox.Show($"Please select a construction site for {row.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
-                    return;
-                }
-
-                var dailyRate = GetDailyRateForDate(context, row.WorkerId, cell.WorkDate);
-
-                if (dailyRate <= 0)
-                {
-                    MessageBox.Show($"No daily rate was found for {row.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
-                    return;
-                }
-
-                var existingLog = context.WorkLogs
-                    .FirstOrDefault(workLog =>
-                        workLog.WorkerId == row.WorkerId &&
-                        workLog.WorkDate == cell.WorkDate);
-
-                var hourlyRate = dailyRate / 8m;
-                var totalAmount = Math.Round(durationHours * hourlyRate, 2);
-                var now = DateTime.Now;
-
-                if (existingLog is null)
-                {
-                    context.WorkLogs.Add(new WorkLog
-                    {
-                        WorkerId = row.WorkerId,
-                        ConstructionSiteId = constructionSiteId,
-                        WorkDate = cell.WorkDate,
-                        DurationHours = Math.Round(durationHours, 2),
-                        DailyRateSnapshot = dailyRate,
-                        TotalAmount = totalAmount,
-                        Notes = "Created from weekly work entry.",
-                        CreatedAt = now,
-                        UpdatedAt = now
-                    });
-                }
-                else
-                {
-                    existingLog.ConstructionSiteId = constructionSiteId;
-                    existingLog.DurationHours = Math.Round(durationHours, 2);
-                    existingLog.DailyRateSnapshot = dailyRate;
-                    existingLog.TotalAmount = totalAmount;
-                    existingLog.UpdatedAt = now;
-                }
-
-                savedCount++;
-            }
-        }
-
-        context.SaveChanges();
-        transaction.Commit();
-
-        LoadWorkerRows();
-        StatusMessage = savedCount == 0
-            ? "No weekly entries were changed."
-            : $"{savedCount} weekly work entries saved.";
-
-        if (savedCount > 0)
-        {
-            ToastNotificationService.ShowSuccess(StatusMessage);
-        }
     }
 
     private void LoadTradeOptions()
@@ -224,7 +138,9 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
 
     private void LoadWorkerRows()
     {
+        allWorkerRows.Clear();
         WorkerRows.Clear();
+        FilteredWorkerRows.Clear();
 
         if (SelectedTradeOption?.Id is not int tradeId)
         {
@@ -285,8 +201,10 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 var cell = new WeeklyWorkLogCell
                 {
                     WorkerId = worker.Id,
+                    WorkerName = row.WorkerName,
                     WorkDate = date,
-                    DurationHoursText = existingLog?.DurationHours.ToString("0.##") ?? string.Empty
+                    DurationHoursText = existingLog?.DurationHours.ToString("0.##") ?? string.Empty,
+                    IsReadOnly = false
                 };
 
                 foreach (var site in assignedSites)
@@ -300,16 +218,137 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
 
                 cell.SelectedConstructionSiteOption = cell.ConstructionSiteOptions
                     .FirstOrDefault(site => site.Id == existingLog?.ConstructionSiteId);
+                cell.AutoSaveRequested = AutoSaveCell;
 
                 row.Cells.Add(cell);
             }
 
+            allWorkerRows.Add(row);
             WorkerRows.Add(row);
         }
 
-        StatusMessage = workers.Count == 0
-            ? "No active workers were found for the selected trade."
-            : $"{workers.Count} workers loaded for {SelectedTradeOption.Name}.";
+        RefreshFilteredWorkerRows();
+
+        if (workers.Count == 0)
+        {
+            StatusMessage = "No active workers were found for the selected trade.";
+        }
+        else
+        {
+            StatusMessage = $"{workers.Count} workers loaded for {SelectedTradeOption.Name}. Entries auto-save when hours and site are filled.";
+        }
+    }
+
+    private void AutoSaveCell(WeeklyWorkLogCell cell)
+    {
+        if (string.IsNullOrWhiteSpace(cell.DurationHoursText) ||
+            cell.SelectedConstructionSiteOption?.Id is not int constructionSiteId)
+        {
+            return;
+        }
+
+        if (!decimal.TryParse(cell.DurationHoursText, out var durationHours))
+        {
+            ShowAutoSaveError($"Please enter a valid duration for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+            return;
+        }
+
+        if (durationHours <= 0)
+        {
+            ShowAutoSaveError($"Duration must be greater than zero for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+            return;
+        }
+
+        if (durationHours > 16)
+        {
+            ShowAutoSaveError($"Duration cannot exceed 16 hours for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+            return;
+        }
+
+        using var context = new AppDbContext();
+        var dailyRate = GetDailyRateForDate(context, cell.WorkerId, cell.WorkDate);
+
+        if (dailyRate <= 0)
+        {
+            ShowAutoSaveError($"No daily rate was found for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+            return;
+        }
+
+        var existingLog = context.WorkLogs
+            .FirstOrDefault(workLog =>
+                workLog.WorkerId == cell.WorkerId &&
+                workLog.WorkDate == cell.WorkDate);
+
+        var hourlyRate = dailyRate / 8m;
+        var totalAmount = Math.Round(durationHours * hourlyRate, 2);
+        var now = DateTime.Now;
+
+        if (existingLog is null)
+        {
+            context.WorkLogs.Add(new WorkLog
+            {
+                WorkerId = cell.WorkerId,
+                ConstructionSiteId = constructionSiteId,
+                WorkDate = cell.WorkDate,
+                DurationHours = Math.Round(durationHours, 2),
+                DailyRateSnapshot = dailyRate,
+                TotalAmount = totalAmount,
+                Notes = "Created from weekly work entry.",
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+        else
+        {
+            existingLog.ConstructionSiteId = constructionSiteId;
+            existingLog.DurationHours = Math.Round(durationHours, 2);
+            existingLog.DailyRateSnapshot = dailyRate;
+            existingLog.TotalAmount = totalAmount;
+            existingLog.UpdatedAt = now;
+        }
+
+        context.SaveChanges();
+        StatusMessage = $"Saved {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.";
+    }
+
+    private static void ShowAutoSaveError(string message)
+    {
+        MessageBox.Show(message, "Weekly Entry Auto-Save", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    [RelayCommand]
+    private void ClearWorkerIdFilter()
+    {
+        WorkerIdFilterText = string.Empty;
+    }
+
+    [RelayCommand]
+    private void ClearWorkerNameFilter()
+    {
+        WorkerNameFilterText = string.Empty;
+    }
+
+    private void RefreshFilteredWorkerRows()
+    {
+        FilteredWorkerRows.Clear();
+
+        foreach (var row in allWorkerRows.Where(MatchesWorkerFilter))
+        {
+            FilteredWorkerRows.Add(row);
+        }
+    }
+
+    private bool MatchesWorkerFilter(WeeklyWorkerRow row)
+    {
+        var idFilter = WorkerIdFilterText.Trim();
+        var nameFilter = WorkerNameFilterText.Trim();
+
+        var matchesId = string.IsNullOrWhiteSpace(idFilter) ||
+                        row.WorkerId.ToString().Contains(idFilter, StringComparison.CurrentCultureIgnoreCase);
+        var matchesName = string.IsNullOrWhiteSpace(nameFilter) ||
+                          row.WorkerName.Contains(nameFilter, StringComparison.CurrentCultureIgnoreCase);
+
+        return matchesId && matchesName;
     }
 
     private static decimal GetDailyRateForDate(AppDbContext context, int workerId, DateTime workDate)
@@ -325,17 +364,10 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         return rate?.DailyRate ?? 0m;
     }
 
-    private static DateTime GetLatestFullWeekStart(DateTime today)
+    private static DateTime GetCurrentWeekStart(DateTime today)
     {
-        var daysSinceWednesday = ((int)today.DayOfWeek - (int)DayOfWeek.Wednesday + 7) % 7;
-
-        if (daysSinceWednesday == 0)
-        {
-            daysSinceWednesday = 7;
-        }
-
-        var lastCompletedWednesday = today.Date.AddDays(-daysSinceWednesday);
-        return lastCompletedWednesday.AddDays(-6);
+        var daysSinceThursday = ((int)today.DayOfWeek - (int)DayOfWeek.Thursday + 7) % 7;
+        return today.Date.AddDays(-daysSinceThursday);
     }
 }
 
@@ -355,7 +387,9 @@ public partial class WeeklyWorkerRow : ObservableObject
 public partial class WeeklyWorkLogCell : ObservableObject
 {
     public int WorkerId { get; set; }
+    public string WorkerName { get; set; } = string.Empty;
     public DateTime WorkDate { get; set; }
+    public Action<WeeklyWorkLogCell>? AutoSaveRequested { get; set; }
     public ObservableCollection<LookupOption> ConstructionSiteOptions { get; } = new();
 
     [ObservableProperty]
@@ -366,4 +400,21 @@ public partial class WeeklyWorkLogCell : ObservableObject
 
     [ObservableProperty]
     private bool isReadOnly;
+
+    public bool IsEditable => !IsReadOnly;
+
+    partial void OnDurationHoursTextChanged(string value)
+    {
+        AutoSaveRequested?.Invoke(this);
+    }
+
+    partial void OnSelectedConstructionSiteOptionChanged(LookupOption? value)
+    {
+        AutoSaveRequested?.Invoke(this);
+    }
+
+    partial void OnIsReadOnlyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsEditable));
+    }
 }

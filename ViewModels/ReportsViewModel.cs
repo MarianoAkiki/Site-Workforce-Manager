@@ -74,15 +74,21 @@ public partial class ReportsViewModel : ObservableObject
     [ObservableProperty]
     private bool isExportInProgress;
 
-    public string WorkerSelectionSummary => BuildSelectionSummary(WorkerOptions, "All workers", "worker");
-    public string TradeSelectionSummary => BuildSelectionSummary(TradeOptions, "All trades", "trade");
-    public string ConstructionSiteSelectionSummary => BuildSelectionSummary(ConstructionSiteOptions, "All construction sites", "site");
+    public string WorkerSelectionSummary => BuildSelectionSummary(WorkerOptions, "All workers");
+    public string TradeSelectionSummary => BuildSelectionSummary(TradeOptions, "All trades");
+    public string ConstructionSiteSelectionSummary => BuildSelectionSummary(ConstructionSiteOptions, "All construction sites");
     public bool HasWorkerFilter => !string.IsNullOrWhiteSpace(WorkerSearchText) || WorkerOptions.Any(option => option.IsSelected);
     public bool HasTradeFilter => !string.IsNullOrWhiteSpace(TradeSearchText) || TradeOptions.Any(option => option.IsSelected);
     public bool HasConstructionSiteFilter => !string.IsNullOrWhiteSpace(ConstructionSiteSearchText) || ConstructionSiteOptions.Any(option => option.IsSelected);
+    public bool ShowWorkerSelectionPreview => string.IsNullOrWhiteSpace(WorkerSearchText);
+    public bool ShowTradeSelectionPreview => string.IsNullOrWhiteSpace(TradeSearchText);
+    public bool ShowConstructionSiteSelectionPreview => string.IsNullOrWhiteSpace(ConstructionSiteSearchText);
 
     public void LoadReport()
     {
+        isInitializing = true;
+        LoadLookupData();
+        isInitializing = false;
         ApplyFilters();
     }
 
@@ -102,9 +108,23 @@ public partial class ReportsViewModel : ObservableObject
         }
     }
 
-    partial void OnWorkerSearchTextChanged(string value) => OnPropertyChanged(nameof(HasWorkerFilter));
-    partial void OnTradeSearchTextChanged(string value) => OnPropertyChanged(nameof(HasTradeFilter));
-    partial void OnConstructionSiteSearchTextChanged(string value) => OnPropertyChanged(nameof(HasConstructionSiteFilter));
+    partial void OnWorkerSearchTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasWorkerFilter));
+        OnPropertyChanged(nameof(ShowWorkerSelectionPreview));
+    }
+
+    partial void OnTradeSearchTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasTradeFilter));
+        OnPropertyChanged(nameof(ShowTradeSelectionPreview));
+    }
+
+    partial void OnConstructionSiteSearchTextChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasConstructionSiteFilter));
+        OnPropertyChanged(nameof(ShowConstructionSiteSelectionPreview));
+    }
 
     [RelayCommand]
     private void ApplyFilters()
@@ -435,6 +455,18 @@ public partial class ReportsViewModel : ObservableObject
     private void LoadLookupData()
     {
         using var context = new AppDbContext();
+        var selectedWorkerIds = WorkerOptions
+            .Where(option => option.IsSelected && option.Id.HasValue)
+            .Select(option => option.Id!.Value)
+            .ToHashSet();
+        var selectedTradeIds = TradeOptions
+            .Where(option => option.IsSelected && option.Id.HasValue)
+            .Select(option => option.Id!.Value)
+            .ToHashSet();
+        var selectedSiteIds = ConstructionSiteOptions
+            .Where(option => option.IsSelected && option.Id.HasValue)
+            .Select(option => option.Id!.Value)
+            .ToHashSet();
 
         WorkerOptions.Clear();
         TradeOptions.Clear();
@@ -448,7 +480,8 @@ public partial class ReportsViewModel : ObservableObject
             .Select(worker => new SelectableLookupOption
             {
                 Id = worker.Id,
-                Name = $"{worker.FirstName} {worker.LastName}"
+                Name = $"{worker.FirstName} {worker.LastName}",
+                IsSelected = selectedWorkerIds.Contains(worker.Id)
             })
             .ToList();
 
@@ -459,7 +492,8 @@ public partial class ReportsViewModel : ObservableObject
             .Select(trade => new SelectableLookupOption
             {
                 Id = trade.Id,
-                Name = trade.Name
+                Name = trade.Name,
+                IsSelected = selectedTradeIds.Contains(trade.Id)
             })
             .ToList();
 
@@ -470,7 +504,8 @@ public partial class ReportsViewModel : ObservableObject
             .Select(site => new SelectableLookupOption
             {
                 Id = site.Id,
-                Name = site.Name
+                Name = site.Name,
+                IsSelected = selectedSiteIds.Contains(site.Id)
             })
             .ToList();
 
@@ -492,6 +527,12 @@ public partial class ReportsViewModel : ObservableObject
             ConstructionSiteOptions.Add(site);
         }
 
+        OnPropertyChanged(nameof(WorkerSelectionSummary));
+        OnPropertyChanged(nameof(TradeSelectionSummary));
+        OnPropertyChanged(nameof(ConstructionSiteSelectionSummary));
+        OnPropertyChanged(nameof(HasWorkerFilter));
+        OnPropertyChanged(nameof(HasTradeFilter));
+        OnPropertyChanged(nameof(HasConstructionSiteFilter));
     }
 
     public ReportExportData BuildExportData()
@@ -538,13 +579,24 @@ public partial class ReportsViewModel : ObservableObject
         isInitializing = false;
     }
 
-    private static string BuildSelectionSummary(IEnumerable<SelectableLookupOption> options, string allText, string itemName)
+    private static string BuildSelectionSummary(IEnumerable<SelectableLookupOption> options, string allText)
     {
-        var selectedCount = options.Count(option => option.IsSelected);
+        var selectedNames = options
+            .Where(option => option.IsSelected)
+            .Select(option => option.Name)
+            .ToList();
 
-        return selectedCount == 0
-            ? allText
-            : $"{selectedCount} {itemName}{(selectedCount == 1 ? string.Empty : "s")} selected";
+        if (selectedNames.Count == 0)
+        {
+            return allText;
+        }
+
+        if (selectedNames.Count <= 3)
+        {
+            return string.Join(", ", selectedNames);
+        }
+
+        return $"{string.Join(", ", selectedNames.Take(3))}, +{selectedNames.Count - 3} more";
     }
 
     public class ReportRow

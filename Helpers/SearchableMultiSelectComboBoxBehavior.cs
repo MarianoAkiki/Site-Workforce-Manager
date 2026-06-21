@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 
 namespace Site_Workforce_Manager.Helpers;
 
@@ -52,14 +53,30 @@ public static class SearchableMultiSelectComboBoxBehavior
             comboBox.Loaded += ComboBoxLoaded;
             comboBox.DropDownOpened += ComboBoxDropDownOpened;
             comboBox.SelectionChanged += ComboBoxSelectionChanged;
+            comboBox.PreviewMouseLeftButtonDown += ComboBoxPreviewMouseLeftButtonDown;
         }
         else
         {
             comboBox.Loaded -= ComboBoxLoaded;
             comboBox.DropDownOpened -= ComboBoxDropDownOpened;
             comboBox.SelectionChanged -= ComboBoxSelectionChanged;
+            comboBox.PreviewMouseLeftButtonDown -= ComboBoxPreviewMouseLeftButtonDown;
             ClearFilter(comboBox);
         }
+    }
+
+    private static void ComboBoxPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not ComboBox comboBox || comboBox.IsDropDownOpen)
+        {
+            return;
+        }
+
+        comboBox.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            comboBox.Focus();
+            comboBox.IsDropDownOpen = true;
+        }));
     }
 
     private static void ComboBoxLoaded(object sender, RoutedEventArgs e)

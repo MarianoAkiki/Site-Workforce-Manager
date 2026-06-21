@@ -111,7 +111,8 @@
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Workers" />
                             <Grid>
-                                <ComboBox ItemsSource="{Binding WorkerOptions}"
+                                <ComboBox x:Name="WorkerFilterComboBox"
+                                          ItemsSource="{Binding WorkerOptions}"
                                           helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding WorkerSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBox.ItemTemplate>
@@ -121,6 +122,15 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
+                                <TextBlock Margin="10,0,44,0"
+                                           VerticalAlignment="Center"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           IsHitTestVisible="False"
+                                           Panel.ZIndex="1"
+                                           Text="{Binding WorkerSelectionSummary}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding ShowWorkerSelectionPreview, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 <Button Margin="0,0,18,0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -130,10 +140,6 @@
                                         Style="{StaticResource DropdownClearButtonStyle}"
                                         Visibility="{Binding HasWorkerFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
-                            <TextBlock Margin="0,6,0,0"
-                                       FontSize="12"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Text="{Binding WorkerSelectionSummary}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="1"
@@ -141,7 +147,8 @@
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trades" />
                             <Grid>
-                                <ComboBox ItemsSource="{Binding TradeOptions}"
+                                <ComboBox x:Name="TradeFilterComboBox"
+                                          ItemsSource="{Binding TradeOptions}"
                                           helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding TradeSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBox.ItemTemplate>
@@ -151,6 +158,15 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
+                                <TextBlock Margin="10,0,44,0"
+                                           VerticalAlignment="Center"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           IsHitTestVisible="False"
+                                           Panel.ZIndex="1"
+                                           Text="{Binding TradeSelectionSummary}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding ShowTradeSelectionPreview, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 <Button Margin="0,0,18,0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -160,10 +176,6 @@
                                         Style="{StaticResource DropdownClearButtonStyle}"
                                         Visibility="{Binding HasTradeFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
-                            <TextBlock Margin="0,6,0,0"
-                                       FontSize="12"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Text="{Binding TradeSelectionSummary}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="1"
@@ -171,7 +183,8 @@
                                     Margin="0,18,16,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Construction Sites" />
                             <Grid>
-                                <ComboBox ItemsSource="{Binding ConstructionSiteOptions}"
+                                <ComboBox x:Name="ConstructionSiteFilterComboBox"
+                                          ItemsSource="{Binding ConstructionSiteOptions}"
                                           helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding ConstructionSiteSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBox.ItemTemplate>
@@ -181,6 +194,15 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
+                                <TextBlock Margin="10,0,44,0"
+                                           VerticalAlignment="Center"
+                                           FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           IsHitTestVisible="False"
+                                           Panel.ZIndex="1"
+                                           Text="{Binding ConstructionSiteSelectionSummary}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="{Binding ShowConstructionSiteSelectionPreview, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                 <Button Margin="0,0,18,0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -190,10 +212,6 @@
                                         Style="{StaticResource DropdownClearButtonStyle}"
                                         Visibility="{Binding HasConstructionSiteFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
-                            <TextBlock Margin="0,6,0,0"
-                                       FontSize="12"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Text="{Binding ConstructionSiteSelectionSummary}" />
                         </StackPanel>
 
                         <StackPanel Grid.Row="2"

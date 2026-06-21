@@ -13,4 +13,5 @@ public class Worker
     public ICollection<WorkerRateHistory> RateHistory { get; set; } = new List<WorkerRateHistory>();
     public ICollection<WorkerConstructionSite> WorkerConstructionSites { get; set; } = new List<WorkerConstructionSite>();
     public ICollection<WorkLog> WorkLogs { get; set; } = new List<WorkLog>();
+    public ICollection<WorkerPayment> WorkerPayments { get; set; } = new List<WorkerPayment>();
 }

@@ -13,6 +13,7 @@ public partial class MainViewModel : ObservableObject
         ConstructionSitesViewModel = new ConstructionSitesViewModel();
         WeeklyWorkEntryViewModel = new WeeklyWorkEntryViewModel();
         ReportsViewModel = new ReportsViewModel();
+        PayrollViewModel = new PayrollViewModel();
         MaintenanceViewModel = new MaintenanceViewModel();
         CurrentPageKey = "Dashboard";
         CurrentViewModel = DashboardViewModel;
@@ -24,6 +25,7 @@ public partial class MainViewModel : ObservableObject
     public ConstructionSitesViewModel ConstructionSitesViewModel { get; }
     public WeeklyWorkEntryViewModel WeeklyWorkEntryViewModel { get; }
     public ReportsViewModel ReportsViewModel { get; }
+    public PayrollViewModel PayrollViewModel { get; }
     public MaintenanceViewModel MaintenanceViewModel { get; }
 
     [ObservableProperty]
@@ -38,6 +40,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsConstructionSitesActive => CurrentPageKey == "ConstructionSites";
     public bool IsWeeklyWorkEntryActive => CurrentPageKey == "WeeklyWorkEntry";
     public bool IsReportsActive => CurrentPageKey == "Reports";
+    public bool IsPayrollActive => CurrentPageKey == "Payroll";
     public bool IsMaintenanceActive => CurrentPageKey == "Maintenance";
 
     partial void OnCurrentPageKeyChanged(string value)
@@ -48,6 +51,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsConstructionSitesActive));
         OnPropertyChanged(nameof(IsWeeklyWorkEntryActive));
         OnPropertyChanged(nameof(IsReportsActive));
+        OnPropertyChanged(nameof(IsPayrollActive));
         OnPropertyChanged(nameof(IsMaintenanceActive));
     }
 
@@ -97,6 +101,14 @@ public partial class MainViewModel : ObservableObject
         ReportsViewModel.LoadReport();
         CurrentPageKey = "Reports";
         CurrentViewModel = ReportsViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowPayroll()
+    {
+        PayrollViewModel.LoadPayrollPage();
+        CurrentPageKey = "Payroll";
+        CurrentViewModel = PayrollViewModel;
     }
 
     [RelayCommand]

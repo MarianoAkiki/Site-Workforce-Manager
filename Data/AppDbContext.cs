@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<ConstructionSite> ConstructionSites => Set<ConstructionSite>();
     public DbSet<WorkerConstructionSite> WorkerConstructionSites => Set<WorkerConstructionSite>();
     public DbSet<WorkLog> WorkLogs => Set<WorkLog>();
+    public DbSet<WorkerPayment> WorkerPayments => Set<WorkerPayment>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -92,6 +93,17 @@ public class AppDbContext : DbContext
             entity.HasOne(workLog => workLog.ConstructionSite)
                 .WithMany(site => site.WorkLogs)
                 .HasForeignKey(workLog => workLog.ConstructionSiteId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<WorkerPayment>(entity =>
+        {
+            entity.Property(payment => payment.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(payment => payment.Notes).HasMaxLength(500);
+
+            entity.HasOne(payment => payment.Worker)
+                .WithMany(worker => worker.WorkerPayments)
+                .HasForeignKey(payment => payment.WorkerId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

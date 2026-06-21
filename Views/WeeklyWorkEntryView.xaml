@@ -2,9 +2,21 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:helpers="clr-namespace:Site_Workforce_Manager.Helpers"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <UserControl.Resources>
+        <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+
+        <Style x:Key="InlineClearButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterClearButtonStyle}">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
+            <Setter Property="ToolTip" Value="Clear filter" />
+            <Setter Property="IsTabStop" Value="False" />
+        </Style>
+
         <DataTemplate x:Key="WeeklyCellTemplate">
             <Border MinHeight="86"
                     Padding="6"
@@ -23,6 +35,7 @@
                               Padding="4,2"
                               FontSize="11"
                               DisplayMemberPath="Name"
+                              IsEnabled="{Binding IsEditable}"
                               ItemsSource="{Binding ConstructionSiteOptions}"
                               SelectedItem="{Binding SelectedConstructionSiteOption, Mode=TwoWay}"
                               ToolTip="Assigned construction site" />
@@ -43,11 +56,11 @@
                 <TextBlock Style="{StaticResource PageTitleTextStyle}"
                            Text="Weekly Work Entry" />
                 <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
-                           Text="Enter worker hours by trade for the latest completed Thursday-to-Wednesday week." />
+                           Text="Enter worker hours by trade for Thursday-to-Wednesday weeks, including the current week." />
             </StackPanel>
 
             <Border Grid.Row="1"
-                    Margin="0,24,0,0"
+                    Margin="0,16,0,0"
                     Style="{StaticResource CardBorderStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -55,7 +68,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="280" />
+                        <ColumnDefinition Width="260" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
@@ -63,7 +76,7 @@
                     <StackPanel Margin="0,0,20,0">
                         <TextBlock Style="{StaticResource FieldLabelTextStyle}"
                                    Text="Trade" />
-                        <ComboBox MinHeight="42"
+                        <ComboBox MinHeight="36"
                                   DisplayMemberPath="Name"
                                   ItemsSource="{Binding TradeOptions}"
                                   SelectedItem="{Binding SelectedTradeOption, Mode=TwoWay}" />
@@ -81,7 +94,7 @@
                                     Style="{StaticResource BaseButtonStyle}" />
                             <Border MinWidth="360"
                                     Margin="12,0"
-                                    Padding="16,10"
+                                    Padding="14,8"
                                     Background="#F8FAFC"
                                     BorderBrush="#D9E2EC"
                                     BorderThickness="1"
@@ -100,16 +113,24 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Button Grid.Column="2"
-                            MinWidth="140"
+                    <Border Grid.Column="2"
+                            MinWidth="130"
                             VerticalAlignment="Bottom"
-                            Command="{Binding SaveWeekCommand}"
-                            Content="Save Week"
-                            Style="{StaticResource PrimaryButtonStyle}" />
+                            Padding="12,8"
+                            Background="#ECFDF5"
+                            BorderBrush="#A7F3D0"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <TextBlock HorizontalAlignment="Center"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#047857"
+                                   Text="Auto-save on" />
+                    </Border>
 
                     <TextBlock Grid.Row="1"
                                Grid.ColumnSpan="3"
-                               Margin="0,18,0,0"
+                               Margin="0,10,0,0"
                                Foreground="{StaticResource TextMutedBrush}"
                                Text="{Binding StatusMessage}" />
                 </Grid>
@@ -120,6 +141,7 @@
                     Style="{StaticResource CardBorderStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
@@ -135,7 +157,50 @@
                         <ColumnDefinition Width="*" MinWidth="88" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0"
+                    <Border Grid.Row="0"
+                            Grid.Column="0"
+                            MinHeight="36"
+                            Padding="0,0,4,6">
+                        <Grid>
+                            <TextBox MinHeight="28"
+                                     Padding="5,3,17,3"
+                                     FontSize="11"
+                                     ToolTip="Filter by worker ID"
+                                     Text="{Binding WorkerIdFilterText, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Margin="0,0,2,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ClearWorkerIdFilterCommand}"
+                                    Content="x"
+                                    Panel.ZIndex="2"
+                                    Style="{StaticResource InlineClearButtonStyle}"
+                                    Visibility="{Binding WorkerIdFilterText, Converter={StaticResource StringToVisibilityConverter}}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="0"
+                            Grid.Column="1"
+                            MinHeight="36"
+                            Padding="0,0,6,6">
+                        <Grid>
+                            <TextBox MinHeight="28"
+                                     Padding="7,3,28,3"
+                                     FontSize="11"
+                                     ToolTip="Filter by worker name"
+                                     Text="{Binding WorkerNameFilterText, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Margin="0,0,5,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ClearWorkerNameFilterCommand}"
+                                    Content="x"
+                                    Panel.ZIndex="2"
+                                    Style="{StaticResource InlineClearButtonStyle}"
+                                    Visibility="{Binding WorkerNameFilterText, Converter={StaticResource StringToVisibilityConverter}}" />
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="1"
+                            Grid.Column="0"
                             MinHeight="46"
                             Padding="6"
                             Background="#F1F5F9"
@@ -145,7 +210,8 @@
                                    FontWeight="SemiBold"
                                    Text="ID" />
                     </Border>
-                    <Border Grid.Column="1"
+                    <Border Grid.Row="1"
+                            Grid.Column="1"
                             MinHeight="46"
                             Padding="8,6"
                             Background="#F1F5F9"
@@ -156,7 +222,8 @@
                                    Text="Worker" />
                     </Border>
 
-                    <Border Grid.Column="2"
+                    <Border Grid.Row="1"
+                            Grid.Column="2"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -166,7 +233,8 @@
                                    FontWeight="SemiBold"
                                    Text="{Binding WeekDays[0].Header}" />
                     </Border>
-                    <Border Grid.Column="3"
+                    <Border Grid.Row="1"
+                            Grid.Column="3"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -176,7 +244,8 @@
                                    FontWeight="SemiBold"
                                    Text="{Binding WeekDays[1].Header}" />
                     </Border>
-                    <Border Grid.Column="4"
+                    <Border Grid.Row="1"
+                            Grid.Column="4"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -186,7 +255,8 @@
                                    FontWeight="SemiBold"
                                    Text="{Binding WeekDays[2].Header}" />
                     </Border>
-                    <Border Grid.Column="5"
+                    <Border Grid.Row="1"
+                            Grid.Column="5"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -196,7 +266,8 @@
                                    FontWeight="SemiBold"
                                    Text="{Binding WeekDays[3].Header}" />
                     </Border>
-                    <Border Grid.Column="6"
+                    <Border Grid.Row="1"
+                            Grid.Column="6"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -206,7 +277,8 @@
                                    FontWeight="SemiBold"
                                    Text="{Binding WeekDays[4].Header}" />
                     </Border>
-                    <Border Grid.Column="7"
+                    <Border Grid.Row="1"
+                            Grid.Column="7"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -216,7 +288,8 @@
                                    FontWeight="SemiBold"
                                    Text="{Binding WeekDays[5].Header}" />
                     </Border>
-                    <Border Grid.Column="8"
+                    <Border Grid.Row="1"
+                            Grid.Column="8"
                             MinHeight="46"
                             Padding="7,6"
                             Background="#F1F5F9"
@@ -227,9 +300,9 @@
                                    Text="{Binding WeekDays[6].Header}" />
                     </Border>
 
-                    <ItemsControl Grid.Row="1"
+                    <ItemsControl Grid.Row="2"
                                   Grid.ColumnSpan="9"
-                                  ItemsSource="{Binding WorkerRows}">
+                                  ItemsSource="{Binding FilteredWorkerRows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
