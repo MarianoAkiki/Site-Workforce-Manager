@@ -83,7 +83,6 @@ public class AppDbContext : DbContext
             entity.Property(workLog => workLog.DurationHours).HasColumnType("decimal(18,2)");
             entity.Property(workLog => workLog.DailyRateSnapshot).HasColumnType("decimal(18,2)");
             entity.Property(workLog => workLog.TotalAmount).HasColumnType("decimal(18,2)");
-            entity.Property(workLog => workLog.Notes).HasMaxLength(500);
 
             entity.HasOne(workLog => workLog.Worker)
                 .WithMany(worker => worker.WorkLogs)
@@ -99,7 +98,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WorkerPayment>(entity =>
         {
             entity.Property(payment => payment.Amount).HasColumnType("decimal(18,2)");
-            entity.Property(payment => payment.Notes).HasMaxLength(500);
 
             entity.HasOne(payment => payment.Worker)
                 .WithMany(worker => worker.WorkerPayments)

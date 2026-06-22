@@ -6,7 +6,7 @@ public class WorkerPayment
     public int WorkerId { get; set; }
     public DateTime PaymentDate { get; set; }
     public decimal Amount { get; set; }
-    public string Notes { get; set; } = string.Empty;
+    public DateTime WeekStartDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

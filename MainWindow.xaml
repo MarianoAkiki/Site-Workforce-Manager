@@ -35,6 +35,9 @@
         <DataTemplate DataType="{x:Type viewModels:PayrollViewModel}">
             <views:PayrollView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:WorkerBalancesViewModel}">
+            <views:WorkerBalancesView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:MaintenanceViewModel}">
             <views:MaintenanceView />
         </DataTemplate>
@@ -123,6 +126,13 @@
                                 Content="Payroll"
                                 helpers:NavigationState.IsActive="{Binding IsPayrollActive}"
                                 Tag="Payroll"
+                                Style="{StaticResource SidebarButtonStyle}" />
+
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowWorkerBalancesCommand}"
+                                Content="Worker Balances"
+                                helpers:NavigationState.IsActive="{Binding IsWorkerBalancesActive}"
+                                Tag="WorkerBalances"
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Command="{Binding ShowMaintenanceCommand}"

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -42,7 +43,6 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public bool CanGoNextWeek => WeekStart < GetCurrentWeekStart(DateTime.Today);
-    public bool CanEditSelectedWeek => true;
 
     partial void OnSelectedTradeOptionChanged(LookupOption? value)
     {
@@ -54,7 +54,6 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         OnPropertyChanged(nameof(WeekEnd));
         OnPropertyChanged(nameof(WeekRangeText));
         OnPropertyChanged(nameof(CanGoNextWeek));
-        OnPropertyChanged(nameof(CanEditSelectedWeek));
         LoadWeekDays();
         LoadWorkerRows();
     }
@@ -166,23 +165,28 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 workLog.WorkDate <= WeekEnd)
             .ToList();
 
-        foreach (var worker in workers)
-        {
-            var assignedSites = context.WorkerConstructionSites
-                .AsNoTracking()
-                .Include(workerSite => workerSite.ConstructionSite)
-                .Where(workerSite =>
-                    workerSite.WorkerId == worker.Id &&
-                    workerSite.Status == EntityStatus.Active &&
-                    workerSite.ConstructionSite != null &&
-                    workerSite.ConstructionSite.Status == EntityStatus.Active)
-                .OrderBy(workerSite => workerSite.ConstructionSite!.Name)
-                .Select(workerSite => new LookupOption
+        var assignedSitesByWorker = context.WorkerConstructionSites
+            .AsNoTracking()
+            .Include(workerSite => workerSite.ConstructionSite)
+            .Where(workerSite =>
+                workerIds.Contains(workerSite.WorkerId) &&
+                workerSite.Status == EntityStatus.Active &&
+                workerSite.ConstructionSite != null &&
+                workerSite.ConstructionSite.Status == EntityStatus.Active)
+            .OrderBy(workerSite => workerSite.ConstructionSite!.Name)
+            .ToList()
+            .GroupBy(workerSite => workerSite.WorkerId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(workerSite => new LookupOption
                 {
                     Id = workerSite.ConstructionSiteId,
                     Name = workerSite.ConstructionSite!.Name
-                })
-                .ToList();
+                }).ToList());
+
+        foreach (var worker in workers)
+        {
+            var assignedSites = assignedSitesByWorker.TryGetValue(worker.Id, out var sites) ? sites : [];
 
             var row = new WeeklyWorkerRow
             {
@@ -203,8 +207,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                     WorkerId = worker.Id,
                     WorkerName = row.WorkerName,
                     WorkDate = date,
-                    DurationHoursText = existingLog?.DurationHours.ToString("0.##") ?? string.Empty,
-                    IsReadOnly = false
+                    DurationHoursText = existingLog?.DurationHours.ToString("0.##") ?? string.Empty
                 };
 
                 foreach (var site in assignedSites)
@@ -217,7 +220,8 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 }
 
                 cell.SelectedConstructionSiteOption = cell.ConstructionSiteOptions
-                    .FirstOrDefault(site => site.Id == existingLog?.ConstructionSiteId);
+                    .FirstOrDefault(site => site.Id == existingLog?.ConstructionSiteId)
+                    ?? (cell.ConstructionSiteOptions.Count == 1 ? cell.ConstructionSiteOptions[0] : null);
                 cell.AutoSaveRequested = AutoSaveCell;
 
                 row.Cells.Add(cell);
@@ -247,7 +251,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
             return;
         }
 
-        if (!decimal.TryParse(cell.DurationHoursText, out var durationHours))
+        if (!decimal.TryParse(cell.DurationHoursText, NumberStyles.Number, CultureInfo.InvariantCulture, out var durationHours))
         {
             ShowAutoSaveError($"Please enter a valid duration for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
             return;
@@ -293,7 +297,6 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 DurationHours = Math.Round(durationHours, 2),
                 DailyRateSnapshot = dailyRate,
                 TotalAmount = totalAmount,
-                Notes = "Created from weekly work entry.",
                 CreatedAt = now,
                 UpdatedAt = now
             });

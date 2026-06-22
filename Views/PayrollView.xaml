@@ -76,13 +76,6 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Button Grid.Column="1"
-                            MinWidth="150"
-                            VerticalAlignment="Bottom"
-                            Command="{Binding SavePaymentsCommand}"
-                            Content="Save Payments"
-                            IsEnabled="{Binding CanEditSelectedWeek}"
-                            Style="{StaticResource PrimaryButtonStyle}" />
 
                     <TextBlock Grid.Row="1"
                                Grid.ColumnSpan="2"
@@ -231,8 +224,56 @@
                                                             Padding="10"
                                                             BorderBrush="#E2E8F0"
                                                             BorderThickness="0,0,1,1">
-                                                        <TextBlock VerticalAlignment="Center"
-                                                                   Text="{Binding WorkerName}" />
+                                                        <Grid>
+                                                            <TextBlock VerticalAlignment="Center"
+                                                                       Text="{Binding WorkerName}" />
+                                                            <Button HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Center"
+                                                                    Width="26"
+                                                                    Height="26"
+                                                                    Padding="0"
+                                                                    FontSize="12"
+                                                                    Content="⊙"
+                                                                    ToolTip="View current balance"
+                                                                    Command="{Binding ShowLiveBalanceCommand}"
+                                                                    Style="{StaticResource BaseButtonStyle}" />
+                                                            <Popup IsOpen="{Binding IsLiveBalancePopupOpen, Mode=TwoWay}"
+                                                                   Placement="Mouse"
+                                                                   StaysOpen="False"
+                                                                   AllowsTransparency="True">
+                                                                <Border Background="White"
+                                                                        BorderBrush="#BFDBFE"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="10"
+                                                                        Padding="18,14"
+                                                                        MinWidth="200"
+                                                                        Margin="6">
+                                                                    <Border.Effect>
+                                                                        <DropShadowEffect Color="#1E3A8A"
+                                                                                          Opacity="0.12"
+                                                                                          BlurRadius="16"
+                                                                                          ShadowDepth="4"
+                                                                                          Direction="270" />
+                                                                    </Border.Effect>
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding WorkerName}"
+                                                                                   FontWeight="SemiBold"
+                                                                                   FontSize="13"
+                                                                                   Foreground="#1E3A8A"
+                                                                                   Margin="0,0,0,8" />
+                                                                        <Separator Background="#E2E8F0" Margin="0,0,0,8" />
+                                                                        <TextBlock Text="Current Balance"
+                                                                                   FontSize="11"
+                                                                                   Foreground="#64748B"
+                                                                                   Margin="0,0,0,3" />
+                                                                        <TextBlock Text="{Binding LiveBalanceDisplay}"
+                                                                                   FontSize="22"
+                                                                                   FontWeight="Bold"
+                                                                                   Foreground="#0F172A" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </Popup>
+                                                        </Grid>
                                                     </Border>
                                                     <Border Grid.Column="2"
                                                             MinHeight="44"
@@ -250,7 +291,7 @@
                                                             BorderThickness="0,0,1,1">
                                                         <TextBox MinHeight="30"
                                                                  IsReadOnly="{Binding IsPaymentReadOnly}"
-                                                                 Text="{Binding PaymentAmountText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                                 Text="{Binding PaymentAmountText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                                                     </Border>
                                                 </Grid>
                                             </DataTemplate>

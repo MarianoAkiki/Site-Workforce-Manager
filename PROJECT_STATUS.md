@@ -64,7 +64,13 @@ Site Workforce Manager is a desktop business application for managing workers, c
 ## Work Logs
 
 - Weekly work entry by trade
+- Weekly Entry opens on the current Thursday-to-Wednesday week by default
+- Previous and current weekly entries can be edited
+- Work logs auto-save when both duration hours and construction site are filled, triggered on field blur (LostFocus)
+- If worker has only one assigned construction site it is auto-selected on load
 - Create and update work logs from the weekly entry page
+- Replace existing worker/date work log when a weekly cell is edited
+- Partial weekly entry is supported; the full week does not need to be filled
 - Filter work logs by date range
 - Filter work logs by worker
 - Filter work logs by construction site
@@ -87,6 +93,28 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Summary by date
 - View total hours
 - View total amount
+
+## Payroll Payments
+
+- Weekly payroll/payment page
+- Payroll view grouped by trade
+- Worker balance shown for every week (earned up to week end minus payments made up to week end)
+- Payment amount auto-saves per worker on field blur — no Save button required
+- Payments can exceed worker balance (negative balance allowed)
+- Payment date recorded as the actual date the payment is made (`DateTime.Today`), not the week end date
+- Week association stored via `WeekStartDate` column on `WorkerPayment`
+- Previous payroll weeks are read-only; only the latest completed week is editable
+- Previous weeks still show paid amount recorded for that week
+- Live current balance popup per worker (computed on demand when icon clicked, not on page load)
+
+## Worker Balances
+
+- Dedicated Worker Balances page
+- Shows all active workers with total earned, total paid, and current balance
+- Balance is all-time: sum of all work logs minus sum of all payments
+- Filter by worker name and trade
+- Toggle to show only workers with an outstanding balance
+- Grand total row for filtered results
 
 ## Excel Export
 
@@ -159,7 +187,15 @@ Site Workforce Manager is a desktop business application for managing workers, c
   - `DurationHours`
   - `DailyRateSnapshot`
   - `TotalAmount`
-  - `Notes`
+  - `CreatedAt`
+  - `UpdatedAt`
+
+- `WorkerPayment`
+  - `Id`
+  - `WorkerId`
+  - `PaymentDate` — actual date the payment was made
+  - `Amount`
+  - `WeekStartDate` — identifies which payroll week this payment belongs to
   - `CreatedAt`
   - `UpdatedAt`
 
@@ -170,6 +206,7 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - `Worker` 1-to-many `WorkerConstructionSite`
 - `ConstructionSite` 1-to-many `WorkerConstructionSite`
 - `Worker` 1-to-many `WorkLog`
+- `Worker` 1-to-many `WorkerPayment`
 - `ConstructionSite` 1-to-many `WorkLog`
 - `WorkerConstructionSite` uses a composite key:
   - `WorkerId`
@@ -185,12 +222,24 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Worker is required for a work log
 - Construction site is required for a work log
 - Work date is required for a work log
+- Weekly Entry opens on the current Thursday-to-Wednesday week
+- Weekly Entry supports editing current and past weeks
 - Work log duration is entered in hours on the weekly entry page
+- Work logs auto-save only after both duration hours and construction site are filled, on field blur
+- If a worker has only one assigned construction site it is auto-selected in the weekly entry grid
+- Auto-save updates an existing log for the same worker and work date instead of creating duplicates
 - Work log total amount is calculated automatically
 - Daily rate is snapshotted on Work Log creation
 - Work log total amount uses `DailyRateSnapshot / 8 * DurationHours`
 - Work logs cannot be created if no valid daily rate exists for that worker on that date
 - Reports are read-only
+- Worker balances are calculated from saved work logs and saved worker payments
+- Worker balance is not stored as a separate database row
+- Weekly payroll payments are saved in `WorkerPayment` with the actual payment date and the payroll week identified by `WeekStartDate`
+- Payroll balance for a given week = all work logs up to week end minus all payments with payment date up to week end
+- Payment amount can exceed worker balance; negative balance is allowed
+- Previous payroll weeks are read-only; only the latest completed week accepts payments
+- Worker Balances page shows all-time balance per worker (all logs minus all payments)
 
 # Documentation
 
@@ -200,7 +249,7 @@ Site Workforce Manager is a desktop business application for managing workers, c
 # Future Enhancements
 
 - Payroll module redesign
-- Worker balances redesign
+- Advanced worker balance history
 - PDF Report Export
 - Advanced Dashboard Charts
 - User Authentication

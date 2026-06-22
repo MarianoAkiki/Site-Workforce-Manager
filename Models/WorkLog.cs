@@ -9,7 +9,6 @@ public class WorkLog
     public decimal DurationHours { get; set; }
     public decimal DailyRateSnapshot { get; set; }
     public decimal TotalAmount { get; set; }
-    public string Notes { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

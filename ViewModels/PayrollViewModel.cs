@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -50,9 +51,9 @@ public partial class PayrollViewModel : ObservableObject
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
     public bool CanGoNextWeek => WeekStart < latestFullWeekStart;
     public bool CanEditSelectedWeek => WeekStart == latestFullWeekStart;
-    public string BalanceHeaderText => CanEditSelectedWeek ? "Balance" : string.Empty;
+    public string BalanceHeaderText => "Balance";
     public string PaymentHeaderText => CanEditSelectedWeek ? "Payment Amount" : "Paid This Week";
-    public string GrandTotalBalanceDisplay => CanEditSelectedWeek ? GrandTotalBalance.ToString("C") : string.Empty;
+    public string GrandTotalBalanceDisplay => GrandTotalBalance.ToString("C");
     public string GrandTotalPaymentDisplay => GrandTotalPayment.ToString("C");
 
     partial void OnWeekStartChanged(DateTime value)
@@ -113,88 +114,69 @@ public partial class PayrollViewModel : ObservableObject
         TradeFilterText = string.Empty;
     }
 
-    [RelayCommand]
-    private void SavePayments()
+    private void AutoSaveRow(PayrollWorkerRow row)
     {
         if (!CanEditSelectedWeek)
+            return;
+
+        using var context = new AppDbContext();
+
+        if (string.IsNullOrWhiteSpace(row.PaymentAmountText))
         {
-            MessageBox.Show("Previous payroll weeks are read-only. Only the latest completed week can be edited.");
+            RemoveExistingWeeklyPayment(context, row);
+            context.SaveChanges();
+            StatusMessage = $"Payment cleared for {row.WorkerName}.";
+            RecalculateGrandTotals();
             return;
         }
 
-        using var context = new AppDbContext();
-        using var transaction = context.Database.BeginTransaction();
-        var savedCount = 0;
-
-        foreach (var row in allTradeGroups.SelectMany(group => group.Rows))
+        if (!decimal.TryParse(row.PaymentAmountText, NumberStyles.Number, CultureInfo.InvariantCulture, out var paymentAmount))
         {
-            if (string.IsNullOrWhiteSpace(row.PaymentAmountText))
-            {
-                RemoveExistingWeeklyPayment(context, row);
-                continue;
-            }
+            StatusMessage = $"Invalid payment amount for {row.WorkerName}.";
+            return;
+        }
 
-            if (!decimal.TryParse(row.PaymentAmountText, out var paymentAmount))
-            {
-                MessageBox.Show($"Please enter a valid payment amount for {row.WorkerName}.");
-                return;
-            }
+        if (paymentAmount < 0)
+        {
+            StatusMessage = $"Payment amount cannot be negative for {row.WorkerName}.";
+            return;
+        }
 
-            if (paymentAmount < 0)
-            {
-                MessageBox.Show($"Payment amount cannot be negative for {row.WorkerName}.");
-                return;
-            }
+        if (paymentAmount == 0)
+        {
+            RemoveExistingWeeklyPayment(context, row);
+            context.SaveChanges();
+            StatusMessage = $"Payment cleared for {row.WorkerName}.";
+            RecalculateGrandTotals();
+            return;
+        }
 
-            if (paymentAmount == 0)
-            {
-                RemoveExistingWeeklyPayment(context, row);
-                continue;
-            }
+        var existingPayment = FindExistingWeeklyPayment(context, row.WorkerId);
+        var now = DateTime.Now;
 
-            if (paymentAmount > row.Balance)
+        if (existingPayment is null)
+        {
+            context.WorkerPayments.Add(new WorkerPayment
             {
-                MessageBox.Show($"Payment amount cannot exceed the balance for {row.WorkerName}.");
-                return;
-            }
-
-            var existingPayment = FindExistingWeeklyPayment(context, row.WorkerId);
-            var now = DateTime.Now;
-
-            if (existingPayment is null)
-            {
-                context.WorkerPayments.Add(new WorkerPayment
-                {
-                    WorkerId = row.WorkerId,
-                    PaymentDate = WeekEnd.Date,
-                    Amount = Math.Round(paymentAmount, 2),
-                    Notes = BuildWeeklyPaymentNote(),
-                    CreatedAt = now,
-                    UpdatedAt = now
-                });
-            }
-            else
-            {
-                existingPayment.Amount = Math.Round(paymentAmount, 2);
-                existingPayment.Notes = BuildWeeklyPaymentNote();
-                existingPayment.UpdatedAt = now;
-            }
-
-            savedCount++;
+                WorkerId = row.WorkerId,
+                PaymentDate = DateTime.Today,
+                Amount = Math.Round(paymentAmount, 2),
+                WeekStartDate = WeekStart.Date,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+        else
+        {
+            existingPayment.Amount = Math.Round(paymentAmount, 2);
+            existingPayment.PaymentDate = DateTime.Today;
+            existingPayment.UpdatedAt = now;
         }
 
         context.SaveChanges();
-        transaction.Commit();
-
-        LoadPayrollRows();
-        StatusMessage = savedCount == 0
-            ? "No payroll payments were saved."
-            : $"{savedCount} payroll payments saved.";
-
-        if (savedCount > 0)
-        {
-            ToastNotificationService.ShowSuccess(StatusMessage);
-        }
+        StatusMessage = $"Saved payment for {row.WorkerName}.";
+        ToastNotificationService.ShowSuccess(StatusMessage);
+        RecalculateGrandTotals();
     }
 
     private void RemoveExistingWeeklyPayment(AppDbContext context, PayrollWorkerRow row)
@@ -207,20 +189,28 @@ public partial class PayrollViewModel : ObservableObject
         }
     }
 
+    private void ComputeLiveBalance(PayrollWorkerRow row)
+    {
+        using var context = new AppDbContext();
+        var totalEarned = context.WorkLogs
+            .Where(log => log.WorkerId == row.WorkerId)
+            .Select(log => log.TotalAmount)
+            .AsEnumerable()
+            .Sum();
+        var totalPaid = context.WorkerPayments
+            .Where(payment => payment.WorkerId == row.WorkerId)
+            .Select(payment => payment.Amount)
+            .AsEnumerable()
+            .Sum();
+        row.LiveBalance = Math.Round(totalEarned - totalPaid, 2);
+    }
+
     private WorkerPayment? FindExistingWeeklyPayment(AppDbContext context, int workerId)
     {
-        var paymentNote = BuildWeeklyPaymentNote();
-
         return context.WorkerPayments
             .FirstOrDefault(payment =>
                 payment.WorkerId == workerId &&
-                payment.PaymentDate == WeekEnd.Date &&
-                payment.Notes == paymentNote);
-    }
-
-    private string BuildWeeklyPaymentNote()
-    {
-        return $"Weekly payroll payment for {WeekStart:yyyy-MM-dd} to {WeekEnd:yyyy-MM-dd}";
+                payment.WeekStartDate == WeekStart.Date);
     }
 
     private void LoadPayrollRows()
@@ -255,44 +245,19 @@ public partial class PayrollViewModel : ObservableObject
             .GroupBy(log => log.WorkerId)
             .ToDictionary(group => group.Key, group => group.Sum(log => log.TotalAmount));
 
-        var paymentsBeforeSelectedWeek = context.WorkerPayments
+        var paidUpToWeekEndByWorker = context.WorkerPayments
             .AsNoTracking()
-            .Where(payment => workerIds.Contains(payment.WorkerId) && payment.PaymentDate < WeekStart.Date)
-            .Select(payment => new
-            {
-                payment.WorkerId,
-                payment.Amount
-            })
-            .ToList();
-
-        var paidBeforeSelectedWeekByWorker = paymentsBeforeSelectedWeek
+            .Where(payment => workerIds.Contains(payment.WorkerId) && payment.PaymentDate <= WeekEnd.Date)
+            .Select(payment => new { payment.WorkerId, payment.Amount })
+            .ToList()
             .GroupBy(payment => payment.WorkerId)
             .ToDictionary(group => group.Key, group => group.Sum(payment => payment.Amount));
 
-        var paymentsDuringSelectedWeek = context.WorkerPayments
-            .AsNoTracking()
-            .Where(payment =>
-                workerIds.Contains(payment.WorkerId) &&
-                payment.PaymentDate >= WeekStart.Date &&
-                payment.PaymentDate <= WeekEnd.Date)
-            .Select(payment => new
-            {
-                payment.WorkerId,
-                payment.Amount
-            })
-            .ToList();
-
-        var paidDuringSelectedWeekByWorker = paymentsDuringSelectedWeek
-            .GroupBy(payment => payment.WorkerId)
-            .ToDictionary(group => group.Key, group => group.Sum(payment => payment.Amount));
-
-        var weeklyPaymentNote = BuildWeeklyPaymentNote();
         var weeklyPayrollPayments = context.WorkerPayments
             .AsNoTracking()
             .Where(payment =>
                 workerIds.Contains(payment.WorkerId) &&
-                payment.PaymentDate == WeekEnd.Date &&
-                payment.Notes == weeklyPaymentNote)
+                payment.WeekStartDate == WeekStart.Date)
             .ToDictionary(payment => payment.WorkerId, payment => payment.Amount);
 
         foreach (var tradeGroup in workers.GroupBy(worker => worker.Trade?.Name ?? "No Trade").OrderBy(group => group.Key))
@@ -305,8 +270,7 @@ public partial class PayrollViewModel : ObservableObject
             foreach (var worker in tradeGroup)
             {
                 earnedByWorker.TryGetValue(worker.Id, out var earnedAmount);
-                paidBeforeSelectedWeekByWorker.TryGetValue(worker.Id, out var paidBeforeSelectedWeek);
-                paidDuringSelectedWeekByWorker.TryGetValue(worker.Id, out var paidDuringSelectedWeek);
+                paidUpToWeekEndByWorker.TryGetValue(worker.Id, out var paidUpToWeekEnd);
                 weeklyPayrollPayments.TryGetValue(worker.Id, out var editableWeeklyPayment);
 
                 var row = new PayrollWorkerRow
@@ -314,18 +278,18 @@ public partial class PayrollViewModel : ObservableObject
                     WorkerId = worker.Id,
                     WorkerName = $"{worker.FirstName} {worker.LastName}".Trim(),
                     TradeName = tradeGroup.Key,
-                    Balance = CanEditSelectedWeek ? Math.Round(earnedAmount - paidBeforeSelectedWeek, 2) : 0m,
-                    PaymentAmountText = CanEditSelectedWeek
-                        ? (editableWeeklyPayment > 0 ? editableWeeklyPayment.ToString("0.##") : string.Empty)
-                        : paidDuringSelectedWeek.ToString("0.##"),
-                    IsPaymentEditable = CanEditSelectedWeek
+                    Balance = Math.Round(earnedAmount - paidUpToWeekEnd, 2),
+                    PaymentAmountText = editableWeeklyPayment > 0 ? editableWeeklyPayment.ToString("0.##") : string.Empty,
+                    IsPaymentEditable = CanEditSelectedWeek,
+                    AutoSaveRequested = CanEditSelectedWeek ? AutoSaveRow : null,
+                    LiveBalanceRequested = ComputeLiveBalance
                 };
 
                 row.PropertyChanged += OnPayrollRowPropertyChanged;
                 payrollGroup.Rows.Add(row);
             }
 
-            payrollGroup.RecalculateTotals(CanEditSelectedWeek);
+            payrollGroup.RecalculateTotals();
             allTradeGroups.Add(payrollGroup);
             TradeGroups.Add(payrollGroup);
         }
@@ -371,7 +335,7 @@ public partial class PayrollViewModel : ObservableObject
                 filteredGroup.Rows.Add(row);
             }
 
-            filteredGroup.RecalculateTotals(CanEditSelectedWeek);
+            filteredGroup.RecalculateTotals();
             FilteredTradeGroups.Add(filteredGroup);
         }
 
@@ -398,17 +362,15 @@ public partial class PayrollViewModel : ObservableObject
     {
         foreach (var group in allTradeGroups)
         {
-            group.RecalculateTotals(CanEditSelectedWeek);
+            group.RecalculateTotals();
         }
 
         foreach (var group in FilteredTradeGroups)
         {
-            group.RecalculateTotals(CanEditSelectedWeek);
+            group.RecalculateTotals();
         }
 
-        GrandTotalBalance = CanEditSelectedWeek
-            ? Math.Round(FilteredTradeGroups.Sum(group => group.TotalBalance), 2)
-            : 0m;
+        GrandTotalBalance = Math.Round(FilteredTradeGroups.Sum(group => group.TotalBalance), 2);
         GrandTotalPayment = Math.Round(FilteredTradeGroups.Sum(group => group.TotalPayment), 2);
         OnPropertyChanged(nameof(GrandTotalBalanceDisplay));
         OnPropertyChanged(nameof(GrandTotalPaymentDisplay));
@@ -439,17 +401,15 @@ public partial class PayrollTradeGroup : ObservableObject
     [ObservableProperty]
     private decimal totalPayment;
 
-    public void RecalculateTotals(bool includeBalance)
+    public void RecalculateTotals()
     {
-        ShowBalance = includeBalance;
-        TotalBalance = includeBalance ? Math.Round(Rows.Sum(row => row.Balance), 2) : 0m;
+        TotalBalance = Math.Round(Rows.Sum(row => row.Balance), 2);
         TotalPayment = Math.Round(Rows.Sum(row => row.PaymentAmount), 2);
         OnPropertyChanged(nameof(TotalBalanceDisplay));
         OnPropertyChanged(nameof(TotalPaymentDisplay));
     }
 
-    public bool ShowBalance { get; private set; }
-    public string TotalBalanceDisplay => ShowBalance ? TotalBalance.ToString("C") : string.Empty;
+    public string TotalBalanceDisplay => TotalBalance.ToString("C");
     public string TotalPaymentDisplay => TotalPayment.ToString("C");
 }
 
@@ -459,7 +419,9 @@ public partial class PayrollWorkerRow : ObservableObject
     public string WorkerName { get; set; } = string.Empty;
     public string TradeName { get; set; } = string.Empty;
     public decimal Balance { get; set; }
-    public string BalanceDisplay => Balance > 0 ? Balance.ToString("C") : string.Empty;
+    public string BalanceDisplay => Balance.ToString("C");
+    public Action<PayrollWorkerRow>? AutoSaveRequested { get; set; }
+    public Action<PayrollWorkerRow>? LiveBalanceRequested { get; set; }
 
     [ObservableProperty]
     private string paymentAmountText = string.Empty;
@@ -467,12 +429,36 @@ public partial class PayrollWorkerRow : ObservableObject
     [ObservableProperty]
     private bool isPaymentEditable;
 
+    [ObservableProperty]
+    private bool isLiveBalancePopupOpen;
+
+    [ObservableProperty]
+    private decimal? liveBalance;
+
+    public string LiveBalanceDisplay => LiveBalance.HasValue
+        ? (LiveBalance.Value < 0 ? $"-{Math.Abs(LiveBalance.Value):C}" : LiveBalance.Value.ToString("C"))
+        : "...";
+
+    partial void OnLiveBalanceChanged(decimal? value) => OnPropertyChanged(nameof(LiveBalanceDisplay));
+
     public bool IsPaymentReadOnly => !IsPaymentEditable;
 
-    partial void OnIsPaymentEditableChanged(bool value)
+    partial void OnIsPaymentEditableChanged(bool value) => OnPropertyChanged(nameof(IsPaymentReadOnly));
+
+    partial void OnPaymentAmountTextChanged(string value) => AutoSaveRequested?.Invoke(this);
+
+    [RelayCommand]
+    private void ShowLiveBalance()
     {
-        OnPropertyChanged(nameof(IsPaymentReadOnly));
+        if (IsLiveBalancePopupOpen)
+        {
+            IsLiveBalancePopupOpen = false;
+            return;
+        }
+        LiveBalance = null;
+        IsLiveBalancePopupOpen = true;
+        LiveBalanceRequested?.Invoke(this);
     }
 
-    public decimal PaymentAmount => decimal.TryParse(PaymentAmountText, out var amount) ? amount : 0m;
+    public decimal PaymentAmount => decimal.TryParse(PaymentAmountText, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) ? amount : 0m;
 }

@@ -21,6 +21,8 @@ public static class DatabaseInitializer
         RemoveLegacyWorkerTradeColumn(context);
         RemoveLegacyWorkerNumberColumn(context);
         RemoveLegacyPayrollTables(context);
+        MigrateWorkerPaymentsAddWeekStartDate(context);
+        MigrateRemoveWorkLogNotes(context);
     }
 
     private static void EnsureTradesSchemaExists(AppDbContext context)
@@ -73,7 +75,6 @@ public static class DatabaseInitializer
                     DurationHours TEXT NOT NULL,
                     DailyRateSnapshot TEXT NOT NULL,
                     TotalAmount TEXT NOT NULL,
-                    Notes TEXT NOT NULL DEFAULT '',
                     CreatedAt TEXT NOT NULL,
                     UpdatedAt TEXT NOT NULL,
                     FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT,
@@ -91,7 +92,6 @@ public static class DatabaseInitializer
                     DurationHours,
                     DailyRateSnapshot,
                     TotalAmount,
-                    Notes,
                     CreatedAt,
                     UpdatedAt
                 )
@@ -106,7 +106,6 @@ public static class DatabaseInitializer
                 """
                     ,
                     TotalAmount,
-                    Notes,
                     CreatedAt,
                     UpdatedAt
                 FROM WorkLogs;
@@ -128,7 +127,6 @@ public static class DatabaseInitializer
                 DurationHours TEXT NOT NULL,
                 DailyRateSnapshot TEXT NOT NULL,
                 TotalAmount TEXT NOT NULL,
-                Notes TEXT NOT NULL DEFAULT '',
                 CreatedAt TEXT NOT NULL,
                 UpdatedAt TEXT NOT NULL,
                 FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT,
@@ -182,7 +180,7 @@ public static class DatabaseInitializer
                 WorkerId INTEGER NOT NULL,
                 PaymentDate TEXT NOT NULL,
                 Amount TEXT NOT NULL,
-                Notes TEXT NOT NULL DEFAULT '',
+                WeekStartDate TEXT NULL,
                 CreatedAt TEXT NOT NULL,
                 UpdatedAt TEXT NOT NULL,
                 FOREIGN KEY (WorkerId) REFERENCES Workers (Id) ON DELETE RESTRICT
@@ -191,6 +189,30 @@ public static class DatabaseInitializer
 
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_WorkerId ON WorkerPayments (WorkerId);");
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_PaymentDate ON WorkerPayments (PaymentDate);");
+    }
+
+    private static void MigrateWorkerPaymentsAddWeekStartDate(AppDbContext context)
+    {
+        if (!ColumnExists(context, "WorkerPayments", "WeekStartDate"))
+        {
+            context.Database.ExecuteSqlRaw("ALTER TABLE WorkerPayments ADD COLUMN WeekStartDate TEXT NULL;");
+            context.Database.ExecuteSqlRaw("UPDATE WorkerPayments SET WeekStartDate = date(PaymentDate, '-6 days');");
+        }
+
+        context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_WeekStartDate ON WorkerPayments (WeekStartDate);");
+
+        if (ColumnExists(context, "WorkerPayments", "Notes"))
+        {
+            context.Database.ExecuteSqlRaw("ALTER TABLE WorkerPayments DROP COLUMN Notes;");
+        }
+    }
+
+    private static void MigrateRemoveWorkLogNotes(AppDbContext context)
+    {
+        if (ColumnExists(context, "WorkLogs", "Notes"))
+        {
+            context.Database.ExecuteSqlRaw("ALTER TABLE WorkLogs DROP COLUMN Notes;");
+        }
     }
 
     private static void RebuildWorkerRateHistoriesWithoutHourlyRate(AppDbContext context)
@@ -252,9 +274,9 @@ public static class DatabaseInitializer
 
         var sampleLogs = new List<WorkLog>
         {
-            CreateSampleWorkLog(context, workers[0].Id, constructionSites[0].Id, new DateTime(2025, 4, 15), 8m, "Electrical setup for level 2."),
-            CreateSampleWorkLog(context, workers[1].Id, constructionSites[0].Id, new DateTime(2025, 4, 16), 8m, "Installed interior wood framing."),
-            CreateSampleWorkLog(context, workers[2].Id, constructionSites[1].Id, new DateTime(2025, 4, 17), 5.5m, "Material delivery delay.")
+            CreateSampleWorkLog(context, workers[0].Id, constructionSites[0].Id, new DateTime(2025, 4, 15), 8m),
+            CreateSampleWorkLog(context, workers[1].Id, constructionSites[0].Id, new DateTime(2025, 4, 16), 8m),
+            CreateSampleWorkLog(context, workers[2].Id, constructionSites[1].Id, new DateTime(2025, 4, 17), 5.5m)
         };
 
         context.WorkLogs.AddRange(sampleLogs);
@@ -266,8 +288,7 @@ public static class DatabaseInitializer
         int workerId,
         int constructionSiteId,
         DateTime workDate,
-        decimal durationHours,
-        string notes)
+        decimal durationHours)
     {
         var dailyRate = GetDailyRateForDate(context, workerId, workDate);
         var now = DateTime.Now;
@@ -280,7 +301,6 @@ public static class DatabaseInitializer
             DurationHours = Math.Round(durationHours, 2),
             DailyRateSnapshot = dailyRate,
             TotalAmount = Math.Round(durationHours * (dailyRate / 8m), 2),
-            Notes = notes,
             CreatedAt = now,
             UpdatedAt = now
         };
