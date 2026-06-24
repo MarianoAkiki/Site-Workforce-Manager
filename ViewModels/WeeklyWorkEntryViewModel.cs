@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
 using Site_Workforce_Manager.Helpers;
 using Site_Workforce_Manager.Models;
+using Site_Workforce_Manager.Services;
 
 namespace Site_Workforce_Manager.ViewModels;
 
@@ -317,6 +318,22 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
     private static void ShowAutoSaveError(string message)
     {
         MessageBox.Show(message, "Weekly Entry Auto-Save", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    [RelayCommand]
+    private void PrintWeeklyView()
+    {
+        if (FilteredWorkerRows.Count == 0)
+        {
+            MessageBox.Show("No workers to print.", "Print", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        WeeklyPrintService.PrintWeeklyView(
+            SelectedTradeOption?.Name ?? "Trade",
+            WeekStart,
+            WeekEnd,
+            FilteredWorkerRows);
     }
 
     [RelayCommand]

@@ -113,20 +113,28 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Border Grid.Column="2"
-                            MinWidth="130"
-                            VerticalAlignment="Bottom"
-                            Padding="12,8"
-                            Background="#ECFDF5"
-                            BorderBrush="#A7F3D0"
-                            BorderThickness="1"
-                            CornerRadius="10">
-                        <TextBlock HorizontalAlignment="Center"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="#047857"
-                                   Text="Auto-save on" />
-                    </Border>
+                    <StackPanel Grid.Column="2"
+                                VerticalAlignment="Bottom"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Border MinWidth="130"
+                                Margin="0,0,10,0"
+                                Padding="12,8"
+                                Background="#ECFDF5"
+                                BorderBrush="#A7F3D0"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <TextBlock HorizontalAlignment="Center"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#047857"
+                                       Text="Auto-save on" />
+                        </Border>
+                        <Button Command="{Binding PrintWeeklyViewCommand}"
+                                Content="⊞ Print"
+                                ToolTip="Print weekly view as PDF (landscape)"
+                                Style="{StaticResource BaseButtonStyle}" />
+                    </StackPanel>
 
                     <TextBlock Grid.Row="1"
                                Grid.ColumnSpan="3"

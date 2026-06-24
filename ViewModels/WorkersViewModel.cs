@@ -53,6 +53,19 @@ public partial class WorkersViewModel : ObservableObject
     private DateTime? newRateEffectiveDate;
 
     [ObservableProperty]
+    private WorkerRateHistory? editingRate;
+
+    [ObservableProperty]
+    private string editingRateValue = string.Empty;
+
+    public bool IsEditingRate => EditingRate is not null;
+
+    partial void OnEditingRateChanged(WorkerRateHistory? value)
+    {
+        OnPropertyChanged(nameof(IsEditingRate));
+    }
+
+    [ObservableProperty]
     private string availableSiteSearchText = string.Empty;
 
     [ObservableProperty]
@@ -402,7 +415,8 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
-        if (!decimal.TryParse(NewDailyRate, out var dailyRate))
+        if (!decimal.TryParse(NewDailyRate, System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var dailyRate))
         {
             MessageBox.Show("Please enter a valid daily rate.");
             return;
@@ -452,23 +466,6 @@ public partial class WorkersViewModel : ObservableObject
             .FirstOrDefault();
 
         var newRateEffectiveTo = nextRate?.EffectiveFrom.Date.AddDays(-1);
-        var previousRateMessage = previousRate is null
-            ? "There is no previous rate to close."
-            : $"The previous rate ({previousRate.DailyRate:C}) will end on {effectiveDate.AddDays(-1):yyyy-MM-dd}.";
-        var newRateRangeMessage = newRateEffectiveTo is null
-            ? $"The new rate ({dailyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} onward."
-            : $"The new rate ({dailyRate:C}) will be valid from {effectiveDate:yyyy-MM-dd} to {newRateEffectiveTo:yyyy-MM-dd}.";
-
-        var confirmed = ConfirmationDialogService.Show(
-            "Add daily rate?",
-            $"{previousRateMessage}\n\n{newRateRangeMessage}\n\nOnly one daily rate is allowed per worker per effective date.",
-            "Add Rate",
-            "Cancel");
-
-        if (!confirmed)
-        {
-            return;
-        }
 
         if (previousRate is not null)
         {
@@ -491,6 +488,78 @@ public partial class WorkersViewModel : ObservableObject
         LoadRateHistory(workerId);
         LoadWorkers();
         SelectedWorker = FilteredWorkers.FirstOrDefault(item => item.Id == workerId);
+    }
+
+    [RelayCommand]
+    private void OpenEditRate(WorkerRateHistory? rate)
+    {
+        if (rate is null) return;
+        EditingRate = rate;
+        EditingRateValue = rate.DailyRate.ToString("0.##");
+    }
+
+    [RelayCommand]
+    private void CancelEditRate()
+    {
+        EditingRate = null;
+        EditingRateValue = string.Empty;
+    }
+
+    [RelayCommand]
+    private void SaveEditedRate()
+    {
+        if (EditingRate is null) return;
+
+        if (!decimal.TryParse(EditingRateValue, System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var newRate) || newRate <= 0)
+        {
+            MessageBox.Show("Please enter a valid daily rate greater than zero.");
+            return;
+        }
+
+        var oldRate = EditingRate.DailyRate;
+
+        if (oldRate == newRate)
+        {
+            EditingRate = null;
+            EditingRateValue = string.Empty;
+            return;
+        }
+
+        using var context = new AppDbContext();
+
+        var rateRecord = context.WorkerRateHistories.FirstOrDefault(r => r.Id == EditingRate.Id);
+        if (rateRecord is null) return;
+
+        rateRecord.DailyRate = newRate;
+
+        var effectiveFrom = EditingRate.EffectiveFrom.Date;
+        var effectiveTo = EditingRate.EffectiveTo?.Date ?? DateTime.MaxValue.Date;
+
+        var affectedLogs = context.WorkLogs
+            .Where(log =>
+                log.WorkerId == EditingRate.WorkerId &&
+                log.WorkDate >= effectiveFrom &&
+                log.WorkDate <= effectiveTo)
+            .ToList();
+
+        foreach (var log in affectedLogs)
+        {
+            log.DailyRateSnapshot = newRate;
+            log.TotalAmount = Math.Round(newRate / 8m * log.DurationHours, 2);
+        }
+
+        context.SaveChanges();
+
+        var workerId = EditingRate.WorkerId;
+        EditingRate = null;
+        EditingRateValue = string.Empty;
+
+        LoadRateHistory(workerId);
+        LoadWorkers();
+        SelectedWorker = FilteredWorkers.FirstOrDefault(w => w.Id == workerId);
+
+        ToastNotificationService.ShowSuccess($"Rate updated. {affectedLogs.Count} work log(s) recalculated.");
     }
 
     [RelayCommand]

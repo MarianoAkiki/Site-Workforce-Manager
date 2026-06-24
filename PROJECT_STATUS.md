@@ -47,6 +47,10 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Effective-dated daily rate records per worker
 - Automatic current rate lookup by work date
 - Historical rate tracking for reporting
+- Rate history UI shows only Rate and Effective From (Effective To managed internally)
+- Inline rate value editing: click Edit on any rate row to correct its value
+- Correcting a rate automatically bulk-recalculates all work logs in that rate's effective period (updates DailyRateSnapshot and TotalAmount)
+- Adding a new rate leaves existing work logs untouched; only new logs from the effective date onward use the new rate
 
 ## Construction Sites
 

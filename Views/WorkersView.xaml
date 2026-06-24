@@ -305,9 +305,57 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}" Header="Daily Rate" Width="*" />
                                 <DataGridTextColumn Binding="{Binding EffectiveFrom, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective From" Width="*" />
-                                <DataGridTextColumn Binding="{Binding EffectiveTo, StringFormat={}{0:yyyy-MM-dd}}" Header="Effective To" Width="*" />
+                                <DataGridTemplateColumn Header="Action" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Edit"
+                                                    Style="{StaticResource TableActionButtonStyle}"
+                                                    Command="{Binding DataContext.OpenEditRateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+
+                        <!-- Inline edit panel -->
+                        <Border Grid.Row="2"
+                                Margin="0,12,0,0"
+                                Padding="16,14"
+                                Background="#F0F9FF"
+                                BorderBrush="#BAE6FD"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Visibility="{Binding IsEditingRate, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Margin="0,0,16,0">
+                                    <TextBlock Style="{StaticResource FieldLabelTextStyle}"
+                                               Text="{Binding EditingRate.EffectiveFrom, StringFormat='Edit rate effective from {0:yyyy-MM-dd}'}" />
+                                    <TextBox MinHeight="40"
+                                             Text="{Binding EditingRateValue, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Bottom"
+                                        MinWidth="100"
+                                        Command="{Binding SaveEditedRateCommand}"
+                                        Content="Save Rate"
+                                        Style="{StaticResource PrimaryButtonStyle}" />
+
+                                <Button Grid.Column="2"
+                                        VerticalAlignment="Bottom"
+                                        Command="{Binding CancelEditRateCommand}"
+                                        Content="Cancel"
+                                        Style="{StaticResource BaseButtonStyle}" />
+                            </Grid>
+                        </Border>
                     </Grid>
                 </Border>
 

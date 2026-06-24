@@ -66,12 +66,19 @@ Workers can be activated or deactivated.
 
 Each worker can have daily rate history.
 
+The rate history list shows each rate with its effective date. The end date is managed internally and is never shown to the user.
+
 When a worker's daily rate changes:
 
-* The old rate is not overwritten.
-* A new rate record is created.
-* The new rate has an effective date.
-* Historical records remain accurate.
+* A new rate record is added with its effective date.
+* Existing work logs are not changed.
+* New work logs from the effective date onward will use the new rate.
+
+When a rate value was entered incorrectly:
+
+* Click Edit on the rate row to correct the value.
+* The system automatically finds all work logs within that rate's effective period and recalculates their TotalAmount and DailyRateSnapshot.
+* No manual adjustment is required.
 
 When a work log is created, the system uses the worker daily rate that is valid for the selected work date.
 
