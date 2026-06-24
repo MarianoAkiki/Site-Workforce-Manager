@@ -136,14 +136,14 @@ public static class WeeklyPrintService
         }
         headerGroup.Rows.Add(dayRow);
 
-        // Row 2: empty | ساعات | الموقع × 7
+        // Row 2: empty | ساعات | ورشة × 7
         var subRow = new TableRow();
         subRow.Cells.Add(MakeCell(string.Empty, colspan: 1, bg: SubHeaderBrush));
         for (int d = 0; d < 7; d++)
         {
             subRow.Cells.Add(MakeCell("ساعات", colspan: 1,
                 bg: SubHeaderBrush, rtl: true, bold: true, size: 7));
-            subRow.Cells.Add(MakeCell("الموقع", colspan: 1,
+            subRow.Cells.Add(MakeCell("ورشة", colspan: 1,
                 bg: SubHeaderBrush, rtl: true, bold: true, size: 7));
         }
         headerGroup.Rows.Add(subRow);
