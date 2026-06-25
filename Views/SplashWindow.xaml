@@ -14,16 +14,16 @@
         <Style x:Key="DotStyle" TargetType="Ellipse">
             <Setter Property="Width" Value="10"/>
             <Setter Property="Height" Value="10"/>
-            <Setter Property="Fill" Value="White"/>
+            <Setter Property="Fill" Value="#2563EB"/>
             <Setter Property="Opacity" Value="0.3"/>
             <Setter Property="Margin" Value="5,0"/>
         </Style>
     </Window.Resources>
 
     <Border CornerRadius="20"
-            Background="#2563EB">
+            Background="White">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="32" ShadowDepth="8" Opacity="0.35" Color="#000000"/>
+            <DropShadowEffect BlurRadius="32" ShadowDepth="8" Opacity="0.18" Color="#000000"/>
         </Border.Effect>
 
         <Grid>
@@ -47,7 +47,7 @@
 
                 <!-- App name -->
                 <TextBlock Text="Site Workforce Manager"
-                           Foreground="White"
+                           Foreground="#0F172A"
                            FontSize="22"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Center"
@@ -55,7 +55,7 @@
 
                 <!-- Subtitle -->
                 <TextBlock Text="Loading your workspace…"
-                           Foreground="#BFDBFE"
+                           Foreground="#64748B"
                            FontSize="13"
                            HorizontalAlignment="Center"
                            Margin="0,0,0,28"/>
@@ -114,7 +114,7 @@
             <!-- Version footer -->
             <TextBlock Grid.Row="1"
                        Text="v1.0"
-                       Foreground="#93C5FD"
+                       Foreground="#94A3B8"
                        FontSize="11"
                        HorizontalAlignment="Center"
                        Margin="0,0,0,16"/>

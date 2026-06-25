@@ -13,8 +13,7 @@ public static class WeeklyReportPrintService
     private static readonly Brush HeaderBg          = new SolidColorBrush(Color.FromRgb(210, 210, 210));
     private static readonly Brush TotalsBg          = new SolidColorBrush(Color.FromRgb(225, 225, 225));
     private static readonly Brush AltRowBrush       = new SolidColorBrush(Color.FromRgb(250, 250, 250));
-    private static readonly Brush GridLineBrush     = new SolidColorBrush(Color.FromRgb(60, 60, 60));
-    private static readonly Thickness CellBorder    = new(0.8);
+    private static readonly Brush GridLineBrush = new SolidColorBrush(Color.FromRgb(60, 60, 60));
 
     private static readonly Dictionary<DayOfWeek, string> ArabicDayNames = new()
     {
@@ -30,10 +29,11 @@ public static class WeeklyReportPrintService
     public static void Print(string categoryName, DateTime weekStart, DateTime weekEnd, IList<WeeklyReportRow> rows)
     {
         var dlg = new PrintDialog();
-        dlg.PrintTicket.PageOrientation = PageOrientation.Landscape;
-        dlg.PrintTicket.PageMediaSize   = new PageMediaSize(PageMediaSizeName.ISOA4);
+        dlg.PrintTicket.PageMediaSize = new PageMediaSize(PageMediaSizeName.ISOA4);
 
         if (dlg.ShowDialog() != true) return;
+
+        dlg.PrintTicket.PageOrientation = PageOrientation.Landscape;
 
         var doc = BuildDocument(categoryName, weekStart, weekEnd, rows, dlg);
         dlg.PrintDocument(
@@ -67,7 +67,8 @@ public static class WeeklyReportPrintService
             { FontSize = 11, Foreground = Brushes.DimGray });
         doc.Blocks.Add(title);
 
-        var available = dlg.PrintableAreaWidth - hPad * 2;
+        // 18 columns → 19 gaps × CellSpacing(1) + 2 × BorderThickness(1) = 21px overhead
+        var available = dlg.PrintableAreaWidth - hPad * 2 - 21;
         doc.Blocks.Add(BuildTable(weekStart, rows, available));
         return doc;
     }
@@ -106,7 +107,8 @@ public static class WeeklyReportPrintService
 
         var table = new Table
         {
-            CellSpacing     = 0,
+            CellSpacing     = 1,
+            Background      = GridLineBrush,
             BorderBrush     = GridLineBrush,
             BorderThickness = new Thickness(1.2),
             FontFamily      = ArabicFont,
@@ -211,10 +213,8 @@ public static class WeeklyReportPrintService
     {
         return new TableCell(Para(text, bold: true, align: align))
         {
-            BorderBrush     = GridLineBrush,
-            BorderThickness = CellBorder,
-            Background      = HeaderBg,
-            Padding         = new Thickness(4, 7, 4, 7),
+            Background = HeaderBg,
+            Padding    = new Thickness(4, 7, 4, 7),
         };
     }
 
@@ -227,10 +227,8 @@ public static class WeeklyReportPrintService
 
         return new TableCell(para)
         {
-            BorderBrush     = GridLineBrush,
-            BorderThickness = CellBorder,
-            Background      = HeaderBg,
-            Padding         = new Thickness(2, 5, 2, 5),
+            Background = HeaderBg,
+            Padding    = new Thickness(2, 5, 2, 5),
         };
     }
 
@@ -238,10 +236,8 @@ public static class WeeklyReportPrintService
     {
         return new TableCell(Para(text, bold: bold, align: align))
         {
-            BorderBrush     = GridLineBrush,
-            BorderThickness = CellBorder,
-            Background      = bg ?? Brushes.White,
-            Padding         = new Thickness(3, 6, 3, 6),
+            Background = bg ?? Brushes.White,
+            Padding    = new Thickness(3, 6, 3, 6),
         };
     }
 

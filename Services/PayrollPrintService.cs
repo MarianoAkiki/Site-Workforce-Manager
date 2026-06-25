@@ -15,9 +15,8 @@ public static class PayrollPrintService
     private static readonly Brush GroupHeaderFg     = Brushes.Black;
     private static readonly Brush SubtotalBg        = new SolidColorBrush(Color.FromRgb(240, 240, 240));
     private static readonly Brush GrandTotalBg      = new SolidColorBrush(Color.FromRgb(210, 210, 210));
-    private static readonly Brush GridLineBrush     = new SolidColorBrush(Color.FromRgb(140, 140, 140));
-    private static readonly Brush AltRowBrush       = new SolidColorBrush(Color.FromRgb(250, 250, 250));
-    private static readonly Thickness CellBorder    = new(1);
+    private static readonly Brush GridLineBrush = new SolidColorBrush(Color.FromRgb(80, 80, 80));
+    private static readonly Brush AltRowBrush   = new SolidColorBrush(Color.FromRgb(250, 250, 250));
 
     public static void Print(
         DateTime weekStart,
@@ -27,10 +26,11 @@ public static class PayrollPrintService
         decimal grandTotalPayment)
     {
         var dlg = new PrintDialog();
-        dlg.PrintTicket.PageOrientation = PageOrientation.Portrait;
-        dlg.PrintTicket.PageMediaSize   = new PageMediaSize(PageMediaSizeName.ISOA4);
+        dlg.PrintTicket.PageMediaSize = new PageMediaSize(PageMediaSizeName.ISOA4);
 
         if (dlg.ShowDialog() != true) return;
+
+        dlg.PrintTicket.PageOrientation = PageOrientation.Portrait;
 
         var doc = BuildDocument(weekStart, weekEnd, groups,
                                 grandTotalBalance, grandTotalPayment, dlg);
@@ -69,7 +69,8 @@ public static class PayrollPrintService
             { FontSize = 10, Foreground = Brushes.DimGray });
         doc.Blocks.Add(title);
 
-        var available = pageWidth - hPad * 2;
+        // 4 columns → 5 gaps × CellSpacing(2) + 2 × BorderThickness(1) = 12px overhead
+        var available = pageWidth - hPad * 2 - 12;
         doc.Blocks.Add(BuildTable(groups, grandTotalBalance, grandTotalPayment, available));
         return doc;
     }
@@ -87,7 +88,8 @@ public static class PayrollPrintService
 
         var table = new Table
         {
-            CellSpacing     = 0,
+            CellSpacing     = 2,
+            Background      = GridLineBrush,
             BorderBrush     = GridLineBrush,
             BorderThickness = new Thickness(1),
             FontFamily      = PrintFont
@@ -113,11 +115,9 @@ public static class PayrollPrintService
             var groupHdrRow  = new TableRow();
             var groupHdrCell = new TableCell(Para(group.TradeName, bold: true, fg: GroupHeaderFg))
             {
-                ColumnSpan      = 4,
-                Background      = GroupHeaderBg,
-                BorderBrush     = GridLineBrush,
-                BorderThickness = CellBorder,
-                Padding         = new Thickness(8, 8, 8, 8)
+                ColumnSpan = 4,
+                Background = GroupHeaderBg,
+                Padding    = new Thickness(8, 8, 8, 8)
             };
             groupHdrRow.Cells.Add(groupHdrCell);
             rg.Rows.Add(groupHdrRow);
@@ -152,8 +152,8 @@ public static class PayrollPrintService
         var grand = new TableRow();
         grand.Cells.Add(Cell(string.Empty,                  GrandTotalBg, null));
         grand.Cells.Add(Cell("Grand Total",                 GrandTotalBg, GroupHeaderFg, bold: true, size: 13));
-        grand.Cells.Add(Cell(Fmt(grandTotalBalance),        GrandTotalBg, GroupHeaderFg, bold: true, size: 13, align: TextAlignment.Right));
-        grand.Cells.Add(Cell(Fmt(grandTotalPayment),        GrandTotalBg, GroupHeaderFg, bold: true, size: 13, align: TextAlignment.Right));
+        grand.Cells.Add(Cell(grandTotalBalance  == 0 ? string.Empty : Fmt(grandTotalBalance),  GrandTotalBg, GroupHeaderFg, bold: true, size: 13, align: TextAlignment.Right));
+        grand.Cells.Add(Cell(grandTotalPayment == 0 ? string.Empty : Fmt(grandTotalPayment), GrandTotalBg, GroupHeaderFg, bold: true, size: 13, align: TextAlignment.Right));
         rg.Rows.Add(grand);
 
         table.RowGroups.Add(rg);
@@ -170,10 +170,8 @@ public static class PayrollPrintService
     {
         return new TableCell(Para(text, bold: bold, size: size, fg: fg, align: align))
         {
-            BorderBrush     = GridLineBrush,
-            BorderThickness = CellBorder,
-            Background      = bg ?? Brushes.White,
-            Padding         = new Thickness(8, 9, 8, 9)
+            Background = bg ?? Brushes.White,
+            Padding    = new Thickness(8, 9, 8, 9)
         };
     }
 
