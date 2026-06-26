@@ -12,6 +12,7 @@
         Width="1200"
         MinHeight="650"
         MinWidth="1000"
+        UseLayoutRounding="True"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <DataTemplate DataType="{x:Type viewModels:DashboardViewModel}">
@@ -45,39 +46,59 @@
 
     <Grid Background="{StaticResource AppBackgroundBrush}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="260" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Margin="20"
-                Background="{StaticResource SidebarBrush}"
-                BorderBrush="#1E293B"
+        <Border Margin="16"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
-                CornerRadius="24">
-            <Grid Margin="20">
+                CornerRadius="20">
+            <Grid Margin="16,20,16,16">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <StackPanel>
-                    <TextBlock Margin="0,0,0,4"
-                               FontSize="24"
-                               FontWeight="SemiBold"
-                               Foreground="White"
-                               Text="Site Workforce" />
+                <!-- App logo and name -->
+                <StackPanel Margin="4,0,0,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="32" Height="32" CornerRadius="9"
+                                Background="{StaticResource PrimaryBrush}"
+                                Margin="0,0,10,0">
+                            <TextBlock Text="S" Foreground="White" FontSize="16"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel>
+                            <TextBlock FontSize="15" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       Text="Site Workforce" LineHeight="18" />
+                            <TextBlock FontSize="10.5"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Manager" LineHeight="14" />
+                        </StackPanel>
+                    </StackPanel>
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="1"
-                              Margin="0,20,0,0"
+                <!-- Separator -->
+                <Border Grid.Row="1" Height="1"
+                        Background="{StaticResource BorderBrush}"
+                        Margin="0,16,0,4" />
+
+                <ScrollViewer Grid.Row="2"
+                              Margin="0,4,0,0"
                               HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="0,0,10,0">
-                        <TextBlock Margin="0,0,0,12"
-                                   FontSize="12"
+                    <StackPanel Margin="0,0,6,0">
+                        <TextBlock Margin="4,6,0,8"
+                                   FontSize="10"
                                    FontWeight="SemiBold"
-                                   Foreground="#94A3B8"
-                                   Text="NAVIGATION" />
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Text="MENU" />
 
                         <Button Margin="0,0,0,8"
                                 Command="{Binding ShowDashboardCommand}"
@@ -88,16 +109,9 @@
 
                         <Button Margin="0,0,0,8"
                                 Command="{Binding ShowTradesCommand}"
-                                Content="Trades"
+                                Content="Categories"
                                 helpers:NavigationState.IsActive="{Binding IsTradesActive}"
                                 Tag="Trades"
-                                Style="{StaticResource SidebarButtonStyle}" />
-
-                        <Button Margin="0,0,0,8"
-                                Command="{Binding ShowWorkersCommand}"
-                                Content="Workers"
-                                helpers:NavigationState.IsActive="{Binding IsWorkersActive}"
-                                Tag="Workers"
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"
@@ -105,6 +119,13 @@
                                 Content="Construction Sites"
                                 helpers:NavigationState.IsActive="{Binding IsConstructionSitesActive}"
                                 Tag="ConstructionSites"
+                                Style="{StaticResource SidebarButtonStyle}" />
+
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowWorkersCommand}"
+                                Content="Workers"
+                                helpers:NavigationState.IsActive="{Binding IsWorkersActive}"
+                                Tag="Workers"
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"
@@ -146,7 +167,7 @@
         </Border>
 
         <ContentControl Grid.Column="1"
-                        Margin="0,20,20,20"
+                        Margin="0,16,16,16"
                         Content="{Binding CurrentViewModel}" />
     </Grid>
 </Window>

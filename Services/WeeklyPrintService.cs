@@ -9,11 +9,13 @@ namespace Site_Workforce_Manager.Services;
 
 public static class WeeklyPrintService
 {
-    private static readonly FontFamily PrintFont = new FontFamily("Arial");
-    private static readonly Brush DarkHeaderBrush = new SolidColorBrush(Color.FromRgb(30, 41, 59));
-    private static readonly Brush SubHeaderBrush = new SolidColorBrush(Color.FromRgb(241, 245, 249));
-    private static readonly Brush DateForegroundBrush = new SolidColorBrush(Color.FromRgb(148, 163, 184));
-    private static readonly Thickness CellBorder = new Thickness(0.5);
+    private static readonly FontFamily PrintFont    = new FontFamily("Arial");
+    private static readonly Brush DarkHeaderBrush  = new SolidColorBrush(Color.FromRgb(210, 210, 210));
+    private static readonly Brush SubHeaderBrush   = new SolidColorBrush(Color.FromRgb(235, 235, 235));
+    private static readonly Brush DateFgBrush      = new SolidColorBrush(Color.FromRgb(90, 90, 90));
+    private static readonly Brush GridLineBrush    = new SolidColorBrush(Color.FromRgb(140, 155, 175));
+    private static readonly Thickness CellBorder   = new Thickness(1);
+    private static readonly Thickness HeaderBorder = new Thickness(2);
 
     public static void PrintWeeklyView(
         string tradeName,
@@ -21,16 +23,15 @@ public static class WeeklyPrintService
         DateTime weekEnd,
         IList<WeeklyWorkerRow> rows)
     {
-        var printDialog = new PrintDialog();
-        printDialog.PrintTicket.PageOrientation = PageOrientation.Landscape;
+        var dlg = new PrintDialog();
+        dlg.PrintTicket.PageOrientation  = PageOrientation.Landscape;
+        dlg.PrintTicket.PageMediaSize    = new PageMediaSize(PageMediaSizeName.ISOA4);
 
-        if (printDialog.ShowDialog() != true) return;
+        if (dlg.ShowDialog() != true) return;
 
-        var doc = BuildDocument(tradeName, weekStart, weekEnd, rows, printDialog);
-
-        printDialog.PrintDocument(
-            ((IDocumentPaginatorSource)doc).DocumentPaginator,
-            $"Weekly Work Entry - {tradeName}");
+        var doc = BuildDocument(tradeName, weekStart, weekEnd, rows, dlg);
+        dlg.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator,
+                          $"Weekly Work Entry - {tradeName}");
     }
 
     private static FlowDocument BuildDocument(
@@ -38,118 +39,120 @@ public static class WeeklyPrintService
         DateTime weekStart,
         DateTime weekEnd,
         IList<WeeklyWorkerRow> rows,
-        PrintDialog printDialog)
+        PrintDialog dlg)
     {
-        var pageWidth = printDialog.PrintableAreaWidth;
-        var pageHeight = printDialog.PrintableAreaHeight;
-        const double padding = 36;
+        var pageWidth  = dlg.PrintableAreaWidth;
+        var pageHeight = dlg.PrintableAreaHeight;
+        const double hPad = 40;
+        const double vPad = 32;
 
         var doc = new FlowDocument
         {
-            PageWidth = pageWidth,
-            PageHeight = pageHeight,
-            PagePadding = new Thickness(padding, 28, padding, 28),
-            ColumnWidth = pageWidth - padding * 2,
-            FontFamily = PrintFont,
-            FontSize = 9
+            PageWidth    = pageWidth,
+            PageHeight   = pageHeight,
+            PagePadding  = new Thickness(hPad, vPad, hPad, vPad),
+            ColumnWidth  = pageWidth - hPad * 2,
+            FontFamily   = PrintFont,
+            FontSize     = 10
         };
 
-        // Title
-        var titlePara = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 0, 0, 10) };
+        // Title block
+        var titlePara = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 0, 0, 14) };
         titlePara.Inlines.Add(new Run($"سجل الحضور الأسبوعي  —  {tradeName}")
         {
-            FontSize = 12,
+            FontSize   = 15,
             FontWeight = FontWeights.Bold
         });
         titlePara.Inlines.Add(new LineBreak());
         titlePara.Inlines.Add(new Run($"{weekStart:dd/MM/yyyy}   —   {weekEnd:dd/MM/yyyy}")
         {
-            FontSize = 9,
+            FontSize   = 10,
             Foreground = Brushes.DimGray
         });
         doc.Blocks.Add(titlePara);
 
-        doc.Blocks.Add(BuildTable(weekStart, rows));
-
+        var available  = pageWidth - hPad * 2;
+        doc.Blocks.Add(BuildTable(weekStart, rows, available));
         return doc;
     }
 
-    private static Table BuildTable(DateTime weekStart, IList<WeeklyWorkerRow> rows)
+    private static Table BuildTable(DateTime weekStart, IList<WeeklyWorkerRow> rows, double available)
     {
+        // Worker name column gets ~17 % of page width; the rest splits evenly across 7 days
+        var workerColW = Math.Round(available * 0.17);
+        var dayW       = (available - workerColW) / 7.0;
+        var hoursColW  = Math.Round(dayW * 0.38);
+        var siteColW   = Math.Round(dayW - hoursColW);
+
         var table = new Table
         {
-            CellSpacing = 0,
-            BorderBrush = Brushes.Black,
+            CellSpacing     = 0,
+            BorderBrush     = GridLineBrush,
             BorderThickness = new Thickness(1),
-            FontFamily = PrintFont
+            FontFamily      = PrintFont
         };
 
-        // Column 0: worker name
-        table.Columns.Add(new TableColumn { Width = new GridLength(135) });
-        // Columns 1-14: 7 days × (hours col + site col)
+        table.Columns.Add(new TableColumn { Width = new GridLength(workerColW) });
         for (int i = 0; i < 7; i++)
         {
-            table.Columns.Add(new TableColumn { Width = new GridLength(42) }); // hours
-            table.Columns.Add(new TableColumn { Width = new GridLength(66) }); // site
+            table.Columns.Add(new TableColumn { Width = new GridLength(hoursColW) });
+            table.Columns.Add(new TableColumn { Width = new GridLength(siteColW) });
         }
 
-        // ── Header row group ─────────────────────────────────────
+        // ── Header row 1: day names ────────────────────────────────
         var headerGroup = new TableRowGroup();
-
-        // Row 1: Worker label | day name per day (each spans 2 cols)
-        var dayRow = new TableRow();
+        var dayRow      = new TableRow();
         dayRow.Cells.Add(MakeCell("العامل", colspan: 1,
-            bg: DarkHeaderBrush, fg: Brushes.White, rtl: true, bold: true, size: 9));
+            bg: DarkHeaderBrush, fg: Brushes.Black, rtl: true, bold: true, size: 11,
+            border: HeaderBorder));
 
         for (int d = 0; d < 7; d++)
         {
-            var date = weekStart.AddDays(d);
+            var date    = weekStart.AddDays(d);
             var dayCell = new TableCell
             {
-                ColumnSpan = 2,
-                Background = DarkHeaderBrush,
-                BorderBrush = Brushes.Black,
-                BorderThickness = CellBorder,
-                Padding = new Thickness(3, 4, 3, 4)
+                ColumnSpan      = 2,
+                Background      = DarkHeaderBrush,
+                BorderBrush     = GridLineBrush,
+                BorderThickness = HeaderBorder,
+                Padding         = new Thickness(4, 8, 4, 8)
             };
-            var dayPara = new Paragraph
+            var para = new Paragraph
             {
                 TextAlignment = TextAlignment.Center,
-                Margin = new Thickness(0),
-                LineHeight = 13,
+                Margin        = new Thickness(0),
+                LineHeight    = 16,
                 FlowDirection = FlowDirection.RightToLeft
             };
-            dayPara.Inlines.Add(new Run(GetArabicDayName(date.DayOfWeek))
+            para.Inlines.Add(new Run(GetArabicDayName(date.DayOfWeek))
             {
                 FontWeight = FontWeights.Bold,
-                FontSize = 9,
-                Foreground = Brushes.White
+                FontSize   = 11,
+                Foreground = Brushes.Black
             });
-            dayPara.Inlines.Add(new LineBreak());
-            dayPara.Inlines.Add(new Run(date.ToString("dd/MM"))
+            para.Inlines.Add(new LineBreak());
+            para.Inlines.Add(new Run(date.ToString("dd/MM"))
             {
-                FontSize = 8,
-                Foreground = DateForegroundBrush
+                FontSize   = 9,
+                Foreground = DateFgBrush
             });
-            dayCell.Blocks.Add(dayPara);
+            dayCell.Blocks.Add(para);
             dayRow.Cells.Add(dayCell);
         }
         headerGroup.Rows.Add(dayRow);
 
-        // Row 2: empty | ساعات | ورشة × 7
+        // ── Header row 2: sub-labels (ساعات / ورشة) ───────────────
         var subRow = new TableRow();
-        subRow.Cells.Add(MakeCell(string.Empty, colspan: 1, bg: SubHeaderBrush));
+        subRow.Cells.Add(MakeCell(string.Empty, colspan: 1, bg: SubHeaderBrush, border: HeaderBorder));
         for (int d = 0; d < 7; d++)
         {
-            subRow.Cells.Add(MakeCell("ساعات", colspan: 1,
-                bg: SubHeaderBrush, rtl: true, bold: true, size: 7));
-            subRow.Cells.Add(MakeCell("ورشة", colspan: 1,
-                bg: SubHeaderBrush, rtl: true, bold: true, size: 7));
+            subRow.Cells.Add(MakeCell("ساعات", colspan: 1, bg: SubHeaderBrush, rtl: true, bold: true, size: 9, border: HeaderBorder));
+            subRow.Cells.Add(MakeCell("ورشة",  colspan: 1, bg: SubHeaderBrush, rtl: true, bold: true, size: 9, border: HeaderBorder));
         }
         headerGroup.Rows.Add(subRow);
         table.RowGroups.Add(headerGroup);
 
-        // ── Data row group ────────────────────────────────────────
+        // ── Data rows ──────────────────────────────────────────────
         var dataGroup = new TableRowGroup();
 
         foreach (var workerRow in rows)
@@ -158,19 +161,9 @@ public static class WeeklyPrintService
             tr.Cells.Add(MakeCell(workerRow.WorkerName, colspan: 1));
             foreach (var cell in workerRow.Cells)
             {
-                tr.Cells.Add(MakeDataCell(cell.DurationHoursText, center: true));
+                tr.Cells.Add(MakeDataCell(cell.DurationHoursText,                                center: true));
                 tr.Cells.Add(MakeDataCell(cell.SelectedConstructionSiteOption?.Name ?? string.Empty));
             }
-            dataGroup.Rows.Add(tr);
-        }
-
-        // Extra blank rows for manual additions
-        for (int i = 0; i < 3; i++)
-        {
-            var tr = new TableRow();
-            tr.Cells.Add(MakeDataCell(string.Empty));
-            for (int d = 0; d < 14; d++)
-                tr.Cells.Add(MakeDataCell(string.Empty));
             dataGroup.Rows.Add(tr);
         }
 
@@ -179,51 +172,52 @@ public static class WeeklyPrintService
     }
 
     private static TableCell MakeCell(
-        string text,
-        int colspan,
-        Brush? bg = null,
-        Brush? fg = null,
-        bool rtl = false,
-        bool bold = false,
-        double size = 8.5)
+        string     text,
+        int        colspan,
+        Brush?     bg     = null,
+        Brush?     fg     = null,
+        bool       rtl    = false,
+        bool       bold   = false,
+        double     size   = 10,
+        Thickness? border = null)
     {
         var para = new Paragraph(new Run(text)
         {
             FontWeight = bold ? FontWeights.Bold : FontWeights.Normal,
-            FontSize = size,
+            FontSize   = size,
             Foreground = fg ?? Brushes.Black
         })
         {
-            Margin = new Thickness(0),
+            Margin        = new Thickness(0),
             TextAlignment = rtl ? TextAlignment.Center : TextAlignment.Left,
             FlowDirection = rtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight,
-            LineHeight = 12
+            LineHeight    = 14
         };
 
         return new TableCell(para)
         {
-            ColumnSpan = colspan,
-            BorderBrush = Brushes.Black,
-            BorderThickness = CellBorder,
-            Background = bg ?? Brushes.White,
-            Padding = new Thickness(3, 4, 3, 4)
+            ColumnSpan      = colspan,
+            BorderBrush     = GridLineBrush,
+            BorderThickness = border ?? CellBorder,
+            Background      = bg ?? Brushes.White,
+            Padding         = new Thickness(5, 7, 5, 7)
         };
     }
 
     private static TableCell MakeDataCell(string text, bool center = false)
     {
-        var para = new Paragraph(new Run(text) { FontSize = 8.5 })
+        var para = new Paragraph(new Run(text) { FontSize = 10 })
         {
-            Margin = new Thickness(0),
+            Margin        = new Thickness(0),
             TextAlignment = center ? TextAlignment.Center : TextAlignment.Left,
-            LineHeight = 12
+            LineHeight    = 14
         };
 
         return new TableCell(para)
         {
-            BorderBrush = Brushes.Black,
+            BorderBrush     = GridLineBrush,
             BorderThickness = CellBorder,
-            Padding = new Thickness(3, 5, 3, 5)
+            Padding         = new Thickness(5, 9, 5, 9)
         };
     }
 
@@ -236,6 +230,6 @@ public static class WeeklyPrintService
         DayOfWeek.Monday    => "الاثنين",
         DayOfWeek.Tuesday   => "الثلاثاء",
         DayOfWeek.Wednesday => "الأربعاء",
-        _ => day.ToString()
+        _                   => day.ToString()
     };
 }

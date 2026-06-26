@@ -75,7 +75,7 @@ public partial class ReportsViewModel : ObservableObject
     private bool isExportInProgress;
 
     public string WorkerSelectionSummary => BuildSelectionSummary(WorkerOptions, "All workers");
-    public string TradeSelectionSummary => BuildSelectionSummary(TradeOptions, "All trades");
+    public string TradeSelectionSummary => BuildSelectionSummary(TradeOptions, "All categories");
     public string ConstructionSiteSelectionSummary => BuildSelectionSummary(ConstructionSiteOptions, "All construction sites");
     public bool HasWorkerFilter => !string.IsNullOrWhiteSpace(WorkerSearchText) || WorkerOptions.Any(option => option.IsSelected);
     public bool HasTradeFilter => !string.IsNullOrWhiteSpace(TradeSearchText) || TradeOptions.Any(option => option.IsSelected);
@@ -386,7 +386,7 @@ public partial class ReportsViewModel : ObservableObject
             var headers = new[]
             {
                 "Worker",
-                "Trade",
+                "Category",
                 "Construction Site",
                 "Work Date",
                 "Duration Hours",

@@ -64,9 +64,9 @@
 
                 <StackPanel>
                     <TextBlock Style="{StaticResource PageTitleTextStyle}"
-                               Text="Trades" />
+                               Text="Categories" />
                     <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
-                               Text="Search, review, and maintain the approved trade list used by workers." />
+                               Text="Search, review, and maintain the approved category list used by workers." />
                 </StackPanel>
 
                 <Border Grid.Row="1"
@@ -87,10 +87,10 @@
 
                             <StackPanel>
                                 <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                           Text="Trades List" />
+                                           Text="Categories List" />
                                 <TextBlock Margin="0,6,0,0"
                                            Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Use quick search to find trades by name or description in the current status view." />
+                                           Text="Use quick search to find categories by name or description in the current status view." />
                             </StackPanel>
 
                             <Border Grid.Column="1"
@@ -119,7 +119,7 @@
                                          Padding="12,9,42,9"
                                          VerticalContentAlignment="Center"
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="Search by trade name or description" />
+                                         ToolTip="Search by category name or description" />
                                 <Button Margin="0,0,8,0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -139,7 +139,7 @@
                                     Command="{Binding OpenAddTradeFormCommand}"
                                     Content="+"
                                     FontSize="18"
-                                    ToolTip="Add trade"
+                                    ToolTip="Add category"
                                     Style="{StaticResource PrimaryButtonStyle}" />
                         </Grid>
 
@@ -151,7 +151,7 @@
                                   SelectedItem="{Binding SelectedTrade, Mode=TwoWay}"
                                   SelectionMode="Single">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Binding="{Binding Name}" Header="Trade Name" Width="180" />
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Category Name" Width="180" />
                                 <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*" />
                                 <DataGridTemplateColumn Header="Status" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -203,10 +203,10 @@
                         Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                   Text="Trade Information" />
+                                   Text="Category Information" />
 
                         <StackPanel Margin="0,20,0,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trade Name" />
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Category Name" />
                             <TextBox MinHeight="48"
                                      FontSize="15"
                                      Text="{Binding TradeName, UpdateSourceTrigger=PropertyChanged}" />

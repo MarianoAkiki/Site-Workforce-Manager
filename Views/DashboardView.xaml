@@ -12,82 +12,109 @@
             </Grid.RowDefinitions>
 
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleTextStyle}"
-                           Text="Dashboard" />
+                <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Dashboard" />
                 <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
                            Text="{Binding MonthLabel, StringFormat=Quick overview for {0}.}" />
             </StackPanel>
 
-            <Border Grid.Row="1"
-                    Margin="0,24,0,0"
-                    Style="{StaticResource CardBorderStyle}">
+            <Border Grid.Row="1" Margin="0,24,0,0" Style="{StaticResource CardBorderStyle}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Summary" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Track workforce activity and labor totals from one place." />
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Summary" />
+                    <TextBlock Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}"
+                               Text="Workforce activity and labor totals at a glance." />
 
-                    <UniformGrid Margin="0,20,0,0"
-                                 Columns="2">
-                        <Border Margin="0,0,16,16"
-                                Style="{StaticResource SummaryCardBorderStyle}">
+                    <UniformGrid Margin="0,20,0,0" Columns="3" Rows="2">
+
+                        <!-- Active Workers -->
+                        <Border Margin="0,0,14,14" Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
-                                <TextBlock FontSize="12"
+                                <Border Width="40" Height="40" CornerRadius="10"
+                                        Background="#EFF6FF" HorizontalAlignment="Left" Margin="0,0,0,14">
+                                    <TextBlock Text="👷" FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               LineHeight="22" />
+                                </Border>
+                                <TextBlock FontSize="28" FontWeight="Bold" LineHeight="32"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           Text="{Binding ActiveWorkers}" />
+                                <TextBlock Margin="0,4,0,0" FontSize="12"
                                            Foreground="{StaticResource TextMutedBrush}"
                                            Text="Active Workers" />
-                                <TextBlock FontSize="26"
-                                           FontWeight="SemiBold"
-                                           Text="{Binding ActiveWorkers}" />
                             </StackPanel>
                         </Border>
 
-                        <Border Margin="0,0,16,16"
-                                Style="{StaticResource SummaryCardBorderStyle}">
+                        <!-- Active Construction Sites -->
+                        <Border Margin="0,0,14,14" Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
-                                <TextBlock FontSize="12"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Active Construction Sites" />
-                                <TextBlock FontSize="26"
-                                           FontWeight="SemiBold"
+                                <Border Width="40" Height="40" CornerRadius="10"
+                                        Background="#ECFDF5" HorizontalAlignment="Left" Margin="0,0,0,14">
+                                    <TextBlock Text="🏗️" FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               LineHeight="22" />
+                                </Border>
+                                <TextBlock FontSize="28" FontWeight="Bold" LineHeight="32"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
                                            Text="{Binding ActiveConstructionSites}" />
+                                <TextBlock Margin="0,4,0,0" FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Active Sites" />
                             </StackPanel>
                         </Border>
 
-                        <Border Margin="0,0,0,16"
-                                Style="{StaticResource SummaryCardBorderStyle}">
+                        <!-- Total Hours This Month -->
+                        <Border Margin="0,0,0,14" Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
-                                <TextBlock FontSize="12"
+                                <Border Width="40" Height="40" CornerRadius="10"
+                                        Background="#F5F3FF" HorizontalAlignment="Left" Margin="0,0,0,14">
+                                    <TextBlock Text="⏱️" FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               LineHeight="22" />
+                                </Border>
+                                <TextBlock FontSize="28" FontWeight="Bold" LineHeight="32"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           Text="{Binding TotalHoursThisMonth, StringFormat={}{0:F1}}" />
+                                <TextBlock Margin="0,4,0,0" FontSize="12"
                                            Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Total Hours This Month" />
-                                <TextBlock FontSize="26"
-                                           FontWeight="SemiBold"
-                                           Text="{Binding TotalHoursThisMonth, StringFormat={}{0:F2}}" />
+                                           Text="Hours This Month" />
                             </StackPanel>
                         </Border>
 
-                        <Border Margin="0,0,16,0"
-                                Style="{StaticResource SummaryCardBorderStyle}">
+                        <!-- Total Labor Cost This Month -->
+                        <Border Margin="0,0,14,0" Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
-                                <TextBlock FontSize="12"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Total Labor Cost This Month" />
-                                <TextBlock FontSize="26"
-                                           FontWeight="SemiBold"
+                                <Border Width="40" Height="40" CornerRadius="10"
+                                        Background="#FFFBEB" HorizontalAlignment="Left" Margin="0,0,0,14">
+                                    <TextBlock Text="💰" FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               LineHeight="22" />
+                                </Border>
+                                <TextBlock FontSize="28" FontWeight="Bold" LineHeight="32"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
                                            Text="{Binding TotalLaborCostThisMonth, StringFormat={}{0:C}}" />
+                                <TextBlock Margin="0,4,0,0" FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Labor Cost This Month" />
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource SummaryCardBorderStyle}">
+                        <!-- Work Logs Count -->
+                        <Border Margin="0,0,14,0" Style="{StaticResource SummaryCardBorderStyle}">
                             <StackPanel>
-                                <TextBlock FontSize="12"
-                                           Foreground="{StaticResource TextMutedBrush}"
-                                           Text="Work Logs Count" />
-                                <TextBlock FontSize="26"
-                                           FontWeight="SemiBold"
+                                <Border Width="40" Height="40" CornerRadius="10"
+                                        Background="#FFF7ED" HorizontalAlignment="Left" Margin="0,0,0,14">
+                                    <TextBlock Text="📋" FontSize="18"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               LineHeight="22" />
+                                </Border>
+                                <TextBlock FontSize="28" FontWeight="Bold" LineHeight="32"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
                                            Text="{Binding WorkLogsCount}" />
+                                <TextBlock Margin="0,4,0,0" FontSize="12"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="Work Log Entries" />
                             </StackPanel>
                         </Border>
+
                     </UniformGrid>
                 </StackPanel>
             </Border>

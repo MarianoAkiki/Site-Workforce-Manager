@@ -53,8 +53,8 @@ public partial class PayrollViewModel : ObservableObject
     public bool CanEditSelectedWeek => WeekStart == latestFullWeekStart;
     public string BalanceHeaderText => "Balance";
     public string PaymentHeaderText => CanEditSelectedWeek ? "Payment Amount" : "Paid This Week";
-    public string GrandTotalBalanceDisplay => GrandTotalBalance.ToString("C");
-    public string GrandTotalPaymentDisplay => GrandTotalPayment.ToString("C");
+    public string GrandTotalBalanceDisplay => PayrollFmt.Fmt(GrandTotalBalance);
+    public string GrandTotalPaymentDisplay => PayrollFmt.Fmt(GrandTotalPayment);
 
     partial void OnWeekStartChanged(DateTime value)
     {
@@ -112,6 +112,15 @@ public partial class PayrollViewModel : ObservableObject
     private void ClearTradeFilter()
     {
         TradeFilterText = string.Empty;
+    }
+
+    [RelayCommand]
+    private void Print()
+    {
+        PayrollPrintService.Print(
+            WeekStart, WeekEnd,
+            FilteredTradeGroups.ToList(),
+            GrandTotalBalance, GrandTotalPayment);
     }
 
     private void AutoSaveRow(PayrollWorkerRow row)
@@ -260,7 +269,7 @@ public partial class PayrollViewModel : ObservableObject
                 payment.WeekStartDate == WeekStart.Date)
             .ToDictionary(payment => payment.WorkerId, payment => payment.Amount);
 
-        foreach (var tradeGroup in workers.GroupBy(worker => worker.Trade?.Name ?? "No Trade").OrderBy(group => group.Key))
+        foreach (var tradeGroup in workers.GroupBy(worker => worker.Trade?.Name ?? "No Category").OrderBy(group => group.Key))
         {
             var payrollGroup = new PayrollTradeGroup
             {
@@ -409,8 +418,8 @@ public partial class PayrollTradeGroup : ObservableObject
         OnPropertyChanged(nameof(TotalPaymentDisplay));
     }
 
-    public string TotalBalanceDisplay => TotalBalance.ToString("C");
-    public string TotalPaymentDisplay => TotalPayment.ToString("C");
+    public string TotalBalanceDisplay => PayrollFmt.Fmt(TotalBalance);
+    public string TotalPaymentDisplay => PayrollFmt.Fmt(TotalPayment);
 }
 
 public partial class PayrollWorkerRow : ObservableObject
@@ -419,7 +428,7 @@ public partial class PayrollWorkerRow : ObservableObject
     public string WorkerName { get; set; } = string.Empty;
     public string TradeName { get; set; } = string.Empty;
     public decimal Balance { get; set; }
-    public string BalanceDisplay => Balance.ToString("C");
+    public string BalanceDisplay => PayrollFmt.Fmt(Balance);
     public Action<PayrollWorkerRow>? AutoSaveRequested { get; set; }
     public Action<PayrollWorkerRow>? LiveBalanceRequested { get; set; }
 
@@ -461,4 +470,10 @@ public partial class PayrollWorkerRow : ObservableObject
     }
 
     public decimal PaymentAmount => decimal.TryParse(PaymentAmountText, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) ? amount : 0m;
+}
+
+internal static class PayrollFmt
+{
+    internal static string Fmt(decimal value) =>
+        value < 0 ? $"-{Math.Abs(value):C}" : value.ToString("C");
 }

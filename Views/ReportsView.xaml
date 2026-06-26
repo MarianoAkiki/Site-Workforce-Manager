@@ -8,24 +8,24 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+
         <Style x:Key="DropdownClearButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterClearButtonStyle}">
-            <Setter Property="Width" Value="20" />
-            <Setter Property="Height" Value="20" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Width"      Value="20" />
+            <Setter Property="Height"     Value="20" />
+            <Setter Property="FontSize"   Value="11" />
             <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}" />
-            <Setter Property="ToolTip" Value="Clear" />
-            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="ToolTip"    Value="Clear" />
+            <Setter Property="IsTabStop"  Value="False" />
         </Style>
-        <Style x:Key="ExcelButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource BaseButtonStyle}">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#217346" />
+
+        <Style x:Key="ExcelButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Foreground"  Value="White" />
+            <Setter Property="Background"  Value="#217346" />
             <Setter Property="BorderBrush" Value="#217346" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
+                        <Border x:Name="Bd"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
@@ -36,15 +36,78 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#1B5E38" />
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#1B5E38" />
+                                <Setter TargetName="Bd" Property="Background" Value="#1B5E38" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#1B5E38" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#154B2D" />
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#154B2D" />
+                                <Setter TargetName="Bd" Property="Background" Value="#154B2D" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#154B2D" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern underline TabControl -->
+        <Style x:Key="ReportTabControlStyle" TargetType="TabControl">
+            <Setter Property="Background"      Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding"         Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabControl">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <Border BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="0,0,0,1">
+                                <TabPanel x:Name="HeaderPanel"
+                                          Background="Transparent"
+                                          IsItemsHost="True" />
+                            </Border>
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              Grid.Row="1"
+                                              Margin="0,16,0,0"
+                                              ContentSource="SelectedContent" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ReportTabItemStyle" TargetType="TabItem">
+            <Setter Property="Background"      Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding"         Value="0" />
+            <Setter Property="Cursor"          Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd"
+                                Padding="16,10"
+                                Margin="0,0,2,0"
+                                BorderThickness="0,0,0,2"
+                                BorderBrush="Transparent"
+                                Background="Transparent">
+                            <TextBlock x:Name="Lbl"
+                                       Text="{TemplateBinding Header}"
+                                       FontSize="13"
+                                       Foreground="{StaticResource TextMutedBrush}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Lbl" Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd"  Property="BorderBrush"  Value="{StaticResource PrimaryBrush}" />
+                                <Setter TargetName="Lbl" Property="Foreground"   Value="{StaticResource PrimaryBrush}" />
+                                <Setter TargetName="Lbl" Property="FontWeight"   Value="SemiBold" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -61,54 +124,45 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <!-- Page header -->
             <StackPanel>
-                <TextBlock Style="{StaticResource PageTitleTextStyle}"
-                           Text="Reports" />
+                <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Reports" />
                 <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
-                           Text="Review work logs across workers and sites with read-only filters and summary totals." />
+                           Text="Review work logs across workers and sites with filters and summary totals." />
             </StackPanel>
 
-            <Border Grid.Row="1"
-                    Margin="0,24,0,0"
-                    Style="{StaticResource CardBorderStyle}">
+            <!-- Filters -->
+            <Border Grid.Row="1" Margin="0,24,0,0" Style="{StaticResource CardBorderStyle}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Report Filters" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               Text="Choose a date range, one or more workers, trades, and sites to analyze." />
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Filters" />
+                    <TextBlock Margin="0,5,0,0" Foreground="{StaticResource TextMutedBrush}"
+                               Text="Choose a date range, workers, categories, and sites to analyze." />
 
-                    <Grid Margin="0,20,0,0">
+                    <Grid Margin="0,18,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="220" />
-                            <ColumnDefinition Width="220" />
-                            <ColumnDefinition Width="220" />
-                        </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Row="0"
-                                    Grid.Column="0"
-                                    Margin="0,0,16,0">
+                        <!-- Row 1: Dates -->
+                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Date From" />
                             <DatePicker SelectedDate="{Binding DateFrom, Mode=TwoWay}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Row="0"
-                                    Grid.Column="1"
-                                    Margin="0,0,16,0">
+                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Date To" />
                             <DatePicker SelectedDate="{Binding DateTo, Mode=TwoWay}" />
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="0"
-                                    Margin="0,18,16,0">
+                        <!-- Row 2: Multi-select dropdowns -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,14,12,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Workers" />
                             <Grid>
                                 <ComboBox x:Name="WorkerFilterComboBox"
@@ -117,35 +171,24 @@
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding WorkerSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}"
-                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <TextBlock Margin="10,0,44,0"
-                                           VerticalAlignment="Center"
-                                           FontSize="13"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           IsHitTestVisible="False"
-                                           Panel.ZIndex="1"
-                                           Text="{Binding WorkerSelectionSummary}"
+                                <TextBlock Margin="11,0,44,0" VerticalAlignment="Center" FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}" IsHitTestVisible="False"
+                                           Panel.ZIndex="1" Text="{Binding WorkerSelectionSummary}"
                                            TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding ShowWorkerSelectionPreview, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Margin="0,0,18,0"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding ClearWorkerFilterCommand}"
-                                        Content="x"
-                                        Panel.ZIndex="2"
+                                <Button Margin="0,0,18,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Command="{Binding ClearWorkerFilterCommand}" Content="x" Panel.ZIndex="2"
                                         Style="{StaticResource DropdownClearButtonStyle}"
                                         Visibility="{Binding HasWorkerFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="1"
-                                    Margin="0,18,16,0">
-                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Trades" />
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,14,12,0">
+                            <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Categories" />
                             <Grid>
                                 <ComboBox x:Name="TradeFilterComboBox"
                                           ItemsSource="{Binding TradeOptions}"
@@ -153,34 +196,23 @@
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding TradeSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}"
-                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <TextBlock Margin="10,0,44,0"
-                                           VerticalAlignment="Center"
-                                           FontSize="13"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           IsHitTestVisible="False"
-                                           Panel.ZIndex="1"
-                                           Text="{Binding TradeSelectionSummary}"
+                                <TextBlock Margin="11,0,44,0" VerticalAlignment="Center" FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}" IsHitTestVisible="False"
+                                           Panel.ZIndex="1" Text="{Binding TradeSelectionSummary}"
                                            TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding ShowTradeSelectionPreview, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Margin="0,0,18,0"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding ClearTradeFilterCommand}"
-                                        Content="x"
-                                        Panel.ZIndex="2"
+                                <Button Margin="0,0,18,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Command="{Binding ClearTradeFilterCommand}" Content="x" Panel.ZIndex="2"
                                         Style="{StaticResource DropdownClearButtonStyle}"
                                         Visibility="{Binding HasTradeFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="2"
-                                    Margin="0,18,16,0">
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,14,12,0">
                             <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Construction Sites" />
                             <Grid>
                                 <ComboBox x:Name="ConstructionSiteFilterComboBox"
@@ -189,275 +221,234 @@
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding ConstructionSiteSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}"
-                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <TextBlock Margin="10,0,44,0"
-                                           VerticalAlignment="Center"
-                                           FontSize="13"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           IsHitTestVisible="False"
-                                           Panel.ZIndex="1"
-                                           Text="{Binding ConstructionSiteSelectionSummary}"
+                                <TextBlock Margin="11,0,44,0" VerticalAlignment="Center" FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}" IsHitTestVisible="False"
+                                           Panel.ZIndex="1" Text="{Binding ConstructionSiteSelectionSummary}"
                                            TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding ShowConstructionSiteSelectionPreview, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                <Button Margin="0,0,18,0"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Command="{Binding ClearConstructionSiteFilterCommand}"
-                                        Content="x"
-                                        Panel.ZIndex="2"
+                                <Button Margin="0,0,18,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Command="{Binding ClearConstructionSiteFilterCommand}" Content="x" Panel.ZIndex="2"
                                         Style="{StaticResource DropdownClearButtonStyle}"
                                         Visibility="{Binding HasConstructionSiteFilter, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             </Grid>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2"
-                                    Grid.Column="0"
-                                    Grid.ColumnSpan="3"
-                                    Margin="0,18,0,0"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Bottom">
-                            <Button MinWidth="130"
-                                    Command="{Binding ApplyFiltersCommand}"
-                                    Content="Apply Filters"
-                                    Style="{StaticResource PrimaryButtonStyle}" />
-                            <Button MinWidth="96"
-                                    Command="{Binding ClearFiltersCommand}"
-                                    Margin="12,0,0,0"
-                                    Content="Clear"
-                                    Style="{StaticResource BaseButtonStyle}" />
+                        <!-- Actions -->
+                        <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,14,0,0"
+                                    Orientation="Horizontal" VerticalAlignment="Bottom">
+                            <Button MinWidth="110" Command="{Binding ApplyFiltersCommand}"
+                                    Content="Apply Filters" Style="{StaticResource PrimaryButtonStyle}" />
+                            <Button MinWidth="80" Margin="10,0,0,0" Command="{Binding ClearFiltersCommand}"
+                                    Content="Clear" Style="{StaticResource BaseButtonStyle}" />
                         </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>
 
-            <Border Grid.Row="2"
-                    Margin="0,20,0,0"
-                    Style="{StaticResource CardBorderStyle}">
+            <!-- Results -->
+            <Border Grid.Row="2" Margin="0,20,0,0" Style="{StaticResource CardBorderStyle}">
                 <StackPanel>
+
+                    <!-- Header row -->
                     <DockPanel LastChildFill="False">
                         <StackPanel DockPanel.Dock="Left">
-                            <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                       Text="Report Results" />
-                            <TextBlock Margin="0,6,0,0"
-                                       Foreground="{StaticResource TextMutedBrush}"
-                                       Text="The table reflects the current filters and weekly work log entries." />
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Report Results" />
+                            <TextBlock Margin="0,5,0,0" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Reflects the current filters and weekly work log entries." />
                         </StackPanel>
-
-                        <StackPanel DockPanel.Dock="Right"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Right">
-                            <Border Margin="12,0,0,0"
-                                    Style="{StaticResource SummaryCardBorderStyle}">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               Text="Total Hours" />
-                                    <TextBlock FontSize="22"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding TotalHours, StringFormat={}{0:F2}}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="12,0,0,0"
-                                    Style="{StaticResource SummaryCardBorderStyle}">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               Text="Total Amount" />
-                                    <TextBlock FontSize="22"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding TotalAmount, StringFormat={}{0:C}}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="12,0,0,0"
-                                    Style="{StaticResource SummaryCardBorderStyle}">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               Text="Workers" />
-                                    <TextBlock FontSize="22"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding NumberOfWorkers}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="12,0,0,0"
-                                    Style="{StaticResource SummaryCardBorderStyle}">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               Text="Trades" />
-                                    <TextBlock FontSize="22"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding NumberOfTrades}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="12,0,0,0"
-                                    Style="{StaticResource SummaryCardBorderStyle}">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               Text="Sites" />
-                                    <TextBlock FontSize="22"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding NumberOfConstructionSites}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="12,0,0,0"
-                                    Style="{StaticResource SummaryCardBorderStyle}">
-                                <StackPanel>
-                                    <TextBlock FontSize="12"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               Text="Logs" />
-                                    <TextBlock FontSize="22"
-                                               FontWeight="SemiBold"
-                                               Text="{Binding NumberOfLogs}" />
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
+                        <Button DockPanel.Dock="Right"
+                                VerticalAlignment="Center"
+                                Command="{Binding RequestExportToExcelCommand}"
+                                Content="Export to Excel"
+                                Style="{StaticResource ExcelButtonStyle}" />
                     </DockPanel>
 
+                    <!-- Stat strip -->
                     <Border Margin="0,18,0,0"
-                            Background="#F8FAFF"
+                            Background="#F8FAFC"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="14"
-                            Padding="16">
+                            CornerRadius="12">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-
-                            <Button Command="{Binding RequestExportToExcelCommand}"
-                                    Content="Export Current View to Excel"
-                                    Style="{StaticResource ExcelButtonStyle}" />
-
-                            <Border Grid.Column="1"
-                                    Margin="16,0,0,0"
-                                    Background="#FFF7ED"
-                                    BorderBrush="#F59E0B"
-                                    BorderThickness="1"
-                                    CornerRadius="12"
-                                    Padding="14,12"
-                                    Visibility="{Binding IsExportConfirmationVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel>
-                                    <TextBlock FontWeight="SemiBold"
-                                               Text="Export current filtered report?" />
-                                    <TextBlock Margin="0,4,0,0"
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               Text="This will export the rows and totals exactly as they are currently filtered on this page." />
-                                    <StackPanel Margin="0,12,0,0"
-                                                Orientation="Horizontal">
-                                        <Button Command="{Binding ConfirmExportToExcelCommand}"
-                                                Content="Yes, Export"
-                                                Style="{StaticResource PrimaryButtonStyle}" />
-                                        <Button Margin="12,0,0,0"
-                                                Command="{Binding CancelExportToExcelCommand}"
-                                                Content="Cancel"
-                                                Style="{StaticResource BaseButtonStyle}" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="1"
-                                    Margin="16,0,0,0"
-                                    Background="#EFF6FF"
-                                    BorderBrush="#93C5FD"
-                                    BorderThickness="1"
-                                    CornerRadius="12"
-                                    Padding="14,12"
-                                    Visibility="{Binding IsExportInProgress, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel Orientation="Horizontal"
-                                            VerticalAlignment="Center">
-                                    <ProgressBar Width="140"
-                                                 Height="10"
-                                                 IsIndeterminate="True"
-                                                 VerticalAlignment="Center" />
-                                    <TextBlock Margin="12,0,0,0"
-                                               VerticalAlignment="Center"
-                                               FontWeight="SemiBold"
-                                               Text="Creating Excel file..." />
-                                </StackPanel>
-                            </Border>
+                            <!-- Dividers -->
+                            <Border Grid.Column="1"  Background="{StaticResource BorderBrush}" />
+                            <Border Grid.Column="3"  Background="{StaticResource BorderBrush}" />
+                            <Border Grid.Column="5"  Background="{StaticResource BorderBrush}" />
+                            <Border Grid.Column="7"  Background="{StaticResource BorderBrush}" />
+                            <Border Grid.Column="9"  Background="{StaticResource BorderBrush}" />
+                            <!-- Stats -->
+                            <StackPanel Grid.Column="0"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="HOURS" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding TotalHours, StringFormat={}{0:F2}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="AMOUNT" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding TotalAmount, StringFormat={}{0:C}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="4"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="WORKERS" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding NumberOfWorkers}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="6"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="CATEGORIES" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding NumberOfTrades}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="8"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="SITES" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding NumberOfConstructionSites}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="10" Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="LOGS" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding NumberOfLogs}" />
+                            </StackPanel>
                         </Grid>
                     </Border>
 
-                    <TabControl Margin="0,18,0,0">
-                        <TabItem Header="Detailed Logs">
-                            <DataGrid AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
+                    <!-- Export confirmation banner -->
+                    <Border Margin="0,12,0,0"
+                            Background="#FFF7ED"
+                            BorderBrush="#F59E0B"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="14,12"
+                            Visibility="{Binding IsExportConfirmationVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="Export current filtered report?" />
+                                <TextBlock Margin="0,3,0,0" Foreground="{StaticResource TextSecondaryBrush}"
+                                           Text="This will export all rows and totals exactly as currently filtered." />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                                <Button Command="{Binding ConfirmExportToExcelCommand}"
+                                        Content="Yes, Export"
+                                        Style="{StaticResource PrimaryButtonStyle}" />
+                                <Button Margin="10,0,0,0" Command="{Binding CancelExportToExcelCommand}"
+                                        Content="Cancel" Style="{StaticResource BaseButtonStyle}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Export in-progress banner -->
+                    <Border Margin="0,12,0,0"
+                            Background="#EFF6FF"
+                            BorderBrush="#93C5FD"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="14,12"
+                            Visibility="{Binding IsExportInProgress, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ProgressBar Width="140" Height="8" IsIndeterminate="True" VerticalAlignment="Center" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center"
+                                       FontWeight="SemiBold" Text="Creating Excel file…" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Modern tab views -->
+                    <TabControl Margin="0,18,0,0"
+                                Style="{StaticResource ReportTabControlStyle}">
+
+                        <TabItem Header="Detailed Logs" Style="{StaticResource ReportTabItemStyle}">
+                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       ItemsSource="{Binding ReportWorkLogs}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Worker}" Header="Worker Name" Width="170" />
-                                    <DataGridTextColumn Binding="{Binding Trade}" Header="Trade Name" Width="140" />
-                                    <DataGridTextColumn Binding="{Binding ConstructionSite}" Header="Construction Site" Width="180" />
-                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="110" />
-                                    <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}" Header="Duration Hours" Width="110" />
-                                    <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}" Header="Daily Rate" Width="100" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="110" />
+                                    <DataGridTextColumn Binding="{Binding Worker}"                                   Header="Worker"            Width="*" />
+                                    <DataGridTextColumn Binding="{Binding Trade}"                                    Header="Category"          Width="130" />
+                                    <DataGridTextColumn Binding="{Binding ConstructionSite}"                         Header="Site"              Width="150" />
+                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}"  Header="Date"              Width="105" />
+                                    <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}"     Header="Hours"             Width="80" />
+                                    <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}"          Header="Daily Rate"        Width="100" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"        Header="Total"             Width="100" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
 
-                        <TabItem Header="Summary by Worker">
-                            <DataGrid AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
+                        <TabItem Header="By Worker" Style="{StaticResource ReportTabItemStyle}">
+                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       ItemsSource="{Binding WorkerSummaries}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Worker}" Header="Worker Name" Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                    <DataGridTextColumn Binding="{Binding Worker}"                               Header="Worker"       Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
 
-                        <TabItem Header="Summary by Trade">
-                            <DataGrid AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
+                        <TabItem Header="By Category" Style="{StaticResource ReportTabItemStyle}">
+                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       ItemsSource="{Binding TradeSummaries}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Trade}" Header="Trade Name" Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                    <DataGridTextColumn Binding="{Binding Trade}"                                Header="Category"     Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
 
-                        <TabItem Header="Summary by Construction Site">
-                            <DataGrid AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
+                        <TabItem Header="By Site" Style="{StaticResource ReportTabItemStyle}">
+                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       ItemsSource="{Binding ConstructionSiteSummaries}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding ConstructionSite}" Header="Construction Site" Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                    <DataGridTextColumn Binding="{Binding ConstructionSite}"                     Header="Site"         Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
 
-                        <TabItem Header="Summary by Date">
-                            <DataGrid AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
+                        <TabItem Header="By Date" Style="{StaticResource ReportTabItemStyle}">
+                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
                                       ItemsSource="{Binding DateSummaries}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Work Date" Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}" Header="Logs" Width="90" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}" Header="Total Hours" Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}" Header="Total Amount" Width="140" />
+                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Date"         Width="*" />
+                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                            Header="Logs"         Width="80" />
+                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"       Header="Total Hours"  Width="120" />
+                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"       Header="Total Amount" Width="130" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>
+
                     </TabControl>
                 </StackPanel>
             </Border>

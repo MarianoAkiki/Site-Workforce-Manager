@@ -38,13 +38,13 @@ public partial class TradesViewModel : ObservableObject
     private bool showActiveTrades = true;
 
     [ObservableProperty]
-    private string formTitle = "Add Trade";
+    private string formTitle = "Add Category";
 
     [ObservableProperty]
-    private string formDescription = "Create a new trade for workers.";
+    private string formDescription = "Create a new category for workers.";
 
     [ObservableProperty]
-    private string saveButtonText = "Save Trade";
+    private string saveButtonText = "Save Category";
 
     private int? editingTradeId;
 
@@ -69,7 +69,7 @@ public partial class TradesViewModel : ObservableObject
     }
 
     public string StatusFilterButtonText => ShowActiveTrades ? "Show Inactive" : "Show Active";
-    public string StatusFilterLabel => ShowActiveTrades ? "Active trades" : "Inactive trades";
+    public string StatusFilterLabel => ShowActiveTrades ? "Active categories" : "Inactive categories";
 
     public void LoadTrades()
     {
@@ -125,9 +125,9 @@ public partial class TradesViewModel : ObservableObject
         SelectedTrade = null;
         TradeName = string.Empty;
         Description = string.Empty;
-        FormTitle = "Add Trade";
-        FormDescription = "Create a new trade and make it available for worker forms.";
-        SaveButtonText = "Save Trade";
+        FormTitle = "Add Category";
+        FormDescription = "Create a new category and make it available for worker forms.";
+        SaveButtonText = "Save Category";
         IsTradeFormVisible = true;
     }
 
@@ -136,7 +136,7 @@ public partial class TradesViewModel : ObservableObject
     {
         if (trade is null)
         {
-            MessageBox.Show("Please select a trade to edit.");
+            MessageBox.Show("Please select a category to edit.");
             return;
         }
 
@@ -144,8 +144,8 @@ public partial class TradesViewModel : ObservableObject
         SelectedTrade = trade;
         TradeName = trade.Name;
         Description = trade.Description ?? string.Empty;
-        FormTitle = "Edit Trade";
-        FormDescription = "Update the trade name or description.";
+        FormTitle = "Edit Category";
+        FormDescription = "Update the category name or description.";
         SaveButtonText = "Save Changes";
         IsTradeFormVisible = true;
     }
@@ -175,7 +175,7 @@ public partial class TradesViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(TradeName))
         {
-            MessageBox.Show("Trade name is required.");
+            MessageBox.Show("Category name is required.");
             return;
         }
 
@@ -187,7 +187,7 @@ public partial class TradesViewModel : ObservableObject
 
         if (duplicateExists)
         {
-            MessageBox.Show("A trade with this name already exists.");
+            MessageBox.Show("A category with this name already exists.");
             return;
         }
 
@@ -214,7 +214,7 @@ public partial class TradesViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(TradeName))
         {
-            MessageBox.Show("Trade name is required.");
+            MessageBox.Show("Category name is required.");
             return;
         }
 
@@ -226,7 +226,7 @@ public partial class TradesViewModel : ObservableObject
 
         if (duplicateExists)
         {
-            MessageBox.Show("A trade with this name already exists.");
+            MessageBox.Show("A category with this name already exists.");
             return;
         }
 
@@ -234,7 +234,7 @@ public partial class TradesViewModel : ObservableObject
 
         if (trade is null)
         {
-            MessageBox.Show("The selected trade could not be found.");
+            MessageBox.Show("The selected category could not be found.");
             return;
         }
 
@@ -254,7 +254,7 @@ public partial class TradesViewModel : ObservableObject
     {
         if (selectedTrade is null)
         {
-            MessageBox.Show("Please select a trade to update.");
+            MessageBox.Show("Please select a category to update.");
             return;
         }
 
@@ -264,15 +264,15 @@ public partial class TradesViewModel : ObservableObject
 
         if (trade is null)
         {
-            MessageBox.Show("The selected trade could not be found.");
+            MessageBox.Show("The selected category could not be found.");
             return;
         }
 
         var isDeactivating = trade.IsActive;
         var confirmed = ConfirmationDialogService.Show(
-            isDeactivating ? "Deactivate trade?" : "Activate trade?",
+            isDeactivating ? "Deactivate category?" : "Activate category?",
             isDeactivating
-                ? $"Are you sure you want to deactivate \"{trade.Name}\"? Existing workers will keep this trade, but it will not appear for new worker assignments."
+                ? $"Are you sure you want to deactivate \"{trade.Name}\"? Existing workers will keep this category, but it will not appear for new worker assignments."
                 : $"Are you sure you want to activate \"{trade.Name}\"? It will become available again for worker assignments.",
             isDeactivating ? "Deactivate" : "Activate",
             "Cancel",

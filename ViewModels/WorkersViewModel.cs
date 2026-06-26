@@ -157,7 +157,7 @@ public partial class WorkersViewModel : ObservableObject
                 LastName = worker.LastName,
                 WorkerName = worker.FirstName + " " + worker.LastName,
                 TradeId = worker.TradeId,
-                TradeName = worker.Trade != null ? worker.Trade.Name : "No Trade",
+                TradeName = worker.Trade != null ? worker.Trade.Name : "No Category",
                 CurrentDailyRate = worker.RateHistory
                     .Where(rate => rate.EffectiveFrom <= DateTime.Today &&
                                    (rate.EffectiveTo == null || rate.EffectiveTo >= DateTime.Today))
@@ -300,7 +300,7 @@ public partial class WorkersViewModel : ObservableObject
 
         if (SelectedTradeOption?.Id is not int tradeId)
         {
-            MessageBox.Show("Please select a trade.");
+            MessageBox.Show("Please select a category.");
             return;
         }
 
@@ -339,7 +339,7 @@ public partial class WorkersViewModel : ObservableObject
 
         if (SelectedTradeOption?.Id is not int tradeId)
         {
-            MessageBox.Show("Please select a trade.");
+            MessageBox.Show("Please select a category.");
             return;
         }
 

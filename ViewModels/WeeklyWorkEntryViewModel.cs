@@ -144,7 +144,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
 
         if (SelectedTradeOption?.Id is not int tradeId)
         {
-            StatusMessage = "Create or select a trade to start weekly entry.";
+            StatusMessage = "Create or select a category to start weekly entry.";
             return;
         }
 
@@ -236,11 +236,11 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
 
         if (workers.Count == 0)
         {
-            StatusMessage = "No active workers were found for the selected trade.";
+            StatusMessage = "No active workers were found for the selected category.";
         }
         else
         {
-            StatusMessage = $"{workers.Count} workers loaded for {SelectedTradeOption.Name}. Entries auto-save when hours and site are filled.";
+            StatusMessage = $"{workers.Count} workers loaded for {SelectedTradeOption.Name}. Entries auto-save when hours and construction site are filled.";
         }
     }
 
@@ -330,7 +330,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         }
 
         WeeklyPrintService.PrintWeeklyView(
-            SelectedTradeOption?.Name ?? "Trade",
+            SelectedTradeOption?.Name ?? "Category",
             WeekStart,
             WeekEnd,
             FilteredWorkerRows);

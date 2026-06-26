@@ -75,7 +75,7 @@
 
                     <StackPanel Margin="0,0,20,0">
                         <TextBlock Style="{StaticResource FieldLabelTextStyle}"
-                                   Text="Trade" />
+                                   Text="Category" />
                         <ComboBox MinHeight="36"
                                   DisplayMemberPath="Name"
                                   ItemsSource="{Binding TradeOptions}"
