@@ -7,6 +7,7 @@
              mc:Ignorable="d">
     <UserControl.Resources>
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
         <Style x:Key="InlineClearButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterClearButtonStyle}">
             <Setter Property="Width" Value="22" />
@@ -108,6 +109,17 @@
                                     Command="{Binding NextWeekCommand}"
                                     Content="&gt;"
                                     IsEnabled="{Binding CanGoNextWeek}"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Center"
+                                    Margin="0,6,0,0"
+                                    Orientation="Horizontal">
+                            <DatePicker DisplayDateEnd="{Binding MaxPickerDate, Mode=OneWay}"
+                                        SelectedDate="{Binding PickerDate, Mode=TwoWay}"
+                                        ToolTip="Pick any date to jump to that week" />
+                            <Button Margin="8,0,0,0"
+                                    Command="{Binding GoToTodayCommand}"
+                                    Content="Today"
                                     Style="{StaticResource BaseButtonStyle}" />
                         </StackPanel>
                     </StackPanel>
@@ -308,7 +320,7 @@
                     </Border>
 
                     <ScrollViewer Grid.Row="2" Grid.ColumnSpan="9" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding FilteredWorkerRows}">
+                    <ItemsControl ItemsSource="{Binding FilteredWorkerRows}" MinHeight="80">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -371,6 +383,16 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     </ScrollViewer>
+                    <Border Grid.Row="2"
+                            Grid.ColumnSpan="9"
+                            Background="#CCFFFFFF"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Loading..." />
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

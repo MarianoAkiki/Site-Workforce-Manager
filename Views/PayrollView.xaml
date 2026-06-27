@@ -7,6 +7,7 @@
              mc:Ignorable="d">
     <UserControl.Resources>
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
         <Style x:Key="InlineClearButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterClearButtonStyle}">
             <Setter Property="Width" Value="22" />
@@ -72,6 +73,17 @@
                                     Command="{Binding NextWeekCommand}"
                                     Content="&gt;"
                                     IsEnabled="{Binding CanGoNextWeek}"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                        </StackPanel>
+                        <StackPanel HorizontalAlignment="Center"
+                                    Margin="0,6,0,0"
+                                    Orientation="Horizontal">
+                            <DatePicker DisplayDateEnd="{Binding MaxPickerDate, Mode=OneWay}"
+                                        SelectedDate="{Binding PickerDate, Mode=TwoWay}"
+                                        ToolTip="Pick any date to jump to that week" />
+                            <Button Margin="8,0,0,0"
+                                    Command="{Binding GoToTodayCommand}"
+                                    Content="Today"
                                     Style="{StaticResource BaseButtonStyle}" />
                         </StackPanel>
                     </StackPanel>
@@ -193,6 +205,7 @@
                         </Border>
                     </Grid>
 
+                    <Grid MinHeight="80">
                     <ItemsControl ItemsSource="{Binding FilteredTradeGroups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -337,6 +350,15 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <Border Background="#CCFFFFFF"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Loading..." />
+                    </Border>
+                    </Grid>
 
                     <Grid Margin="0,12,0,0"
                           Background="#DBEAFE">

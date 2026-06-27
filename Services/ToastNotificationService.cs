@@ -82,15 +82,27 @@ public static class ToastNotificationService
 
         toast.Loaded += (_, _) =>
         {
-            if (owner is null)
+            var workArea = SystemParameters.WorkArea;
+            double left, top;
+
+            if (owner is not null && owner.WindowState == WindowState.Maximized)
             {
-                toast.Left = SystemParameters.WorkArea.Right - toast.ActualWidth - 24;
-                toast.Top = SystemParameters.WorkArea.Top + 24;
-                return;
+                left = workArea.Right - toast.ActualWidth - 24;
+                top = workArea.Top + 24;
+            }
+            else if (owner is not null)
+            {
+                left = owner.Left + owner.ActualWidth - toast.ActualWidth - 32;
+                top = owner.Top + 32;
+            }
+            else
+            {
+                left = workArea.Right - toast.ActualWidth - 24;
+                top = workArea.Top + 24;
             }
 
-            toast.Left = owner.Left + owner.ActualWidth - toast.ActualWidth - 32;
-            toast.Top = owner.Top + 32;
+            toast.Left = Math.Max(workArea.Left, Math.Min(left, workArea.Right - toast.ActualWidth));
+            toast.Top = Math.Max(workArea.Top, Math.Min(top, workArea.Bottom - toast.ActualHeight));
         };
 
         var timer = new DispatcherTimer

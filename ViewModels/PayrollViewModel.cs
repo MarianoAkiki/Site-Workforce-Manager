@@ -15,11 +15,13 @@ public partial class PayrollViewModel : ObservableObject
 {
     private readonly DateTime latestFullWeekStart;
     private readonly List<PayrollTradeGroup> allTradeGroups = new();
+    private CancellationTokenSource? loadCts;
 
     public PayrollViewModel()
     {
         latestFullWeekStart = GetLatestFullWeekStart(DateTime.Today);
         WeekStart = latestFullWeekStart;
+        PickerDate = DateTime.Today;
         LoadPayrollPage();
     }
 
@@ -28,6 +30,9 @@ public partial class PayrollViewModel : ObservableObject
 
     [ObservableProperty]
     private DateTime weekStart;
+
+    [ObservableProperty]
+    private DateTime? pickerDate;
 
     [ObservableProperty]
     private string workerIdFilterText = string.Empty;
@@ -47,14 +52,27 @@ public partial class PayrollViewModel : ObservableObject
     [ObservableProperty]
     private decimal grandTotalPayment;
 
+    [ObservableProperty]
+    private bool isLoading;
+
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
     public bool CanGoNextWeek => WeekStart < latestFullWeekStart;
     public bool CanEditSelectedWeek => WeekStart == latestFullWeekStart;
+    public DateTime MaxPickerDate => latestFullWeekStart;
     public string BalanceHeaderText => "Balance";
     public string PaymentHeaderText => CanEditSelectedWeek ? "Payment Amount" : "Paid This Week";
     public string GrandTotalBalanceDisplay => PayrollFmt.Fmt(GrandTotalBalance);
     public string GrandTotalPaymentDisplay => PayrollFmt.Fmt(GrandTotalPayment);
+
+    partial void OnPickerDateChanged(DateTime? value)
+    {
+        if (value is null) return;
+        var thursday = SnapToWeekStart(value.Value);
+        if (thursday > latestFullWeekStart) thursday = latestFullWeekStart;
+        if (thursday != WeekStart)
+            WeekStart = thursday;
+    }
 
     partial void OnWeekStartChanged(DateTime value)
     {
@@ -64,7 +82,7 @@ public partial class PayrollViewModel : ObservableObject
         OnPropertyChanged(nameof(CanEditSelectedWeek));
         OnPropertyChanged(nameof(BalanceHeaderText));
         OnPropertyChanged(nameof(PaymentHeaderText));
-        LoadPayrollRows();
+        _ = LoadPayrollRowsAsync();
     }
 
     partial void OnWorkerIdFilterTextChanged(string value) => RefreshFilteredGroups();
@@ -76,13 +94,21 @@ public partial class PayrollViewModel : ObservableObject
         WorkerIdFilterText = string.Empty;
         WorkerNameFilterText = string.Empty;
         TradeFilterText = string.Empty;
-        LoadPayrollRows();
+        _ = LoadPayrollRowsAsync();
+    }
+
+    [RelayCommand]
+    private void GoToToday()
+    {
+        WeekStart = latestFullWeekStart;
+        PickerDate = DateTime.Today;
     }
 
     [RelayCommand]
     private void PreviousWeek()
     {
         WeekStart = WeekStart.AddDays(-7);
+        PickerDate = WeekStart;
     }
 
     [RelayCommand]
@@ -94,6 +120,7 @@ public partial class PayrollViewModel : ObservableObject
         }
 
         WeekStart = WeekStart.AddDays(7);
+        PickerDate = WeekStart;
     }
 
     [RelayCommand]
@@ -184,7 +211,6 @@ public partial class PayrollViewModel : ObservableObject
 
         context.SaveChanges();
         StatusMessage = $"Saved payment for {row.WorkerName}.";
-        ToastNotificationService.ShowSuccess(StatusMessage);
         RecalculateGrandTotals();
     }
 
@@ -222,93 +248,108 @@ public partial class PayrollViewModel : ObservableObject
                 payment.WeekStartDate == WeekStart.Date);
     }
 
-    private void LoadPayrollRows()
+    private async Task LoadPayrollRowsAsync()
     {
+        loadCts?.Cancel();
+        loadCts = new CancellationTokenSource();
+        var cts = loadCts;
+
+        IsLoading = true;
         allTradeGroups.Clear();
         TradeGroups.Clear();
         FilteredTradeGroups.Clear();
 
-        using var context = new AppDbContext();
+        // Capture values used in background thread to avoid cross-thread access to the VM
+        var weekStart = WeekStart;
+        var weekEnd = WeekEnd;
+        var canEdit = CanEditSelectedWeek;
 
-        var workers = context.Workers
-            .AsNoTracking()
-            .Include(worker => worker.Trade)
-            .Where(worker => worker.Status == EntityStatus.Active)
-            .OrderBy(worker => worker.Trade!.Name)
-            .ThenBy(worker => worker.FirstName)
-            .ThenBy(worker => worker.LastName)
-            .ToList();
-
-        var workerIds = workers.Select(worker => worker.Id).ToList();
-        var earnedLogs = context.WorkLogs
-            .AsNoTracking()
-            .Where(log => workerIds.Contains(log.WorkerId) && log.WorkDate <= WeekEnd.Date)
-            .Select(log => new
-            {
-                log.WorkerId,
-                log.TotalAmount
-            })
-            .ToList();
-
-        var earnedByWorker = earnedLogs
-            .GroupBy(log => log.WorkerId)
-            .ToDictionary(group => group.Key, group => group.Sum(log => log.TotalAmount));
-
-        var paidUpToWeekEndByWorker = context.WorkerPayments
-            .AsNoTracking()
-            .Where(payment => workerIds.Contains(payment.WorkerId) && payment.PaymentDate <= WeekEnd.Date)
-            .Select(payment => new { payment.WorkerId, payment.Amount })
-            .ToList()
-            .GroupBy(payment => payment.WorkerId)
-            .ToDictionary(group => group.Key, group => group.Sum(payment => payment.Amount));
-
-        var weeklyPayrollPayments = context.WorkerPayments
-            .AsNoTracking()
-            .Where(payment =>
-                workerIds.Contains(payment.WorkerId) &&
-                payment.WeekStartDate == WeekStart.Date)
-            .ToDictionary(payment => payment.WorkerId, payment => payment.Amount);
-
-        foreach (var tradeGroup in workers.GroupBy(worker => worker.Trade?.Name ?? "No Category").OrderBy(group => group.Key))
+        try
         {
-            var payrollGroup = new PayrollTradeGroup
+            var data = await Task.Run(() =>
             {
-                TradeName = tradeGroup.Key
-            };
+                using var context = new AppDbContext();
 
-            foreach (var worker in tradeGroup)
+                var workers = context.Workers
+                    .AsNoTracking()
+                    .Include(worker => worker.Trade)
+                    .Where(worker => worker.Status == EntityStatus.Active)
+                    .OrderBy(worker => worker.Trade!.Name)
+                    .ThenBy(worker => worker.FirstName)
+                    .ThenBy(worker => worker.LastName)
+                    .ToList();
+
+                var workerIds = workers.Select(worker => worker.Id).ToList();
+
+                var earnedByWorker = context.WorkLogs
+                    .AsNoTracking()
+                    .Where(log => workerIds.Contains(log.WorkerId) && log.WorkDate <= weekEnd.Date)
+                    .GroupBy(log => log.WorkerId)
+                    .Select(g => new { WorkerId = g.Key, Total = g.Sum(log => (double)log.TotalAmount) })
+                    .ToDictionary(x => x.WorkerId, x => (decimal)x.Total);
+
+                var priorWeekCutoff = weekStart.Date.AddDays(-1);
+                var paidUpToWeekEndByWorker = context.WorkerPayments
+                    .AsNoTracking()
+                    .Where(payment => workerIds.Contains(payment.WorkerId) && payment.WeekStartDate <= priorWeekCutoff)
+                    .GroupBy(payment => payment.WorkerId)
+                    .Select(g => new { WorkerId = g.Key, Total = g.Sum(p => (double)p.Amount) })
+                    .ToDictionary(x => x.WorkerId, x => (decimal)x.Total);
+
+                var weeklyPayrollPayments = context.WorkerPayments
+                    .AsNoTracking()
+                    .Where(payment => workerIds.Contains(payment.WorkerId) && payment.WeekStartDate == weekStart.Date)
+                    .ToDictionary(payment => payment.WorkerId, payment => payment.Amount);
+
+                return (workers, earnedByWorker, paidUpToWeekEndByWorker, weeklyPayrollPayments);
+            }, cts.Token);
+
+            if (cts.IsCancellationRequested) return;
+
+            foreach (var tradeGroup in data.workers.GroupBy(worker => worker.Trade?.Name ?? "No Category").OrderBy(group => group.Key))
             {
-                earnedByWorker.TryGetValue(worker.Id, out var earnedAmount);
-                paidUpToWeekEndByWorker.TryGetValue(worker.Id, out var paidUpToWeekEnd);
-                weeklyPayrollPayments.TryGetValue(worker.Id, out var editableWeeklyPayment);
+                var payrollGroup = new PayrollTradeGroup { TradeName = tradeGroup.Key };
 
-                var row = new PayrollWorkerRow
+                foreach (var worker in tradeGroup)
                 {
-                    WorkerId = worker.Id,
-                    WorkerName = $"{worker.FirstName} {worker.LastName}".Trim(),
-                    TradeName = tradeGroup.Key,
-                    Balance = Math.Round(earnedAmount - paidUpToWeekEnd, 2),
-                    PaymentAmountText = editableWeeklyPayment > 0 ? editableWeeklyPayment.ToString("0.##") : string.Empty,
-                    IsPaymentEditable = CanEditSelectedWeek,
-                    AutoSaveRequested = CanEditSelectedWeek ? AutoSaveRow : null,
-                    LiveBalanceRequested = ComputeLiveBalance
-                };
+                    data.earnedByWorker.TryGetValue(worker.Id, out var earnedAmount);
+                    data.paidUpToWeekEndByWorker.TryGetValue(worker.Id, out var paidUpToWeekEnd);
+                    data.weeklyPayrollPayments.TryGetValue(worker.Id, out var editableWeeklyPayment);
 
-                row.PropertyChanged += OnPayrollRowPropertyChanged;
-                payrollGroup.Rows.Add(row);
+                    var row = new PayrollWorkerRow
+                    {
+                        WorkerId = worker.Id,
+                        WorkerName = $"{worker.FirstName} {worker.LastName}".Trim(),
+                        TradeName = tradeGroup.Key,
+                        Balance = Math.Round(earnedAmount - paidUpToWeekEnd, 2),
+                        PaymentAmountText = editableWeeklyPayment > 0 ? editableWeeklyPayment.ToString("0.##") : string.Empty,
+                        IsPaymentEditable = canEdit,
+                        AutoSaveRequested = canEdit ? AutoSaveRow : null,
+                        LiveBalanceRequested = ComputeLiveBalance
+                    };
+
+                    row.PropertyChanged += OnPayrollRowPropertyChanged;
+                    payrollGroup.Rows.Add(row);
+                }
+
+                payrollGroup.RecalculateTotals();
+                allTradeGroups.Add(payrollGroup);
+                TradeGroups.Add(payrollGroup);
             }
 
-            payrollGroup.RecalculateTotals();
-            allTradeGroups.Add(payrollGroup);
-            TradeGroups.Add(payrollGroup);
+            RefreshFilteredGroups();
+            RecalculateGrandTotals();
+
+            StatusMessage = canEdit
+                ? "Latest completed payroll week is editable."
+                : "Previous payroll weeks are read-only.";
         }
-
-        RefreshFilteredGroups();
-        RecalculateGrandTotals();
-
-        StatusMessage = CanEditSelectedWeek
-            ? "Latest completed payroll week is editable."
-            : "Previous payroll weeks are read-only.";
+        catch (OperationCanceledException) { }
+        finally
+        {
+            if (!cts.IsCancellationRequested)
+                IsLoading = false;
+        }
     }
 
     private void OnPayrollRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -391,6 +432,12 @@ public partial class PayrollViewModel : ObservableObject
         var daysSinceWednesday = ((int)today.DayOfWeek - (int)DayOfWeek.Wednesday + 7) % 7;
         var lastCompletedWednesday = today.Date.AddDays(-daysSinceWednesday);
         return lastCompletedWednesday.AddDays(-6);
+    }
+
+    private static DateTime SnapToWeekStart(DateTime date)
+    {
+        var daysSinceThursday = ((int)date.DayOfWeek - (int)DayOfWeek.Thursday + 7) % 7;
+        return date.Date.AddDays(-daysSinceThursday);
     }
 }
 

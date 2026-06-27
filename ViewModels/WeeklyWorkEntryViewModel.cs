@@ -14,10 +14,12 @@ namespace Site_Workforce_Manager.ViewModels;
 public partial class WeeklyWorkEntryViewModel : ObservableObject
 {
     private readonly List<WeeklyWorkerRow> allWorkerRows = new();
+    private CancellationTokenSource? loadCts;
 
     public WeeklyWorkEntryViewModel()
     {
         WeekStart = GetCurrentWeekStart(DateTime.Today);
+        PickerDate = DateTime.Today;
         LoadWeeklyEntryPage();
     }
 
@@ -33,7 +35,13 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
     private DateTime weekStart;
 
     [ObservableProperty]
+    private DateTime? pickerDate;
+
+    [ObservableProperty]
     private string statusMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool isLoading;
 
     [ObservableProperty]
     private string workerIdFilterText = string.Empty;
@@ -44,10 +52,20 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public bool CanGoNextWeek => WeekStart < GetCurrentWeekStart(DateTime.Today);
+    public DateTime MaxPickerDate => GetCurrentWeekStart(DateTime.Today);
 
     partial void OnSelectedTradeOptionChanged(LookupOption? value)
     {
-        LoadWorkerRows();
+        _ = LoadWorkerRowsAsync();
+    }
+
+    partial void OnPickerDateChanged(DateTime? value)
+    {
+        if (value is null) return;
+        var thursday = GetCurrentWeekStart(value.Value);
+        if (thursday > MaxPickerDate) thursday = MaxPickerDate;
+        if (thursday != WeekStart)
+            WeekStart = thursday;
     }
 
     partial void OnWeekStartChanged(DateTime value)
@@ -56,7 +74,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         OnPropertyChanged(nameof(WeekRangeText));
         OnPropertyChanged(nameof(CanGoNextWeek));
         LoadWeekDays();
-        LoadWorkerRows();
+        _ = LoadWorkerRowsAsync();
     }
 
     partial void OnWorkerIdFilterTextChanged(string value)
@@ -75,13 +93,21 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         WorkerNameFilterText = string.Empty;
         LoadTradeOptions();
         LoadWeekDays();
-        LoadWorkerRows();
+        _ = LoadWorkerRowsAsync();
+    }
+
+    [RelayCommand]
+    private void GoToToday()
+    {
+        WeekStart = GetCurrentWeekStart(DateTime.Today);
+        PickerDate = DateTime.Today;
     }
 
     [RelayCommand]
     private void PreviousWeek()
     {
         WeekStart = WeekStart.AddDays(-7);
+        PickerDate = WeekStart;
     }
 
     [RelayCommand]
@@ -93,6 +119,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         }
 
         WeekStart = WeekStart.AddDays(7);
+        PickerDate = WeekStart;
     }
 
     private void LoadTradeOptions()
@@ -136,8 +163,12 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         }
     }
 
-    private void LoadWorkerRows()
+    private async Task LoadWorkerRowsAsync()
     {
+        loadCts?.Cancel();
+        loadCts = new CancellationTokenSource();
+        var cts = loadCts;
+
         allWorkerRows.Clear();
         WorkerRows.Clear();
         FilteredWorkerRows.Clear();
@@ -148,99 +179,114 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
             return;
         }
 
-        using var context = new AppDbContext();
-        var workers = context.Workers
-            .AsNoTracking()
-            .Include(worker => worker.Trade)
-            .Where(worker => worker.TradeId == tradeId && worker.Status == EntityStatus.Active)
-            .OrderBy(worker => worker.FirstName)
-            .ThenBy(worker => worker.LastName)
-            .ToList();
+        IsLoading = true;
 
-        var workerIds = workers.Select(worker => worker.Id).ToList();
-        var existingLogs = context.WorkLogs
-            .AsNoTracking()
-            .Where(workLog =>
-                workerIds.Contains(workLog.WorkerId) &&
-                workLog.WorkDate >= WeekStart &&
-                workLog.WorkDate <= WeekEnd)
-            .ToList();
+        var weekStart = WeekStart;
+        var weekEnd = WeekEnd;
+        var tradeName = SelectedTradeOption.Name;
 
-        var assignedSitesByWorker = context.WorkerConstructionSites
-            .AsNoTracking()
-            .Include(workerSite => workerSite.ConstructionSite)
-            .Where(workerSite =>
-                workerIds.Contains(workerSite.WorkerId) &&
-                workerSite.Status == EntityStatus.Active &&
-                workerSite.ConstructionSite != null &&
-                workerSite.ConstructionSite.Status == EntityStatus.Active)
-            .OrderBy(workerSite => workerSite.ConstructionSite!.Name)
-            .ToList()
-            .GroupBy(workerSite => workerSite.WorkerId)
-            .ToDictionary(
-                group => group.Key,
-                group => group.Select(workerSite => new LookupOption
-                {
-                    Id = workerSite.ConstructionSiteId,
-                    Name = workerSite.ConstructionSite!.Name
-                }).ToList());
-
-        foreach (var worker in workers)
+        try
         {
-            var assignedSites = assignedSitesByWorker.TryGetValue(worker.Id, out var sites) ? sites : [];
-
-            var row = new WeeklyWorkerRow
+            var data = await Task.Run(() =>
             {
-                WorkerId = worker.Id,
-                WorkerName = $"{worker.FirstName} {worker.LastName}".Trim()
-            };
+                using var context = new AppDbContext();
 
-            for (var dayOffset = 0; dayOffset < 7; dayOffset++)
+                var workers = context.Workers
+                    .AsNoTracking()
+                    .Include(worker => worker.Trade)
+                    .Where(worker => worker.TradeId == tradeId && worker.Status == EntityStatus.Active)
+                    .OrderBy(worker => worker.FirstName)
+                    .ThenBy(worker => worker.LastName)
+                    .ToList();
+
+                var workerIds = workers.Select(worker => worker.Id).ToList();
+
+                var existingLogs = context.WorkLogs
+                    .AsNoTracking()
+                    .Where(workLog =>
+                        workerIds.Contains(workLog.WorkerId) &&
+                        workLog.WorkDate >= weekStart &&
+                        workLog.WorkDate <= weekEnd)
+                    .ToList();
+
+                var assignedSitesByWorker = context.WorkerConstructionSites
+                    .AsNoTracking()
+                    .Include(workerSite => workerSite.ConstructionSite)
+                    .Where(workerSite =>
+                        workerIds.Contains(workerSite.WorkerId) &&
+                        workerSite.Status == EntityStatus.Active &&
+                        workerSite.ConstructionSite != null &&
+                        workerSite.ConstructionSite.Status == EntityStatus.Active)
+                    .OrderBy(workerSite => workerSite.ConstructionSite!.Name)
+                    .ToList()
+                    .GroupBy(workerSite => workerSite.WorkerId)
+                    .ToDictionary(
+                        group => group.Key,
+                        group => group.Select(workerSite => new LookupOption
+                        {
+                            Id = workerSite.ConstructionSiteId,
+                            Name = workerSite.ConstructionSite!.Name
+                        }).ToList());
+
+                return (workers, existingLogs, assignedSitesByWorker);
+            }, cts.Token);
+
+            if (cts.IsCancellationRequested) return;
+
+            foreach (var worker in data.workers)
             {
-                var date = WeekStart.AddDays(dayOffset);
-                var existingLog = existingLogs
-                    .Where(workLog => workLog.WorkerId == worker.Id && workLog.WorkDate == date)
-                    .OrderBy(workLog => workLog.Id)
-                    .FirstOrDefault();
+                var assignedSites = data.assignedSitesByWorker.TryGetValue(worker.Id, out var sites) ? sites : [];
 
-                var cell = new WeeklyWorkLogCell
+                var row = new WeeklyWorkerRow
                 {
                     WorkerId = worker.Id,
-                    WorkerName = row.WorkerName,
-                    WorkDate = date,
-                    DurationHoursText = existingLog?.DurationHours.ToString("0.##") ?? string.Empty
+                    WorkerName = $"{worker.FirstName} {worker.LastName}".Trim()
                 };
 
-                foreach (var site in assignedSites)
+                for (var dayOffset = 0; dayOffset < 7; dayOffset++)
                 {
-                    cell.ConstructionSiteOptions.Add(new LookupOption
+                    var date = weekStart.AddDays(dayOffset);
+                    var existingLog = data.existingLogs
+                        .Where(workLog => workLog.WorkerId == worker.Id && workLog.WorkDate == date)
+                        .OrderBy(workLog => workLog.Id)
+                        .FirstOrDefault();
+
+                    var cell = new WeeklyWorkLogCell
                     {
-                        Id = site.Id,
-                        Name = site.Name
-                    });
+                        WorkerId = worker.Id,
+                        WorkerName = row.WorkerName,
+                        WorkDate = date,
+                        DurationHoursText = existingLog?.DurationHours.ToString("0.##") ?? string.Empty
+                    };
+
+                    foreach (var site in assignedSites)
+                    {
+                        cell.ConstructionSiteOptions.Add(new LookupOption { Id = site.Id, Name = site.Name });
+                    }
+
+                    cell.SelectedConstructionSiteOption = cell.ConstructionSiteOptions
+                        .FirstOrDefault(site => site.Id == existingLog?.ConstructionSiteId)
+                        ?? (cell.ConstructionSiteOptions.Count == 1 ? cell.ConstructionSiteOptions[0] : null);
+                    cell.AutoSaveRequested = AutoSaveCell;
+
+                    row.Cells.Add(cell);
                 }
 
-                cell.SelectedConstructionSiteOption = cell.ConstructionSiteOptions
-                    .FirstOrDefault(site => site.Id == existingLog?.ConstructionSiteId)
-                    ?? (cell.ConstructionSiteOptions.Count == 1 ? cell.ConstructionSiteOptions[0] : null);
-                cell.AutoSaveRequested = AutoSaveCell;
-
-                row.Cells.Add(cell);
+                allWorkerRows.Add(row);
+                WorkerRows.Add(row);
             }
 
-            allWorkerRows.Add(row);
-            WorkerRows.Add(row);
-        }
+            RefreshFilteredWorkerRows();
 
-        RefreshFilteredWorkerRows();
-
-        if (workers.Count == 0)
-        {
-            StatusMessage = "No active workers were found for the selected category.";
+            StatusMessage = data.workers.Count == 0
+                ? "No active workers were found for the selected category."
+                : $"{data.workers.Count} workers loaded for {tradeName}. Entries auto-save when hours and construction site are filled.";
         }
-        else
+        catch (OperationCanceledException) { }
+        finally
         {
-            StatusMessage = $"{workers.Count} workers loaded for {SelectedTradeOption.Name}. Entries auto-save when hours and construction site are filled.";
+            if (!cts.IsCancellationRequested)
+                IsLoading = false;
         }
     }
 
