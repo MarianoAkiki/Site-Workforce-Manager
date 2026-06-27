@@ -22,6 +22,7 @@ public partial class ReportsViewModel : ObservableObject
     {
         isInitializing = true;
         LoadLookupData();
+        SetDefaultDateRange();
         isInitializing = false;
         ApplyFilters();
     }
@@ -88,6 +89,7 @@ public partial class ReportsViewModel : ObservableObject
     {
         isInitializing = true;
         LoadLookupData();
+        SetDefaultDateRange();
         isInitializing = false;
         ApplyFilters();
     }
@@ -450,6 +452,20 @@ public partial class ReportsViewModel : ObservableObject
             IsExportInProgress = false;
             MessageBox.Show($"Export failed: {ex.Message}");
         }
+    }
+
+    private void SetDefaultDateRange()
+    {
+        var weekStart = GetLatestFullWeekStart(DateTime.Today);
+        DateFrom = weekStart;
+        DateTo   = weekStart.AddDays(6);
+    }
+
+    private static DateTime GetLatestFullWeekStart(DateTime today)
+    {
+        var daysSinceWednesday = ((int)today.DayOfWeek - (int)DayOfWeek.Wednesday + 7) % 7;
+        var lastCompletedWednesday = today.Date.AddDays(-daysSinceWednesday);
+        return lastCompletedWednesday.AddDays(-6);
     }
 
     private void LoadLookupData()

@@ -54,13 +54,11 @@
     </UserControl.Resources>
 
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
-                      Visibility="{Binding IsSiteFormVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+        <Grid Visibility="{Binding IsSiteFormVisible, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
                 <StackPanel>
                     <TextBlock Style="{StaticResource PageTitleTextStyle}"
@@ -178,8 +176,7 @@
                         </DataGrid>
                     </Grid>
                 </Border>
-            </Grid>
-        </ScrollViewer>
+        </Grid>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       Visibility="{Binding IsSiteFormVisible, Converter={StaticResource BoolToVisibilityConverter}}">

@@ -9,20 +9,22 @@ public static class DatabaseInitializer
 {
     public static void Initialize()
     {
-        using var context = new AppDbContext();
+        using (var context = new AppDbContext())
+        {
+            context.Database.EnsureCreated();
+            EnsureTradesSchemaExists(context);
+            EnsureDailyRateHistorySchema(context);
+            EnsureWorkLogsTableExists(context);
+            EnsureWorkerPaymentsTableExists(context);
+            EnsureLegacyTradesExist(context);
+            BackfillWorkerTrades(context);
+            RemoveLegacyWorkerTradeColumn(context);
+            RemoveLegacyWorkerNumberColumn(context);
+            RemoveLegacyPayrollTables(context);
+            MigrateWorkerPaymentsAddWeekStartDate(context);
+            MigrateRemoveWorkLogNotes(context);
+        }
 
-        context.Database.EnsureCreated();
-        EnsureTradesSchemaExists(context);
-        EnsureDailyRateHistorySchema(context);
-        EnsureWorkLogsTableExists(context);
-        EnsureWorkerPaymentsTableExists(context);
-        EnsureLegacyTradesExist(context);
-        BackfillWorkerTrades(context);
-        RemoveLegacyWorkerTradeColumn(context);
-        RemoveLegacyWorkerNumberColumn(context);
-        RemoveLegacyPayrollTables(context);
-        MigrateWorkerPaymentsAddWeekStartDate(context);
-        MigrateRemoveWorkLogNotes(context);
     }
 
     private static void EnsureTradesSchemaExists(AppDbContext context)
@@ -137,6 +139,7 @@ public static class DatabaseInitializer
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_WorkerId ON WorkLogs (WorkerId);");
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_ConstructionSiteId ON WorkLogs (ConstructionSiteId);");
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkLogs_WorkDate ON WorkLogs (WorkDate);");
+        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_WorkLogs_WorkerId_WorkDate ON WorkLogs (WorkerId, WorkDate);");
     }
 
     private static void EnsureDailyRateHistorySchema(AppDbContext context)
@@ -189,6 +192,7 @@ public static class DatabaseInitializer
 
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_WorkerId ON WorkerPayments (WorkerId);");
         context.Database.ExecuteSqlRaw("CREATE INDEX IF NOT EXISTS IX_WorkerPayments_PaymentDate ON WorkerPayments (PaymentDate);");
+        context.Database.ExecuteSqlRaw("CREATE UNIQUE INDEX IF NOT EXISTS IX_WorkerPayments_WorkerId_WeekStartDate ON WorkerPayments (WorkerId, WeekStartDate);");
     }
 
     private static void MigrateWorkerPaymentsAddWeekStartDate(AppDbContext context)

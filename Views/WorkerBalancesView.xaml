@@ -18,13 +18,12 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
             <StackPanel>
                 <TextBlock Style="{StaticResource PageTitleTextStyle}" Text="Worker Balances" />
@@ -35,13 +34,26 @@
             <Border Grid.Row="1" Margin="0,16,0,0" Style="{StaticResource CardBorderStyle}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="200" />
                         <ColumnDefinition Width="180" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Margin="0,0,12,0">
+                    <StackPanel Margin="0,0,8,0">
+                        <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="ID" />
+                        <Grid>
+                            <TextBox MinHeight="30" Padding="6,4,20,4" FontSize="12"
+                                     Text="{Binding WorkerIdFilterText, UpdateSourceTrigger=PropertyChanged}" />
+                            <Button Margin="0,0,3,0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Command="{Binding ClearWorkerIdFilterCommand}" Content="x"
+                                    Style="{StaticResource InlineClearButtonStyle}"
+                                    Visibility="{Binding WorkerIdFilterText, Converter={StaticResource StringToVisibilityConverter}}" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
                         <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Worker Name" />
                         <Grid>
                             <TextBox MinHeight="30" Padding="8,4,28,4" FontSize="12"
@@ -53,7 +65,7 @@
                         </Grid>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                    <StackPanel Grid.Column="2" Margin="0,0,16,0">
                         <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Category" />
                         <Grid>
                             <TextBox MinHeight="30" Padding="8,4,28,4" FontSize="12"
@@ -65,7 +77,7 @@
                         </Grid>
                     </StackPanel>
 
-                    <CheckBox Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,6"
+                    <CheckBox Grid.Column="3" VerticalAlignment="Bottom" Margin="0,0,0,6"
                               IsChecked="{Binding ShowOnlyWithBalance}"
                               Foreground="{StaticResource TextPrimaryBrush}"
                               Content="Outstanding balance only" />
@@ -73,7 +85,12 @@
             </Border>
 
             <Border Grid.Row="2" Margin="0,20,0,0" Style="{StaticResource CardBorderStyle}">
-                <StackPanel>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
                     <!-- Header -->
                     <Grid>
@@ -106,6 +123,7 @@
                     </Grid>
 
                     <!-- Rows -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding FilteredRows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -153,9 +171,10 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    </ScrollViewer>
 
                     <!-- Totals -->
-                    <Grid Margin="0,12,0,0" Background="#DBEAFE">
+                    <Grid Grid.Row="2" Margin="0,0,0,0" Background="#DBEAFE">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="60" />
                             <ColumnDefinition Width="180" />
@@ -178,8 +197,7 @@
                         </Border>
                     </Grid>
 
-                </StackPanel>
+                </Grid>
             </Border>
         </Grid>
-    </ScrollViewer>
 </UserControl>

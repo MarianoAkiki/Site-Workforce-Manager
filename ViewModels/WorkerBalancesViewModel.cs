@@ -13,6 +13,9 @@ public partial class WorkerBalancesViewModel : ObservableObject
     private readonly List<WorkerBalanceRow> allRows = new();
 
     [ObservableProperty]
+    private string workerIdFilterText = string.Empty;
+
+    [ObservableProperty]
     private string workerNameFilterText = string.Empty;
 
     [ObservableProperty]
@@ -38,17 +41,22 @@ public partial class WorkerBalancesViewModel : ObservableObject
         ? $"-{Math.Abs(GrandTotalBalance):C}"
         : GrandTotalBalance.ToString("C");
 
+    partial void OnWorkerIdFilterTextChanged(string value) => RefreshFilteredRows();
     partial void OnWorkerNameFilterTextChanged(string value) => RefreshFilteredRows();
     partial void OnTradeFilterTextChanged(string value) => RefreshFilteredRows();
     partial void OnShowOnlyWithBalanceChanged(bool value) => RefreshFilteredRows();
 
     public void LoadPage()
     {
+        WorkerIdFilterText = string.Empty;
         WorkerNameFilterText = string.Empty;
         TradeFilterText = string.Empty;
         ShowOnlyWithBalance = false;
         LoadRows();
     }
+
+    [RelayCommand]
+    private void ClearWorkerIdFilter() => WorkerIdFilterText = string.Empty;
 
     [RelayCommand]
     private void ClearWorkerNameFilter() => WorkerNameFilterText = string.Empty;
@@ -112,11 +120,16 @@ public partial class WorkerBalancesViewModel : ObservableObject
     {
         FilteredRows.Clear();
 
+        var idFilter = WorkerIdFilterText.Trim();
         var nameFilter = WorkerNameFilterText.Trim();
         var tradeFilter = TradeFilterText.Trim();
 
         foreach (var row in allRows)
         {
+            if (!string.IsNullOrWhiteSpace(idFilter) &&
+                !row.WorkerId.ToString().Contains(idFilter, StringComparison.CurrentCultureIgnoreCase))
+                continue;
+
             if (!string.IsNullOrWhiteSpace(nameFilter) &&
                 !row.WorkerName.Contains(nameFilter, StringComparison.CurrentCultureIgnoreCase))
                 continue;

@@ -101,10 +101,10 @@ public static class PayrollPrintService
 
         // Column header row
         var hdr = new TableRow();
-        hdr.Cells.Add(Cell("ID",                 DarkHeaderBrush, Brushes.White, bold: true));
-        hdr.Cells.Add(Cell("Worker",             DarkHeaderBrush, Brushes.White, bold: true));
-        hdr.Cells.Add(Cell("Balance",            DarkHeaderBrush, Brushes.White, bold: true, align: TextAlignment.Right));
-        hdr.Cells.Add(Cell("Payment This Week",  DarkHeaderBrush, Brushes.White, bold: true, align: TextAlignment.Right));
+        hdr.Cells.Add(Cell("ID",                 DarkHeaderBrush, Brushes.Black, bold: true));
+        hdr.Cells.Add(Cell("Worker",             DarkHeaderBrush, Brushes.Black, bold: true));
+        hdr.Cells.Add(Cell("Balance",            DarkHeaderBrush, Brushes.Black, bold: true, align: TextAlignment.Right));
+        hdr.Cells.Add(Cell("Payment This Week",  DarkHeaderBrush, Brushes.Black, bold: true, align: TextAlignment.Right));
         rg.Rows.Add(hdr);
 
         foreach (var group in groups)
