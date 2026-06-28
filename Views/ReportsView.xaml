@@ -286,6 +286,8 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="1" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <!-- Dividers -->
                             <Border Grid.Column="1"  Background="{StaticResource BorderBrush}" />
@@ -293,6 +295,7 @@
                             <Border Grid.Column="5"  Background="{StaticResource BorderBrush}" />
                             <Border Grid.Column="7"  Background="{StaticResource BorderBrush}" />
                             <Border Grid.Column="9"  Background="{StaticResource BorderBrush}" />
+                            <Border Grid.Column="11" Background="{StaticResource BorderBrush}" />
                             <!-- Stats -->
                             <StackPanel Grid.Column="0"  Margin="0,14,0,14" HorizontalAlignment="Center">
                                 <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
@@ -303,33 +306,40 @@
                             </StackPanel>
                             <StackPanel Grid.Column="2"  Margin="0,14,0,14" HorizontalAlignment="Center">
                                 <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
-                                           HorizontalAlignment="Center" Text="AMOUNT" />
+                                           HorizontalAlignment="Center" Text="EARNED" />
                                 <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
                                            Text="{Binding TotalAmount, StringFormat={}{0:C}}" />
                             </StackPanel>
                             <StackPanel Grid.Column="4"  Margin="0,14,0,14" HorizontalAlignment="Center">
                                 <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
+                                           HorizontalAlignment="Center" Text="PAID" />
+                                <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
+                                           HorizontalAlignment="Center"
+                                           Text="{Binding TotalPaid, StringFormat={}{0:C}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="6"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                                <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
                                            HorizontalAlignment="Center" Text="WORKERS" />
                                 <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
                                            Text="{Binding NumberOfWorkers}" />
                             </StackPanel>
-                            <StackPanel Grid.Column="6"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                            <StackPanel Grid.Column="8"  Margin="0,14,0,14" HorizontalAlignment="Center">
                                 <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
                                            HorizontalAlignment="Center" Text="CATEGORIES" />
                                 <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
                                            Text="{Binding NumberOfTrades}" />
                             </StackPanel>
-                            <StackPanel Grid.Column="8"  Margin="0,14,0,14" HorizontalAlignment="Center">
+                            <StackPanel Grid.Column="10" Margin="0,14,0,14" HorizontalAlignment="Center">
                                 <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
                                            HorizontalAlignment="Center" Text="SITES" />
                                 <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
                                            HorizontalAlignment="Center"
                                            Text="{Binding NumberOfConstructionSites}" />
                             </StackPanel>
-                            <StackPanel Grid.Column="10" Margin="0,14,0,14" HorizontalAlignment="Center">
+                            <StackPanel Grid.Column="12" Margin="0,14,0,14" HorizontalAlignment="Center">
                                 <TextBlock FontSize="11"  FontWeight="SemiBold" Foreground="{StaticResource TextMutedBrush}"
                                            HorizontalAlignment="Center" Text="LOGS" />
                                 <TextBlock FontSize="20"  FontWeight="Bold" Margin="0,4,0,0"
@@ -384,6 +394,7 @@
 
                     <!-- Modern tab views -->
                     <TabControl Margin="0,18,0,0"
+                                SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
                                 Style="{StaticResource ReportTabControlStyle}">
 
                         <TabItem Header="Detailed Logs" Style="{StaticResource ReportTabItemStyle}">
@@ -445,6 +456,19 @@
                                     <DataGridTextColumn Binding="{Binding NumberOfLogs}"                            Header="Logs"         Width="80" />
                                     <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"       Header="Total Hours"  Width="120" />
                                     <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"       Header="Total Amount" Width="130" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+
+                        <TabItem Header="Payments" Style="{StaticResource ReportTabItemStyle}">
+                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                      ItemsSource="{Binding ReportPayments}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding Worker}"                                       Header="Worker"       Width="*" />
+                                    <DataGridTextColumn Binding="{Binding Trade}"                                        Header="Category"     Width="130" />
+                                    <DataGridTextColumn Binding="{Binding WeekStartDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Week Start"   Width="110" />
+                                    <DataGridTextColumn Binding="{Binding PaymentDate, StringFormat={}{0:yyyy-MM-dd}}"   Header="Payment Date" Width="115" />
+                                    <DataGridTextColumn Binding="{Binding Amount, StringFormat={}{0:C}}"                 Header="Amount"       Width="110" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>

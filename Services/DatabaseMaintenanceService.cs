@@ -1,5 +1,4 @@
 using System.IO;
-using Microsoft.Data.Sqlite;
 using Site_Workforce_Manager.Data;
 
 namespace Site_Workforce_Manager.Services;
@@ -23,24 +22,5 @@ public static class DatabaseMaintenanceService
         }
 
         File.Copy(databasePath, destinationFilePath, overwrite: true);
-    }
-
-    public static void RestoreDatabase(string sourceFilePath)
-    {
-        if (!File.Exists(sourceFilePath))
-        {
-            throw new FileNotFoundException("The selected backup file could not be found.", sourceFilePath);
-        }
-
-        var databasePath = AppDbContext.GetDatabasePath();
-        var destinationDirectory = Path.GetDirectoryName(databasePath);
-
-        if (!string.IsNullOrWhiteSpace(destinationDirectory))
-        {
-            Directory.CreateDirectory(destinationDirectory);
-        }
-
-        SqliteConnection.ClearAllPools();
-        File.Copy(sourceFilePath, databasePath, overwrite: true);
     }
 }

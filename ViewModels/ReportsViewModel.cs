@@ -28,6 +28,7 @@ public partial class ReportsViewModel : ObservableObject
     }
 
     public ObservableCollection<ReportRow> ReportWorkLogs { get; } = new();
+    public ObservableCollection<PaymentReportRow> ReportPayments { get; } = new();
     public ObservableCollection<WorkerSummaryRow> WorkerSummaries { get; } = new();
     public ObservableCollection<TradeSummaryRow> TradeSummaries { get; } = new();
     public ObservableCollection<ConstructionSiteSummaryRow> ConstructionSiteSummaries { get; } = new();
@@ -68,6 +69,12 @@ public partial class ReportsViewModel : ObservableObject
 
     [ObservableProperty]
     private int numberOfLogs;
+
+    [ObservableProperty]
+    private decimal totalPaid;
+
+    [ObservableProperty]
+    private int selectedTabIndex;
 
     [ObservableProperty]
     private bool isExportConfirmationVisible;
@@ -188,11 +195,47 @@ public partial class ReportsViewModel : ObservableObject
             .ThenBy(workLog => workLog.Worker!.LastName)
             .ToList();
 
+        // Load payments filtered by date + worker (site filter doesn't apply to payments)
+        var paymentQuery = context.WorkerPayments
+            .AsNoTracking()
+            .Include(p => p.Worker)
+            .ThenInclude(w => w!.Trade)
+            .AsQueryable();
+
+        if (DateFrom.HasValue)
+            paymentQuery = paymentQuery.Where(p => p.PaymentDate >= DateFrom.Value.Date);
+        if (DateTo.HasValue)
+            paymentQuery = paymentQuery.Where(p => p.PaymentDate <= DateTo.Value.Date);
+        if (selectedWorkerIds.Count > 0)
+            paymentQuery = paymentQuery.Where(p => selectedWorkerIds.Contains(p.WorkerId));
+        if (selectedTradeIds.Count > 0)
+            paymentQuery = paymentQuery.Where(p => p.Worker!.TradeId.HasValue && selectedTradeIds.Contains(p.Worker.TradeId.Value));
+
+        var payments = paymentQuery
+            .OrderByDescending(p => p.PaymentDate)
+            .ThenBy(p => p.Worker!.FirstName)
+            .ToList();
+
         ReportWorkLogs.Clear();
+        ReportPayments.Clear();
         WorkerSummaries.Clear();
         TradeSummaries.Clear();
         ConstructionSiteSummaries.Clear();
         DateSummaries.Clear();
+
+        foreach (var payment in payments)
+        {
+            ReportPayments.Add(new PaymentReportRow
+            {
+                Worker = $"{payment.Worker?.FirstName} {payment.Worker?.LastName}".Trim(),
+                Trade = payment.Worker?.Trade?.Name ?? "Unassigned",
+                PaymentDate = payment.PaymentDate,
+                WeekStartDate = payment.WeekStartDate,
+                Amount = payment.Amount
+            });
+        }
+
+        TotalPaid = Math.Round(payments.Sum(p => p.Amount), 2);
 
         foreach (var workLog in workLogs)
         {
@@ -344,9 +387,20 @@ public partial class ReportsViewModel : ObservableObject
     [RelayCommand]
     private void RequestExportToExcel()
     {
-        if (ReportWorkLogs.Count == 0)
+        var isEmpty = SelectedTabIndex switch
         {
-            MessageBox.Show("There are no report rows to export.");
+            0 => ReportWorkLogs.Count == 0,
+            1 => WorkerSummaries.Count == 0,
+            2 => TradeSummaries.Count == 0,
+            3 => ConstructionSiteSummaries.Count == 0,
+            4 => DateSummaries.Count == 0,
+            5 => ReportPayments.Count == 0,
+            _ => true
+        };
+
+        if (isEmpty)
+        {
+            MessageBox.Show("There are no rows to export on the current tab.");
             return;
         }
 
@@ -383,54 +437,104 @@ public partial class ReportsViewModel : ObservableObject
             await Task.Yield();
 
             using var workbook = new XLWorkbook();
-            var worksheet = workbook.Worksheets.Add("Report Results");
-
-            var headers = new[]
-            {
-                "Worker",
-                "Category",
-                "Construction Site",
-                "Work Date",
-                "Duration Hours",
-                "Daily Rate",
-                "Total Amount"
-            };
-
-            for (var column = 0; column < headers.Length; column++)
-            {
-                var cell = worksheet.Cell(1, column + 1);
-                cell.Value = headers[column];
-                cell.Style.Font.Bold = true;
-                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#E0EAFF");
-            }
-
+            var worksheet = workbook.Worksheets.Add("Report");
             var rowIndex = 2;
 
-            foreach (var row in ReportWorkLogs)
+            switch (SelectedTabIndex)
             {
-                worksheet.Cell(rowIndex, 1).Value = row.Worker;
-                worksheet.Cell(rowIndex, 2).Value = row.Trade;
-                worksheet.Cell(rowIndex, 3).Value = row.ConstructionSite;
-                worksheet.Cell(rowIndex, 4).Value = row.WorkDate;
-                worksheet.Cell(rowIndex, 4).Style.DateFormat.Format = "yyyy-mm-dd";
-                worksheet.Cell(rowIndex, 5).Value = row.DurationHours;
-                worksheet.Cell(rowIndex, 6).Value = row.DailyRate;
-                worksheet.Cell(rowIndex, 7).Value = row.TotalAmount;
-                rowIndex++;
+                case 0: // Detailed Logs
+                    WriteHeaders(worksheet, "Worker", "Category", "Site", "Date", "Hours", "Daily Rate", "Total");
+                    foreach (var row in ReportWorkLogs)
+                    {
+                        worksheet.Cell(rowIndex, 1).Value = row.Worker;
+                        worksheet.Cell(rowIndex, 2).Value = row.Trade;
+                        worksheet.Cell(rowIndex, 3).Value = row.ConstructionSite;
+                        worksheet.Cell(rowIndex, 4).Value = row.WorkDate;
+                        worksheet.Cell(rowIndex, 4).Style.DateFormat.Format = "yyyy-mm-dd";
+                        worksheet.Cell(rowIndex, 5).Value = row.DurationHours;
+                        worksheet.Cell(rowIndex, 6).Value = row.DailyRate;
+                        worksheet.Cell(rowIndex, 7).Value = row.TotalAmount;
+                        rowIndex++;
+                    }
+                    worksheet.Column(5).Style.NumberFormat.Format = "0.00";
+                    worksheet.Column(6).Style.NumberFormat.Format = "$#,##0.00";
+                    worksheet.Column(7).Style.NumberFormat.Format = "$#,##0.00";
+                    WriteTotals(worksheet, rowIndex, ("Total Hours", (double)TotalHours, "0.00"), ("Total Earned", (double)TotalAmount, "$#,##0.00"));
+                    break;
+
+                case 1: // By Worker
+                    WriteHeaders(worksheet, "Worker", "Logs", "Total Hours", "Total Amount");
+                    foreach (var row in WorkerSummaries)
+                    {
+                        worksheet.Cell(rowIndex, 1).Value = row.Worker;
+                        worksheet.Cell(rowIndex, 2).Value = row.NumberOfLogs;
+                        worksheet.Cell(rowIndex, 3).Value = row.TotalHours;
+                        worksheet.Cell(rowIndex, 4).Value = row.TotalAmount;
+                        rowIndex++;
+                    }
+                    worksheet.Column(3).Style.NumberFormat.Format = "0.00";
+                    worksheet.Column(4).Style.NumberFormat.Format = "$#,##0.00";
+                    break;
+
+                case 2: // By Category
+                    WriteHeaders(worksheet, "Category", "Logs", "Total Hours", "Total Amount");
+                    foreach (var row in TradeSummaries)
+                    {
+                        worksheet.Cell(rowIndex, 1).Value = row.Trade;
+                        worksheet.Cell(rowIndex, 2).Value = row.NumberOfLogs;
+                        worksheet.Cell(rowIndex, 3).Value = row.TotalHours;
+                        worksheet.Cell(rowIndex, 4).Value = row.TotalAmount;
+                        rowIndex++;
+                    }
+                    worksheet.Column(3).Style.NumberFormat.Format = "0.00";
+                    worksheet.Column(4).Style.NumberFormat.Format = "$#,##0.00";
+                    break;
+
+                case 3: // By Site
+                    WriteHeaders(worksheet, "Site", "Logs", "Total Hours", "Total Amount");
+                    foreach (var row in ConstructionSiteSummaries)
+                    {
+                        worksheet.Cell(rowIndex, 1).Value = row.ConstructionSite;
+                        worksheet.Cell(rowIndex, 2).Value = row.NumberOfLogs;
+                        worksheet.Cell(rowIndex, 3).Value = row.TotalHours;
+                        worksheet.Cell(rowIndex, 4).Value = row.TotalAmount;
+                        rowIndex++;
+                    }
+                    worksheet.Column(3).Style.NumberFormat.Format = "0.00";
+                    worksheet.Column(4).Style.NumberFormat.Format = "$#,##0.00";
+                    break;
+
+                case 4: // By Date
+                    WriteHeaders(worksheet, "Date", "Logs", "Total Hours", "Total Amount");
+                    foreach (var row in DateSummaries)
+                    {
+                        worksheet.Cell(rowIndex, 1).Value = row.WorkDate;
+                        worksheet.Cell(rowIndex, 1).Style.DateFormat.Format = "yyyy-mm-dd";
+                        worksheet.Cell(rowIndex, 2).Value = row.NumberOfLogs;
+                        worksheet.Cell(rowIndex, 3).Value = row.TotalHours;
+                        worksheet.Cell(rowIndex, 4).Value = row.TotalAmount;
+                        rowIndex++;
+                    }
+                    worksheet.Column(3).Style.NumberFormat.Format = "0.00";
+                    worksheet.Column(4).Style.NumberFormat.Format = "$#,##0.00";
+                    break;
+
+                case 5: // Payments
+                    WriteHeaders(worksheet, "Worker", "Category", "Week Start", "Payment Date", "Amount");
+                    foreach (var row in ReportPayments)
+                    {
+                        worksheet.Cell(rowIndex, 1).Value = row.Worker;
+                        worksheet.Cell(rowIndex, 2).Value = row.Trade;
+                        worksheet.Cell(rowIndex, 3).Value = row.WeekStartDate?.ToString("yyyy-MM-dd") ?? string.Empty;
+                        worksheet.Cell(rowIndex, 4).Value = row.PaymentDate;
+                        worksheet.Cell(rowIndex, 4).Style.DateFormat.Format = "yyyy-mm-dd";
+                        worksheet.Cell(rowIndex, 5).Value = row.Amount;
+                        rowIndex++;
+                    }
+                    worksheet.Column(5).Style.NumberFormat.Format = "$#,##0.00";
+                    WriteTotals(worksheet, rowIndex, ("Total Paid", (double)TotalPaid, "$#,##0.00"));
+                    break;
             }
-
-            worksheet.Cell(rowIndex + 1, 1).Value = "Total Hours";
-            worksheet.Cell(rowIndex + 1, 1).Style.Font.Bold = true;
-            worksheet.Cell(rowIndex + 1, 2).Value = TotalHours;
-            worksheet.Cell(rowIndex + 2, 1).Value = "Total Amount";
-            worksheet.Cell(rowIndex + 2, 1).Style.Font.Bold = true;
-            worksheet.Cell(rowIndex + 2, 2).Value = TotalAmount;
-
-            worksheet.Column(5).Style.NumberFormat.Format = "0.00";
-            worksheet.Column(6).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Column(7).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(rowIndex + 1, 2).Style.NumberFormat.Format = "0.00";
-            worksheet.Cell(rowIndex + 2, 2).Style.NumberFormat.Format = "$#,##0.00";
 
             worksheet.Columns().AdjustToContents();
             worksheet.SheetView.FreezeRows(1);
@@ -451,6 +555,28 @@ public partial class ReportsViewModel : ObservableObject
             IsExportConfirmationVisible = false;
             IsExportInProgress = false;
             MessageBox.Show($"Export failed: {ex.Message}");
+        }
+    }
+
+    private static void WriteHeaders(IXLWorksheet ws, params string[] headers)
+    {
+        for (var i = 0; i < headers.Length; i++)
+        {
+            var cell = ws.Cell(1, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#E0EAFF");
+        }
+    }
+
+    private static void WriteTotals(IXLWorksheet ws, int afterRow, params (string Label, double Value, string Format)[] totals)
+    {
+        for (var i = 0; i < totals.Length; i++)
+        {
+            ws.Cell(afterRow + 1 + i, 1).Value = totals[i].Label;
+            ws.Cell(afterRow + 1 + i, 1).Style.Font.Bold = true;
+            ws.Cell(afterRow + 1 + i, 2).Value = totals[i].Value;
+            ws.Cell(afterRow + 1 + i, 2).Style.NumberFormat.Format = totals[i].Format;
         }
     }
 
@@ -613,6 +739,15 @@ public partial class ReportsViewModel : ObservableObject
         }
 
         return $"{string.Join(", ", selectedNames.Take(3))}, +{selectedNames.Count - 3} more";
+    }
+
+    public class PaymentReportRow
+    {
+        public string Worker { get; set; } = string.Empty;
+        public string Trade { get; set; } = string.Empty;
+        public DateTime PaymentDate { get; set; }
+        public DateTime? WeekStartDate { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public class ReportRow

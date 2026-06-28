@@ -136,17 +136,17 @@
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"
-                                Command="{Binding ShowReportsCommand}"
-                                Content="Reports"
-                                helpers:NavigationState.IsActive="{Binding IsReportsActive}"
-                                Tag="Reports"
-                                Style="{StaticResource SidebarButtonStyle}" />
-
-                        <Button Margin="0,0,0,8"
                                 Command="{Binding ShowPayrollCommand}"
                                 Content="Payroll"
                                 helpers:NavigationState.IsActive="{Binding IsPayrollActive}"
                                 Tag="Payroll"
+                                Style="{StaticResource SidebarButtonStyle}" />
+
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowReportsCommand}"
+                                Content="Reports"
+                                helpers:NavigationState.IsActive="{Binding IsReportsActive}"
+                                Tag="Reports"
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"

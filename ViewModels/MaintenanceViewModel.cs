@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,7 +13,7 @@ public partial class MaintenanceViewModel : ObservableObject
     private string databasePath = AppDbContext.GetDatabasePath();
 
     [ObservableProperty]
-    private string statusMessage = "Use backup before major updates, and restore only from trusted SQLite backup files.";
+    private string statusMessage = "Use backup before major updates to keep a copy of your data.";
 
     public void LoadMaintenanceData()
     {
@@ -51,50 +50,4 @@ public partial class MaintenanceViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void RestoreDatabase()
-    {
-        try
-        {
-            var openDialog = new OpenFileDialog
-            {
-                Title = "Restore Database",
-                Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
-                CheckFileExists = true
-            };
-
-            if (openDialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            var confirmation = MessageBox.Show(
-                $"Restore the database from this backup?\n\n{openDialog.FileName}\n\nThis will replace the current database.",
-                "Confirm Restore",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-
-            if (confirmation != MessageBoxResult.Yes)
-            {
-                return;
-            }
-
-            DatabaseMaintenanceService.RestoreDatabase(openDialog.FileName);
-            DatabaseInitializer.Initialize();
-
-            if (Application.Current.MainWindow is MainWindow mainWindow)
-            {
-                mainWindow.ReloadApplicationData();
-            }
-
-            DatabasePath = AppDbContext.GetDatabasePath();
-            StatusMessage = $"Database restored successfully from: {Path.GetFileName(openDialog.FileName)}";
-            MessageBox.Show("Database restored successfully.");
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Restore failed: {ex.Message}";
-            MessageBox.Show($"Restore failed: {ex.Message}");
-        }
-    }
 }

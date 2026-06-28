@@ -16,7 +16,7 @@
                 <TextBlock Style="{StaticResource PageTitleTextStyle}"
                            Text="Maintenance" />
                 <TextBlock Style="{StaticResource PageSubtitleTextStyle}"
-                           Text="Create database backups and restore the application from a previous SQLite backup when needed." />
+                           Text="Create database backups to keep a copy of your data safe." />
             </StackPanel>
 
             <Border Grid.Row="1"
@@ -44,19 +44,15 @@
                     Style="{StaticResource CardBorderStyle}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Backup and Restore" />
+                               Text="Backup" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource TextMutedBrush}"
-                               Text="Backup copies the current database to another file. Restore replaces the current database with a selected backup file." />
+                               Text="Copies the current database to a file of your choice." />
 
                     <WrapPanel Margin="0,20,0,0">
                         <Button Command="{Binding BackupDatabaseCommand}"
                                 Content="Backup Database"
                                 Style="{StaticResource PrimaryButtonStyle}" />
-                        <Button Margin="12,0,0,0"
-                                Command="{Binding RestoreDatabaseCommand}"
-                                Content="Restore Database"
-                                Style="{StaticResource DangerButtonStyle}" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
