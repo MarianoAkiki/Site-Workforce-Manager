@@ -288,10 +288,9 @@ public partial class PayrollViewModel : ObservableObject
                     .Select(g => new { WorkerId = g.Key, Total = g.Sum(log => (double)log.TotalAmount) })
                     .ToDictionary(x => x.WorkerId, x => (decimal)x.Total);
 
-                var priorWeekCutoff = weekStart.Date.AddDays(-1);
                 var paidUpToWeekEndByWorker = context.WorkerPayments
                     .AsNoTracking()
-                    .Where(payment => workerIds.Contains(payment.WorkerId) && payment.WeekStartDate <= priorWeekCutoff)
+                    .Where(payment => workerIds.Contains(payment.WorkerId) && payment.PaymentDate <= weekEnd.Date)
                     .GroupBy(payment => payment.WorkerId)
                     .Select(g => new { WorkerId = g.Key, Total = g.Sum(p => (double)p.Amount) })
                     .ToDictionary(x => x.WorkerId, x => (decimal)x.Total);

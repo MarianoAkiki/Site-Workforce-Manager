@@ -481,6 +481,19 @@ public partial class WorkersViewModel : ObservableObject
         };
 
         context.WorkerRateHistories.Add(newRate);
+
+        // Recalculate existing logs that fall within this new rate's effective range
+        var effectiveTo = newRateEffectiveTo ?? DateTime.MaxValue.Date;
+        var affectedLogs = context.WorkLogs
+            .Where(log => log.WorkerId == workerId && log.WorkDate >= effectiveDate && log.WorkDate <= effectiveTo)
+            .ToList();
+
+        foreach (var log in affectedLogs)
+        {
+            log.DailyRateSnapshot = dailyRate;
+            log.TotalAmount = Math.Round(dailyRate / 8m * log.DurationHours, 2);
+        }
+
         context.SaveChanges();
 
         NewDailyRate = string.Empty;
