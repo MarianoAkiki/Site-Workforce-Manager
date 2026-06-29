@@ -36,6 +36,9 @@
         <DataTemplate DataType="{x:Type viewModels:PayrollViewModel}">
             <views:PayrollView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:WeeklyReportViewModel}">
+            <views:WeeklyReportView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewModels:WorkerBalancesViewModel}">
             <views:WorkerBalancesView />
         </DataTemplate>
@@ -147,6 +150,13 @@
                                 Content="Reports"
                                 helpers:NavigationState.IsActive="{Binding IsReportsActive}"
                                 Tag="Reports"
+                                Style="{StaticResource SidebarButtonStyle}" />
+
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowWeeklyReportCommand}"
+                                Content="Weekly Report"
+                                helpers:NavigationState.IsActive="{Binding IsWeeklyReportActive}"
+                                Tag="WeeklyReport"
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"

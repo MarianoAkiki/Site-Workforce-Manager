@@ -14,6 +14,7 @@ public partial class MainViewModel : ObservableObject
         WeeklyWorkEntryViewModel = new WeeklyWorkEntryViewModel();
         ReportsViewModel = new ReportsViewModel();
         PayrollViewModel = new PayrollViewModel();
+        WeeklyReportViewModel = new WeeklyReportViewModel();
         WorkerBalancesViewModel = new WorkerBalancesViewModel();
         MaintenanceViewModel = new MaintenanceViewModel();
         CurrentPageKey = "Dashboard";
@@ -27,6 +28,7 @@ public partial class MainViewModel : ObservableObject
     public WeeklyWorkEntryViewModel WeeklyWorkEntryViewModel { get; }
     public ReportsViewModel ReportsViewModel { get; }
     public PayrollViewModel PayrollViewModel { get; }
+    public WeeklyReportViewModel WeeklyReportViewModel { get; }
     public WorkerBalancesViewModel WorkerBalancesViewModel { get; }
     public MaintenanceViewModel MaintenanceViewModel { get; }
 
@@ -45,6 +47,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsPayrollActive => CurrentPageKey == "Payroll";
     public bool IsWorkerBalancesActive => CurrentPageKey == "WorkerBalances";
     public bool IsMaintenanceActive => CurrentPageKey == "Maintenance";
+    public bool IsWeeklyReportActive => CurrentPageKey == "WeeklyReport";
 
     partial void OnCurrentPageKeyChanged(string value)
     {
@@ -55,6 +58,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsWeeklyWorkEntryActive));
         OnPropertyChanged(nameof(IsReportsActive));
         OnPropertyChanged(nameof(IsPayrollActive));
+        OnPropertyChanged(nameof(IsWeeklyReportActive));
         OnPropertyChanged(nameof(IsWorkerBalancesActive));
         OnPropertyChanged(nameof(IsMaintenanceActive));
     }
@@ -113,6 +117,14 @@ public partial class MainViewModel : ObservableObject
         PayrollViewModel.LoadPayrollPage();
         CurrentPageKey = "Payroll";
         CurrentViewModel = PayrollViewModel;
+    }
+
+    [RelayCommand]
+    private void ShowWeeklyReport()
+    {
+        WeeklyReportViewModel.LoadPage();
+        CurrentPageKey = "WeeklyReport";
+        CurrentViewModel = WeeklyReportViewModel;
     }
 
     [RelayCommand]
