@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
+using Site_Workforce_Manager.Helpers;
 using Site_Workforce_Manager.Models;
 using Site_Workforce_Manager.Services;
 
@@ -18,6 +19,7 @@ public partial class TradesViewModel : ObservableObject
 
     public ObservableCollection<Trade> Trades { get; } = new();
     public ObservableCollection<Trade> FilteredTrades { get; } = new();
+    public PagedList<Trade> TradesPage { get; } = new(25);
 
     [ObservableProperty]
     private Trade? selectedTrade;
@@ -313,5 +315,7 @@ public partial class TradesViewModel : ObservableObject
         {
             FilteredTrades.Add(trade);
         }
+
+        TradesPage.SetSource(FilteredTrades);
     }
 }

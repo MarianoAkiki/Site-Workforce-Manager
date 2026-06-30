@@ -75,6 +75,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <Grid>
@@ -145,7 +146,7 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   IsReadOnly="True"
-                                  ItemsSource="{Binding FilteredTrades}"
+                                  ItemsSource="{Binding TradesPage.Items}"
                                   SelectedItem="{Binding SelectedTrade, Mode=TwoWay}"
                                   SelectionMode="Single">
                             <DataGrid.Columns>
@@ -176,6 +177,25 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+
+                        <StackPanel Grid.Row="3" Margin="0,14,0,0"
+                                    HorizontalAlignment="Center" Orientation="Horizontal">
+                            <Button Command="{Binding TradesPage.PreviousPageCommand}"
+                                    Content="&lt; Prev" MinWidth="76"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                            <TextBlock Margin="14,0" VerticalAlignment="Center"
+                                       FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="{Binding TradesPage.PageInfoText}" />
+                            <Button Command="{Binding TradesPage.NextPageCommand}"
+                                    Content="Next &gt;" MinWidth="76"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                            <TextBlock Margin="20,0,6,0" VerticalAlignment="Center"
+                                       FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Show:" />
+                            <ComboBox MinWidth="68"
+                                      ItemsSource="{x:Static helpers:PageSizeOptions.Values}"
+                                      SelectedItem="{Binding TradesPage.PageSize, Mode=TwoWay}" />
+                        </StackPanel>
                     </Grid>
                 </Border>
         </Grid>

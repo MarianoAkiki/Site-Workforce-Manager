@@ -460,7 +460,7 @@ public partial class PayrollTradeGroup : ObservableObject
     }
 
     public string TotalBalanceDisplay => PayrollFmt.Fmt(TotalBalance);
-    public string TotalPaymentDisplay => PayrollFmt.Fmt(TotalPayment);
+    public string TotalPaymentDisplay => TotalPayment == 0 ? string.Empty : PayrollFmt.Fmt(TotalPayment);
 }
 
 public partial class PayrollWorkerRow : ObservableObject
@@ -486,7 +486,7 @@ public partial class PayrollWorkerRow : ObservableObject
     private decimal? liveBalance;
 
     public string LiveBalanceDisplay => LiveBalance.HasValue
-        ? (LiveBalance.Value < 0 ? $"-{Math.Abs(LiveBalance.Value):C}" : LiveBalance.Value.ToString("C"))
+        ? PayrollFmt.Fmt(LiveBalance.Value)
         : "...";
 
     partial void OnLiveBalanceChanged(decimal? value) => OnPropertyChanged(nameof(LiveBalanceDisplay));
@@ -516,5 +516,5 @@ public partial class PayrollWorkerRow : ObservableObject
 internal static class PayrollFmt
 {
     internal static string Fmt(decimal value) =>
-        value < 0 ? $"-{Math.Abs(value):C}" : value.ToString("C");
+        value < 0 ? $"({Math.Abs(value):C})" : value.ToString("C");
 }

@@ -33,6 +33,13 @@ public partial class ReportsViewModel : ObservableObject
     public ObservableCollection<TradeSummaryRow> TradeSummaries { get; } = new();
     public ObservableCollection<ConstructionSiteSummaryRow> ConstructionSiteSummaries { get; } = new();
     public ObservableCollection<DateSummaryRow> DateSummaries { get; } = new();
+
+    public PagedList<ReportRow> ReportWorkLogsPage { get; } = new(25);
+    public PagedList<PaymentReportRow> ReportPaymentsPage { get; } = new(25);
+    public PagedList<WorkerSummaryRow> WorkerSummariesPage { get; } = new(25);
+    public PagedList<TradeSummaryRow> TradeSummariesPage { get; } = new(25);
+    public PagedList<ConstructionSiteSummaryRow> ConstructionSiteSummariesPage { get; } = new(25);
+    public PagedList<DateSummaryRow> DateSummariesPage { get; } = new(25);
     public ObservableCollection<SelectableLookupOption> WorkerOptions { get; } = new();
     public ObservableCollection<SelectableLookupOption> TradeOptions { get; } = new();
     public ObservableCollection<SelectableLookupOption> ConstructionSiteOptions { get; } = new();
@@ -236,6 +243,7 @@ public partial class ReportsViewModel : ObservableObject
         }
 
         TotalPaid = Math.Round(payments.Sum(p => p.Amount), 2);
+        ReportPaymentsPage.SetSource(ReportPayments);
 
         foreach (var workLog in workLogs)
         {
@@ -251,6 +259,8 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
+        ReportWorkLogsPage.SetSource(ReportWorkLogs);
+
         foreach (var summary in workLogs
                      .GroupBy(workLog => workLog.Worker?.Trade?.Name ?? "Unassigned")
                      .OrderBy(group => group.Key))
@@ -263,6 +273,8 @@ public partial class ReportsViewModel : ObservableObject
                 NumberOfLogs = summary.Count()
             });
         }
+
+        TradeSummariesPage.SetSource(TradeSummaries);
 
         foreach (var summary in workLogs
                      .GroupBy(workLog => $"{workLog.Worker?.FirstName} {workLog.Worker?.LastName}".Trim())
@@ -277,6 +289,8 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
+        WorkerSummariesPage.SetSource(WorkerSummaries);
+
         foreach (var summary in workLogs
                      .GroupBy(workLog => workLog.ConstructionSite?.Name ?? string.Empty)
                      .OrderBy(group => group.Key))
@@ -290,6 +304,8 @@ public partial class ReportsViewModel : ObservableObject
             });
         }
 
+        ConstructionSiteSummariesPage.SetSource(ConstructionSiteSummaries);
+
         foreach (var summary in workLogs
                      .GroupBy(workLog => workLog.WorkDate.Date)
                      .OrderBy(group => group.Key))
@@ -302,6 +318,8 @@ public partial class ReportsViewModel : ObservableObject
                 NumberOfLogs = summary.Count()
             });
         }
+
+        DateSummariesPage.SetSource(DateSummaries);
 
         TotalHours = Math.Round(workLogs.Sum(workLog => workLog.DurationHours), 2);
         TotalAmount = Math.Round(workLogs.Sum(workLog => workLog.TotalAmount), 2);

@@ -58,7 +58,7 @@ public static class PayrollPrintService
             PagePadding = new Thickness(hPad, vPad, hPad, vPad),
             ColumnWidth = pageWidth - hPad * 2,
             FontFamily  = PrintFont,
-            FontSize    = 10
+            FontSize    = 12
         };
 
         // Title
@@ -151,9 +151,9 @@ public static class PayrollPrintService
         // Grand total
         var grand = new TableRow();
         grand.Cells.Add(Cell(string.Empty,                  GrandTotalBg, null));
-        grand.Cells.Add(Cell("Grand Total",                 GrandTotalBg, GroupHeaderFg, bold: true, size: 11));
-        grand.Cells.Add(Cell(Fmt(grandTotalBalance),        GrandTotalBg, GroupHeaderFg, bold: true, size: 11, align: TextAlignment.Right));
-        grand.Cells.Add(Cell(Fmt(grandTotalPayment),        GrandTotalBg, GroupHeaderFg, bold: true, size: 11, align: TextAlignment.Right));
+        grand.Cells.Add(Cell("Grand Total",                 GrandTotalBg, GroupHeaderFg, bold: true, size: 13));
+        grand.Cells.Add(Cell(Fmt(grandTotalBalance),        GrandTotalBg, GroupHeaderFg, bold: true, size: 13, align: TextAlignment.Right));
+        grand.Cells.Add(Cell(Fmt(grandTotalPayment),        GrandTotalBg, GroupHeaderFg, bold: true, size: 13, align: TextAlignment.Right));
         rg.Rows.Add(grand);
 
         table.RowGroups.Add(rg);
@@ -165,7 +165,7 @@ public static class PayrollPrintService
         Brush?        bg    = null,
         Brush?        fg    = null,
         bool          bold  = false,
-        double        size  = 10,
+        double        size  = 12,
         TextAlignment align = TextAlignment.Left)
     {
         return new TableCell(Para(text, bold: bold, size: size, fg: fg, align: align))
@@ -178,7 +178,7 @@ public static class PayrollPrintService
     }
 
     private static string Fmt(decimal value) =>
-        value < 0 ? $"-{Math.Abs(value):C}" : value.ToString("C");
+        value < 0 ? $"({Math.Abs(value):C})" : value.ToString("C");
 
     private static Paragraph Para(
         string        text,

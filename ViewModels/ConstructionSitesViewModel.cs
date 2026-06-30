@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
+using Site_Workforce_Manager.Helpers;
 using Site_Workforce_Manager.Models;
 using Site_Workforce_Manager.Services;
 using System.Windows;
@@ -18,6 +19,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
 
     public ObservableCollection<ConstructionSite> ConstructionSites { get; } = new();
     public ObservableCollection<ConstructionSite> FilteredConstructionSites { get; } = new();
+    public PagedList<ConstructionSite> ConstructionSitesPage { get; } = new(25);
 
     [ObservableProperty]
     private ConstructionSite? selectedConstructionSite;
@@ -294,5 +296,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
         {
             FilteredConstructionSites.Add(site);
         }
+
+        ConstructionSitesPage.SetSource(FilteredConstructionSites);
     }
 }

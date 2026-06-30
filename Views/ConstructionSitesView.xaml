@@ -75,6 +75,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <Grid>
@@ -145,7 +146,7 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   IsReadOnly="True"
-                                  ItemsSource="{Binding FilteredConstructionSites}"
+                                  ItemsSource="{Binding ConstructionSitesPage.Items}"
                                   SelectedItem="{Binding SelectedConstructionSite, Mode=TwoWay}"
                                   SelectionMode="Single">
                             <DataGrid.Columns>
@@ -174,6 +175,25 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
+
+                        <StackPanel Grid.Row="3" Margin="0,14,0,0"
+                                    HorizontalAlignment="Center" Orientation="Horizontal">
+                            <Button Command="{Binding ConstructionSitesPage.PreviousPageCommand}"
+                                    Content="&lt; Prev" MinWidth="76"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                            <TextBlock Margin="14,0" VerticalAlignment="Center"
+                                       FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="{Binding ConstructionSitesPage.PageInfoText}" />
+                            <Button Command="{Binding ConstructionSitesPage.NextPageCommand}"
+                                    Content="Next &gt;" MinWidth="76"
+                                    Style="{StaticResource BaseButtonStyle}" />
+                            <TextBlock Margin="20,0,6,0" VerticalAlignment="Center"
+                                       FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                       Text="Show:" />
+                            <ComboBox MinWidth="68"
+                                      ItemsSource="{x:Static helpers:PageSizeOptions.Values}"
+                                      SelectedItem="{Binding ConstructionSitesPage.PageSize, Mode=TwoWay}" />
+                        </StackPanel>
                     </Grid>
                 </Border>
         </Grid>

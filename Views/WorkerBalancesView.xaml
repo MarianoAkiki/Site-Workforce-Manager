@@ -90,6 +90,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
@@ -124,7 +125,7 @@
 
                     <!-- Rows -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding FilteredRows}">
+                    <ItemsControl ItemsSource="{Binding RowsPage.Items}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
@@ -196,6 +197,25 @@
                             <TextBlock FontWeight="SemiBold" FontSize="14" Text="{Binding GrandTotalBalanceDisplay}" Foreground="#1E3A8A" />
                         </Border>
                     </Grid>
+
+                    <StackPanel Grid.Row="3" Margin="0,14,0,0"
+                                HorizontalAlignment="Center" Orientation="Horizontal">
+                        <Button Command="{Binding RowsPage.PreviousPageCommand}"
+                                Content="&lt; Prev" MinWidth="76"
+                                Style="{StaticResource BaseButtonStyle}" />
+                        <TextBlock Margin="14,0" VerticalAlignment="Center"
+                                   FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="{Binding RowsPage.PageInfoText}" />
+                        <Button Command="{Binding RowsPage.NextPageCommand}"
+                                Content="Next &gt;" MinWidth="76"
+                                Style="{StaticResource BaseButtonStyle}" />
+                        <TextBlock Margin="20,0,6,0" VerticalAlignment="Center"
+                                   FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                   Text="Show:" />
+                        <ComboBox MinWidth="68"
+                                  ItemsSource="{x:Static helpers:PageSizeOptions.Values}"
+                                  SelectedItem="{Binding RowsPage.PageSize, Mode=TwoWay}" />
+                    </StackPanel>
 
                 </Grid>
             </Border>

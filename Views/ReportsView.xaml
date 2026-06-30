@@ -9,6 +9,61 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
 
+        <Style x:Key="MultiSelectRowCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="RowBorder"
+                                Background="{TemplateBinding Background}"
+                                Padding="10,9"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="Box"
+                                        Width="16" Height="16"
+                                        VerticalAlignment="Center"
+                                        Background="White"
+                                        BorderBrush="#CBD5E1"
+                                        BorderThickness="1.3"
+                                        CornerRadius="4">
+                                    <Path x:Name="CheckMark"
+                                          Margin="1"
+                                          Data="M2,5.3 L4.3,7.6 L9.7,1.8"
+                                          Stroke="White"
+                                          StrokeThickness="1.6"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          StrokeLineJoin="Round"
+                                          Visibility="Collapsed" />
+                                </Border>
+                                <ContentPresenter Grid.Column="1"
+                                                   Margin="9,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   Content="{TemplateBinding Content}" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="#F1F5F9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="DropdownClearButtonStyle" TargetType="Button" BasedOn="{StaticResource FilterClearButtonStyle}">
             <Setter Property="Width"      Value="20" />
             <Setter Property="Height"     Value="20" />
@@ -169,9 +224,24 @@
                                           ItemsSource="{Binding WorkerOptions}"
                                           helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding WorkerSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style TargetType="ComboBoxItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ComboBoxItem">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      Style="{StaticResource MultiSelectRowCheckBoxStyle}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
@@ -194,9 +264,24 @@
                                           ItemsSource="{Binding TradeOptions}"
                                           helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding TradeSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style TargetType="ComboBoxItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ComboBoxItem">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      Style="{StaticResource MultiSelectRowCheckBoxStyle}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
@@ -219,9 +304,24 @@
                                           ItemsSource="{Binding ConstructionSiteOptions}"
                                           helpers:SearchableMultiSelectComboBoxBehavior.IsEnabled="True"
                                           helpers:SearchableMultiSelectComboBoxBehavior.SearchText="{Binding ConstructionSiteSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style TargetType="ComboBoxItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ComboBoxItem">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      Style="{StaticResource MultiSelectRowCheckBoxStyle}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
@@ -240,9 +340,7 @@
                         <!-- Actions -->
                         <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,14,0,0"
                                     Orientation="Horizontal" VerticalAlignment="Bottom">
-                            <Button MinWidth="110" Command="{Binding ApplyFiltersCommand}"
-                                    Content="Apply Filters" Style="{StaticResource PrimaryButtonStyle}" />
-                            <Button MinWidth="80" Margin="10,0,0,0" Command="{Binding ClearFiltersCommand}"
+                            <Button MinWidth="80" Command="{Binding ClearFiltersCommand}"
                                     Content="Clear" Style="{StaticResource BaseButtonStyle}" />
                         </StackPanel>
                     </Grid>
@@ -398,79 +496,157 @@
                                 Style="{StaticResource ReportTabControlStyle}">
 
                         <TabItem Header="Detailed Logs" Style="{StaticResource ReportTabItemStyle}">
-                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                                      ItemsSource="{Binding ReportWorkLogs}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Worker}"                                   Header="Worker"            Width="*" />
-                                    <DataGridTextColumn Binding="{Binding Trade}"                                    Header="Category"          Width="130" />
-                                    <DataGridTextColumn Binding="{Binding ConstructionSite}"                         Header="Site"              Width="150" />
-                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}"  Header="Date"              Width="105" />
-                                    <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}"     Header="Hours"             Width="80" />
-                                    <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}"          Header="Daily Rate"        Width="100" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"        Header="Total"             Width="100" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                          ItemsSource="{Binding ReportWorkLogsPage.Items}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Worker}"                                   Header="Worker"            Width="*" />
+                                        <DataGridTextColumn Binding="{Binding Trade}"                                    Header="Category"          Width="130" />
+                                        <DataGridTextColumn Binding="{Binding ConstructionSite}"                         Header="Site"              Width="150" />
+                                        <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}"  Header="Date"              Width="105" />
+                                        <DataGridTextColumn Binding="{Binding DurationHours, StringFormat={}{0:F2}}"     Header="Hours"             Width="80" />
+                                        <DataGridTextColumn Binding="{Binding DailyRate, StringFormat={}{0:C}}"          Header="Daily Rate"        Width="100" />
+                                        <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"        Header="Total"             Width="100" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Button Command="{Binding ReportWorkLogsPage.PreviousPageCommand}" Content="&lt; Prev" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="14,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="{Binding ReportWorkLogsPage.PageInfoText}" />
+                                    <Button Command="{Binding ReportWorkLogsPage.NextPageCommand}" Content="Next &gt;" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="20,0,6,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="Show:" />
+                                    <ComboBox MinWidth="68" ItemsSource="{x:Static helpers:PageSizeOptions.Values}" SelectedItem="{Binding ReportWorkLogsPage.PageSize, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                         </TabItem>
 
                         <TabItem Header="By Worker" Style="{StaticResource ReportTabItemStyle}">
-                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                                      ItemsSource="{Binding WorkerSummaries}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Worker}"                               Header="Worker"       Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                          ItemsSource="{Binding WorkerSummariesPage.Items}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Worker}"                               Header="Worker"       Width="*" />
+                                        <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
+                                        <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
+                                        <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Button Command="{Binding WorkerSummariesPage.PreviousPageCommand}" Content="&lt; Prev" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="14,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="{Binding WorkerSummariesPage.PageInfoText}" />
+                                    <Button Command="{Binding WorkerSummariesPage.NextPageCommand}" Content="Next &gt;" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="20,0,6,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="Show:" />
+                                    <ComboBox MinWidth="68" ItemsSource="{x:Static helpers:PageSizeOptions.Values}" SelectedItem="{Binding WorkerSummariesPage.PageSize, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                         </TabItem>
 
                         <TabItem Header="By Category" Style="{StaticResource ReportTabItemStyle}">
-                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                                      ItemsSource="{Binding TradeSummaries}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Trade}"                                Header="Category"     Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                          ItemsSource="{Binding TradeSummariesPage.Items}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Trade}"                                Header="Category"     Width="*" />
+                                        <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
+                                        <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
+                                        <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Button Command="{Binding TradeSummariesPage.PreviousPageCommand}" Content="&lt; Prev" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="14,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="{Binding TradeSummariesPage.PageInfoText}" />
+                                    <Button Command="{Binding TradeSummariesPage.NextPageCommand}" Content="Next &gt;" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="20,0,6,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="Show:" />
+                                    <ComboBox MinWidth="68" ItemsSource="{x:Static helpers:PageSizeOptions.Values}" SelectedItem="{Binding TradeSummariesPage.PageSize, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                         </TabItem>
 
                         <TabItem Header="By Site" Style="{StaticResource ReportTabItemStyle}">
-                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                                      ItemsSource="{Binding ConstructionSiteSummaries}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding ConstructionSite}"                     Header="Site"         Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                          ItemsSource="{Binding ConstructionSiteSummariesPage.Items}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding ConstructionSite}"                     Header="Site"         Width="*" />
+                                        <DataGridTextColumn Binding="{Binding NumberOfLogs}"                         Header="Logs"         Width="80" />
+                                        <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"    Header="Total Hours"  Width="120" />
+                                        <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"    Header="Total Amount" Width="130" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Button Command="{Binding ConstructionSiteSummariesPage.PreviousPageCommand}" Content="&lt; Prev" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="14,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="{Binding ConstructionSiteSummariesPage.PageInfoText}" />
+                                    <Button Command="{Binding ConstructionSiteSummariesPage.NextPageCommand}" Content="Next &gt;" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="20,0,6,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="Show:" />
+                                    <ComboBox MinWidth="68" ItemsSource="{x:Static helpers:PageSizeOptions.Values}" SelectedItem="{Binding ConstructionSiteSummariesPage.PageSize, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                         </TabItem>
 
                         <TabItem Header="By Date" Style="{StaticResource ReportTabItemStyle}">
-                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                                      ItemsSource="{Binding DateSummaries}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Date"         Width="*" />
-                                    <DataGridTextColumn Binding="{Binding NumberOfLogs}"                            Header="Logs"         Width="80" />
-                                    <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"       Header="Total Hours"  Width="120" />
-                                    <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"       Header="Total Amount" Width="130" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                          ItemsSource="{Binding DateSummariesPage.Items}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding WorkDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Date"         Width="*" />
+                                        <DataGridTextColumn Binding="{Binding NumberOfLogs}"                            Header="Logs"         Width="80" />
+                                        <DataGridTextColumn Binding="{Binding TotalHours, StringFormat={}{0:F2}}"       Header="Total Hours"  Width="120" />
+                                        <DataGridTextColumn Binding="{Binding TotalAmount, StringFormat={}{0:C}}"       Header="Total Amount" Width="130" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Button Command="{Binding DateSummariesPage.PreviousPageCommand}" Content="&lt; Prev" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="14,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="{Binding DateSummariesPage.PageInfoText}" />
+                                    <Button Command="{Binding DateSummariesPage.NextPageCommand}" Content="Next &gt;" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="20,0,6,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="Show:" />
+                                    <ComboBox MinWidth="68" ItemsSource="{x:Static helpers:PageSizeOptions.Values}" SelectedItem="{Binding DateSummariesPage.PageSize, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                         </TabItem>
 
                         <TabItem Header="Payments" Style="{StaticResource ReportTabItemStyle}">
-                            <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
-                                      ItemsSource="{Binding ReportPayments}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Binding="{Binding Worker}"                                       Header="Worker"       Width="*" />
-                                    <DataGridTextColumn Binding="{Binding Trade}"                                        Header="Category"     Width="130" />
-                                    <DataGridTextColumn Binding="{Binding WeekStartDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Week Start"   Width="110" />
-                                    <DataGridTextColumn Binding="{Binding PaymentDate, StringFormat={}{0:yyyy-MM-dd}}"   Header="Payment Date" Width="115" />
-                                    <DataGridTextColumn Binding="{Binding Amount, StringFormat={}{0:C}}"                 Header="Amount"       Width="110" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <DataGrid AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                                          ItemsSource="{Binding ReportPaymentsPage.Items}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Worker}"                                       Header="Worker"       Width="*" />
+                                        <DataGridTextColumn Binding="{Binding Trade}"                                        Header="Category"     Width="130" />
+                                        <DataGridTextColumn Binding="{Binding WeekStartDate, StringFormat={}{0:yyyy-MM-dd}}" Header="Week Start"   Width="110" />
+                                        <DataGridTextColumn Binding="{Binding PaymentDate, StringFormat={}{0:yyyy-MM-dd}}"   Header="Payment Date" Width="115" />
+                                        <DataGridTextColumn Binding="{Binding Amount, StringFormat={}{0:C}}"                 Header="Amount"       Width="110" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <Button Command="{Binding ReportPaymentsPage.PreviousPageCommand}" Content="&lt; Prev" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="14,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="{Binding ReportPaymentsPage.PageInfoText}" />
+                                    <Button Command="{Binding ReportPaymentsPage.NextPageCommand}" Content="Next &gt;" MinWidth="76" Style="{StaticResource BaseButtonStyle}" />
+                                    <TextBlock Margin="20,0,6,0" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}" Text="Show:" />
+                                    <ComboBox MinWidth="68" ItemsSource="{x:Static helpers:PageSizeOptions.Values}" SelectedItem="{Binding ReportPaymentsPage.PageSize, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Grid>
                         </TabItem>
 
                     </TabControl>

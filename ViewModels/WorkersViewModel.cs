@@ -21,6 +21,7 @@ public partial class WorkersViewModel : ObservableObject
 
     public ObservableCollection<WorkerListItem> Workers { get; } = new();
     public ObservableCollection<WorkerListItem> FilteredWorkers { get; } = new();
+    public PagedList<WorkerListItem> WorkersPage { get; } = new(25);
     public ObservableCollection<WorkerRateHistory> SelectedWorkerRateHistory { get; } = new();
     public ObservableCollection<ConstructionSite> AvailableConstructionSites { get; } = new();
     public ObservableCollection<ConstructionSite> AssignedConstructionSites { get; } = new();
@@ -799,6 +800,8 @@ public partial class WorkersViewModel : ObservableObject
         {
             FilteredWorkers.Add(worker);
         }
+
+        WorkersPage.SetSource(FilteredWorkers);
     }
 
     private void ApplyConstructionSiteAssignmentFilters()

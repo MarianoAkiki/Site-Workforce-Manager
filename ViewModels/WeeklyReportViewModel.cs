@@ -27,6 +27,7 @@ public partial class WeeklyReportViewModel : ObservableObject
     [ObservableProperty] private DateTime? pickerDate;
     [ObservableProperty] private bool isLoading;
     [ObservableProperty] private Trade? selectedTrade;
+    [ObservableProperty] private int workerCount;
 
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public string WeekRangeText => $"{WeekStart:ddd, MMM dd yyyy} – {WeekEnd:ddd, MMM dd yyyy}";
@@ -83,8 +84,8 @@ public partial class WeeklyReportViewModel : ObservableObject
     [RelayCommand]
     private void Print()
     {
-        if (Rows.Count == 0) return;
-        WeeklyReportPrintService.Print(WeekStart, WeekEnd, Rows.ToList());
+        if (Rows.Count == 0 || SelectedTrade is null) return;
+        WeeklyReportPrintService.Print(SelectedTrade.Name, WeekStart, WeekEnd, Rows.ToList());
     }
 
     [RelayCommand]
@@ -121,7 +122,11 @@ public partial class WeeklyReportViewModel : ObservableObject
 
     private async Task LoadRowsAsync()
     {
-        if (SelectedTrade is null) return;
+        if (SelectedTrade is null)
+        {
+            WorkerCount = 0;
+            return;
+        }
 
         loadCts?.Cancel();
         loadCts = new CancellationTokenSource();
@@ -236,6 +241,8 @@ public partial class WeeklyReportViewModel : ObservableObject
                 });
             }
 
+            WorkerCount = Rows.Count;
+
             if (Rows.Count > 0)
             {
                 Rows.Add(new WeeklyReportRow
@@ -300,6 +307,7 @@ public class WeeklyReportRow
     public decimal TotalPaidUpToWeekEnd { get; set; }
     public decimal TotalBalanceTillWeekEnd { get; set; }
 
+    public string WorkerIdDisplay => IsTotalsRow ? string.Empty : WorkerId.ToString();
     public string Day0Display => FormatHours(Day0);
     public string Day1Display => FormatHours(Day1);
     public string Day2Display => FormatHours(Day2);
@@ -317,5 +325,5 @@ public class WeeklyReportRow
 
     private static string FormatHours(decimal h) => h > 0 ? h.ToString("0.##") : string.Empty;
     private static string FmtBalance(decimal v) =>
-        v == 0 ? string.Empty : v < 0 ? $"-{Math.Abs(v):C}" : v.ToString("C");
+        v == 0 ? string.Empty : v < 0 ? $"({Math.Abs(v):C})" : v.ToString("C");
 }

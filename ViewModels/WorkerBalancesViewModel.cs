@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using Site_Workforce_Manager.Data;
+using Site_Workforce_Manager.Helpers;
 using Site_Workforce_Manager.Models;
 
 namespace Site_Workforce_Manager.ViewModels;
@@ -11,6 +12,7 @@ namespace Site_Workforce_Manager.ViewModels;
 public partial class WorkerBalancesViewModel : ObservableObject
 {
     private readonly List<WorkerBalanceRow> allRows = new();
+    public PagedList<WorkerBalanceRow> RowsPage { get; } = new(25);
 
     [ObservableProperty]
     private string workerIdFilterText = string.Empty;
@@ -150,6 +152,8 @@ public partial class WorkerBalancesViewModel : ObservableObject
         OnPropertyChanged(nameof(GrandTotalEarnedDisplay));
         OnPropertyChanged(nameof(GrandTotalPaidDisplay));
         OnPropertyChanged(nameof(GrandTotalBalanceDisplay));
+
+        RowsPage.SetSource(FilteredRows);
     }
 }
 

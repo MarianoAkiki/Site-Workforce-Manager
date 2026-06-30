@@ -27,7 +27,7 @@ public static class WeeklyReportPrintService
         { DayOfWeek.Friday,    "الجمعة"   },
     };
 
-    public static void Print(DateTime weekStart, DateTime weekEnd, IList<WeeklyReportRow> rows)
+    public static void Print(string categoryName, DateTime weekStart, DateTime weekEnd, IList<WeeklyReportRow> rows)
     {
         var dlg = new PrintDialog();
         dlg.PrintTicket.PageOrientation = PageOrientation.Landscape;
@@ -35,18 +35,18 @@ public static class WeeklyReportPrintService
 
         if (dlg.ShowDialog() != true) return;
 
-        var doc = BuildDocument(weekStart, weekEnd, rows, dlg);
+        var doc = BuildDocument(categoryName, weekStart, weekEnd, rows, dlg);
         dlg.PrintDocument(
             ((IDocumentPaginatorSource)doc).DocumentPaginator,
-            $"كشف أسبوعي {weekStart:dd-MM-yyyy}");
+            $"كشف أسبوعي - {categoryName} {weekStart:dd-MM-yyyy}");
     }
 
     private static FlowDocument BuildDocument(
-        DateTime weekStart, DateTime weekEnd,
+        string categoryName, DateTime weekStart, DateTime weekEnd,
         IList<WeeklyReportRow> rows, PrintDialog dlg)
     {
-        const double hPad = 40;
-        const double vPad = 36;
+        const double hPad = 24;
+        const double vPad = 28;
 
         var doc = new FlowDocument
         {
@@ -55,16 +55,16 @@ public static class WeeklyReportPrintService
             PagePadding   = new Thickness(hPad, vPad, hPad, vPad),
             ColumnWidth   = dlg.PrintableAreaWidth,
             FontFamily    = ArabicFont,
-            FontSize      = 9,
+            FontSize      = 11,
             FlowDirection = FlowDirection.RightToLeft,
         };
 
         // Title
         var title = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 0, 0, 14) };
-        title.Inlines.Add(new Run("كشف أسبوعي") { FontSize = 16, FontWeight = FontWeights.Bold });
+        title.Inlines.Add(new Run($"كشف أسبوعي  —  {categoryName}") { FontSize = 18, FontWeight = FontWeights.Bold });
         title.Inlines.Add(new LineBreak());
         title.Inlines.Add(new Run($"{weekStart:dd/MM/yyyy}  —  {weekEnd:dd/MM/yyyy}")
-            { FontSize = 9, Foreground = Brushes.DimGray });
+            { FontSize = 11, Foreground = Brushes.DimGray });
         doc.Blocks.Add(title);
 
         var available = dlg.PrintableAreaWidth - hPad * 2;
@@ -74,20 +74,35 @@ public static class WeeklyReportPrintService
 
     private static Table BuildTable(DateTime weekStart, IList<WeeklyReportRow> rows, double available)
     {
-        // Fixed widths for day + stat columns; Name gets the rest
-        const double idCol       = 34;
-        const double dayCol      = 50;
-        const double hrsCol      = 42;
-        const double daysCol     = 36;
-        const double rateCol     = 62;
-        const double balCol      = 65;
-        const double earnCol     = 65;
-        const double totEarnCol  = 70;
-        const double totPaidCol  = 65;
-        const double owedCol     = 70;
-        const double sigCol      = 72;
-        double fixedWidth = idCol + 7 * dayCol + hrsCol + daysCol + rateCol + balCol + earnCol + totEarnCol + totPaidCol + owedCol + sigCol;
-        double nameCol = Math.Max(90, available - fixedWidth);
+        // Proportional weights — columns always sum exactly to `available`, so the
+        // table can never overflow the printable page width regardless of printer margins.
+        const double idW      = 0.6;
+        const double nameW    = 2.2;
+        const double dayW     = 1.0;
+        const double hrsW     = 0.8;
+        const double daysW    = 0.6;
+        const double rateW    = 1.1;
+        const double balW     = 1.3;
+        const double earnW    = 1.3;
+        const double totEarnW = 1.4;
+        const double totPaidW = 1.3;
+        const double owedW    = 1.4;
+        const double sigW     = 1.3;
+        double totalWeight = idW + nameW + 7 * dayW + hrsW + daysW + rateW + balW + earnW + totEarnW + totPaidW + owedW + sigW;
+        double unit = available / totalWeight;
+
+        double idCol      = idW * unit;
+        double nameCol     = nameW * unit;
+        double dayCol      = dayW * unit;
+        double hrsCol      = hrsW * unit;
+        double daysCol     = daysW * unit;
+        double rateCol     = rateW * unit;
+        double balCol      = balW * unit;
+        double earnCol     = earnW * unit;
+        double totEarnCol  = totEarnW * unit;
+        double totPaidCol  = totPaidW * unit;
+        double owedCol     = owedW * unit;
+        double sigCol      = sigW * unit;
 
         var table = new Table
         {
@@ -205,10 +220,10 @@ public static class WeeklyReportPrintService
 
     private static TableCell DayHeader(string dayName, string date, double width)
     {
-        var para = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0), LineHeight = 13 };
-        para.Inlines.Add(new Run(dayName) { FontWeight = FontWeights.Bold, FontSize = 9 });
+        var para = new Paragraph { TextAlignment = TextAlignment.Center, Margin = new Thickness(0), LineHeight = 16 };
+        para.Inlines.Add(new Run(dayName) { FontWeight = FontWeights.Bold, FontSize = 11 });
         para.Inlines.Add(new LineBreak());
-        para.Inlines.Add(new Run(date) { FontSize = 8, Foreground = Brushes.DimGray });
+        para.Inlines.Add(new Run(date) { FontSize = 9.5, Foreground = Brushes.DimGray });
 
         return new TableCell(para)
         {
@@ -230,7 +245,7 @@ public static class WeeklyReportPrintService
         };
     }
 
-    private static Paragraph Para(string text, bool bold = false, double size = 9, TextAlignment align = TextAlignment.Center)
+    private static Paragraph Para(string text, bool bold = false, double size = 11, TextAlignment align = TextAlignment.Center)
     {
         return new Paragraph(new Run(text)
         {
@@ -240,7 +255,7 @@ public static class WeeklyReportPrintService
         {
             Margin        = new Thickness(0),
             TextAlignment = align,
-            LineHeight    = 13,
+            LineHeight    = 15,
         };
     }
 }
