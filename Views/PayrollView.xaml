@@ -309,6 +309,7 @@
                                                             BorderBrush="#E2E8F0"
                                                             BorderThickness="0,0,1,1">
                                                         <TextBox MinHeight="30"
+                                                                 helpers:PositiveDecimalBehavior.IsEnabled="True"
                                                                  IsReadOnly="{Binding IsPaymentReadOnly}"
                                                                  Text="{Binding PaymentAmountText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                                                     </Border>

@@ -27,6 +27,7 @@
                     <TextBox MinHeight="30"
                              Padding="7,4"
                              FontSize="12"
+                             helpers:PositiveDecimalBehavior.IsEnabled="True"
                              IsReadOnly="{Binding IsReadOnly}"
                              ToolTip="Duration in hours"
                              Text="{Binding DurationHoursText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />

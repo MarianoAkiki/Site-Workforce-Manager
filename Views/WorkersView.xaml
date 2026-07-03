@@ -297,6 +297,7 @@
                             <StackPanel Margin="0,0,16,0">
                                 <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="New Daily Rate" />
                                 <TextBox MinHeight="44"
+                                         helpers:PositiveDecimalBehavior.IsEnabled="True"
                                          Text="{Binding NewDailyRate, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
 
@@ -355,6 +356,7 @@
                                     <TextBlock Style="{StaticResource FieldLabelTextStyle}"
                                                Text="{Binding EditingRate.EffectiveFrom, StringFormat='Edit rate effective from {0:yyyy-MM-dd}'}" />
                                     <TextBox MinHeight="40"
+                                             helpers:PositiveDecimalBehavior.IsEnabled="True"
                                              Text="{Binding EditingRateValue, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
 

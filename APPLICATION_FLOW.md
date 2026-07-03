@@ -22,329 +22,264 @@ The Dashboard is used for quick monitoring and does not modify data.
 
 ---
 
-## 2. Manage Trades
+## 2. Manage Categories (Trades)
 
-Trades represent worker job types.
-
-Examples:
-
-* Mason
-* Electrician
-* Plumber
-* Painter
-* Carpenter
+Categories represent worker job types (e.g. Mason, Electrician, Plumber).
 
 The user can:
 
-* Add trades
-* Edit trades
-* Deactivate trades
+* Add categories
+* Edit categories
+* Deactivate categories
 
-Inactive trades should not be assigned to new workers, but existing workers using inactive trades should still display their trade history correctly.
+Inactive categories are not assigned to new workers, but existing workers keep their category.
 
 ---
 
 ## 3. Manage Workers
 
-The user creates and manages workers.
-
 Worker information includes:
 
-* Worker Name
-* Trade
-* Status
+* First Name, Last Name
+* Category (Trade)
+* Status (Active / Inactive)
 * Daily Rate History
 * Construction Site Assignments
 
-A worker must be linked to a trade.
-
-Workers can be activated or deactivated.
+A worker must be linked to a category. Workers can be activated or deactivated.
 
 ---
 
 ## 4. Manage Worker Daily Rates
 
-Each worker can have daily rate history.
+Each worker has a daily rate history.
 
-The rate history list shows each rate with its effective date. The end date is managed internally and is never shown to the user.
+The rate list shows each rate with its effective date. The end date is managed internally and not shown.
 
 When a worker's daily rate changes:
 
 * A new rate record is added with its effective date.
 * Existing work logs are not changed.
-* New work logs from the effective date onward will use the new rate.
+* New work logs from the effective date onward use the new rate.
 
 When a rate value was entered incorrectly:
 
 * Click Edit on the rate row to correct the value.
-* The system automatically finds all work logs within that rate's effective period and recalculates their TotalAmount and DailyRateSnapshot.
-* No manual adjustment is required.
+* The system automatically finds all work logs within that rate's effective period and recalculates TotalAmount and DailyRateSnapshot.
 
-When a work log is created, the system uses the worker daily rate that is valid for the selected work date.
-
-The selected rate is saved as a snapshot inside the work log.
+When a work log is created, the system uses the daily rate valid for the work date, saved as a snapshot inside the work log.
 
 ---
 
 ## 5. Manage Construction Sites
 
-The user creates and manages construction sites.
-
 Construction site information includes:
 
 * Site Name
-* Location or Description
-* Status
+* Location / Description
+* Status (Active / Inactive)
 
-Construction sites can be activated or deactivated.
-
-Inactive sites should not be used for new work logs.
+Inactive sites cannot be used for new work logs.
 
 ---
 
 ## 6. Assign Workers to Construction Sites
 
-Workers can be assigned to one or multiple construction sites.
+Workers can be assigned to one or multiple construction sites. A site can have multiple workers.
 
-A construction site can also have multiple assigned workers.
-
-Business rules:
+Rules:
 
 * Duplicate assignments are not allowed.
-* Inactive workers cannot be assigned.
-* Inactive construction sites cannot be assigned.
-* Work Log site selection may be restricted to sites assigned to the selected worker.
+* Inactive workers and inactive sites cannot be assigned.
 
 ---
 
-## 7. Create Work Logs
+## 7. Create Work Logs (Weekly Entry)
 
-Work Logs represent daily work performed by workers.
+Work logs represent daily work performed by workers. They are entered on the Weekly Entry page.
 
-Work logs are filled from the Weekly Entry page.
+Weekly Entry opens on the current Thursday-to-Wednesday week. The user can navigate to previous weeks and edit them.
 
-Weekly Entry opens on the current Thursday-to-Wednesday week by default.
+For each work log entry, the user fills:
 
-The user can move to previous weeks and edit them when needed.
-
-For each work log, the user selects:
-
-* Worker
+* Duration Hours (numeric, positive only)
 * Construction Site
-* Work Date
-* Duration Hours
 
 The system automatically calculates:
 
-* Daily Rate Snapshot
-* Total Amount
+* Daily Rate Snapshot (from rate history at the work date)
+* Total Amount = DailyRateSnapshot / 8 × DurationHours
 
-Formula:
+Rules:
 
-Hourly value = Daily Rate Snapshot / 8
-
-Total Amount = Duration Hours x Hourly value
-
-Business rules:
-
-* Worker is required.
-* Construction Site is required.
-* Duration hours must be greater than zero.
-* A valid daily rate must exist for the worker and work date.
-* If a worker has only one assigned construction site it is auto-selected on page load.
-* A work log is auto-saved when both duration hours and construction site are filled, triggered when the duration field loses focus.
-* Editing an existing weekly cell updates the existing work log for that worker and date.
-* The full week does not need to be filled before saving.
-* Weekly Entry does not use payment status.
+* A work log auto-saves when both hours and site are filled, on field blur.
+* If a worker has only one assigned site it is auto-selected on load.
+* Editing an existing cell updates the existing work log for that worker/date.
+* The full week does not need to be filled.
 
 ---
 
 ## 8. Review Reports
 
-Reports are used to analyze work logs.
+Reports analyze work logs and payments. Reports are read-only.
 
-Reports are read-only.
+Tabs available:
 
-Reports do not:
+* **Work Logs** — detailed log rows
+* **Payments** — worker payment records
+* **By Worker** — earnings summary per worker
+* **By Category** — earnings summary per category
+* **By Construction Site** — earnings summary per site
+* **By Date** — earnings summary per date
 
-* Modify worker balances
-* Save payments
-* Change work logs
+Filters (auto-apply on change):
 
-Report filters include:
+* Date range
+* Workers (multi-select)
+* Categories / Trades (multi-select)
+* Construction Sites (multi-select)
 
-* Date Range
-* Workers
-* Trades
-* Construction Sites
+Stats shown: Total Hours, Total Earned, Total Paid.
 
-Report views include:
-
-* Detailed Logs
-* Summary by Worker
-* Summary by Trade
-* Summary by Construction Site
-* Summary by Date
-
-Reports display:
-
-* Worker Name
-* Trade
-* Construction Site
-* Work Date
-* Duration Hours
-* Daily Rate
-* Total Amount
-
-Reports can be used to understand:
-
-* Worker labor cost for a selected period
-* Construction site labor cost
-* Total labor cost
-* Cost by trade
+All tabs support pagination (25/50/100 rows per page).
 
 ---
 
 ## 9. Export Reports
 
-Filtered reports can be exported to Excel.
+The currently active report tab can be exported to Excel.
 
-The exported file should include:
-
-* Selected filters
-* Detailed rows
-* Totals
-* Summary information where applicable
-
-Excel export is used for sharing, printing, and external review.
+The exported file includes the rows visible in that tab (full filtered set, not just the current page).
 
 ---
 
-## 10. Weekly Payroll Payments
+## 10. Payroll (Weekly Payments)
 
-Payroll currently works as weekly worker payment entry, not payroll slips.
+The Payroll page uses Thursday-to-Wednesday weeks.
 
-The Payroll page uses the same Thursday-to-Wednesday week structure.
+The table is grouped by category and shows per worker:
 
-The payroll table is grouped by trade and displays:
+* Worker ID and Name
+* Balance for the opened week
+* Payment Amount (editable for the latest week only)
 
-* Worker ID
-* Worker Name
-* Balance (for the opened week)
-* Payment Amount
-
-The balance shown for any week = all work logs with work date up to the week end minus all payments with payment date up to the week end. This means viewing week Jun 11–17 shows the exact financial position as of Jun 17, regardless of what was entered later.
+**Balance for a week** = all work logs with WorkDate ≤ WeekEnd minus all payments with PaymentDate ≤ WeekEnd.
 
 For the latest completed payroll week:
 
 * Balance is shown.
-* Payment amount can be entered per worker.
-* Payments auto-save per worker when the payment field loses focus.
-* Payments are saved into the `WorkerPayment` table with `PaymentDate = today` and `WeekStartDate` identifying the payroll week.
-* Re-entering a payment for the same worker and week updates the existing record and refreshes the payment date.
+* Payment amount can be entered; auto-saves on field blur.
+* A payment is saved with PaymentDate = today and WeekStartDate identifying the payroll week.
+* Re-entering a payment for the same worker and week updates the existing record.
 
-For previous payroll weeks:
+For previous weeks:
 
-* The page is read-only.
-* It shows the paid amount recorded for that week.
+* The page is read-only and shows the paid amount recorded for that week.
 
-Each worker row has a live balance button (⊙) that opens a popup showing the worker's true current balance across all time, computed on demand.
+Each worker row has a live balance button that opens a popup showing the all-time current balance, computed on demand.
 
-Business rules:
+Negative values are displayed as parentheses, e.g. (150.00).
+Category totals show blank when no payment has been entered yet.
 
-* Payment amount cannot be negative.
-* Payment amount can exceed the worker balance (negative balance is allowed).
-* Empty or zero payment removes the weekly payment entry if one exists.
-* Existing weekly payment entries are updated instead of duplicated.
-* Payment date is always the actual date the payment is made, not the week end date.
+Rules:
 
----
-
-## 11. Worker Balances
-
-Worker balances are calculated, not stored as a separate balance table.
-
-Balance calculation:
-
-Total Balance = Sum of WorkLog TotalAmount - Sum of WorkerPayment Amount
-
-The system computes balances from:
-
-* Saved work logs
-* Saved worker payments
-
-This keeps the balance safer because the source records remain the authority.
-
-The dedicated Worker Balances page shows all active workers with:
-
-* Total Earned (all work logs, all time)
-* Total Paid (all payments, all time)
-* Current Balance
-
-The page supports filtering by worker name, trade, and an "outstanding balance only" toggle. Grand totals are shown for the filtered results.
+* Payment amount must be positive (negative input is blocked at the field level).
+* Payment can exceed balance; a negative balance is allowed.
+* Empty or zero payment removes the weekly payment entry.
+* Payment date is the actual date of payment, not the week end date.
 
 ---
 
-## 12. Backup and Restore
+## 11. Weekly Report
 
-Because the application runs locally, data protection is important.
+The Weekly Report page shows a per-worker financial summary for a selected week, filtered by category.
 
-The user can:
+The category filter is mandatory — the report is always scoped to one category.
 
-* Create a database backup.
-* Restore the database from a backup file.
+Columns per worker:
 
-Backups protect against:
+* ID, Name
+* Hours logged for each of the 7 days
+* Total Hours, Number of Days
+* Daily Rate
+* Balance Before This Week
+* This Week's Earnings
+* Total Earned up to Week End
+* Total Paid up to Week End
+* Balance to Week End (still owed)
 
-* PC failure
-* Accidental deletion
-* Database corruption
-* User mistakes
+A totals row is shown at the bottom. The worker count excludes the totals row.
 
----
+Negative values display as parentheses.
 
-## 13. End-to-End Example
-
-Example workflow:
-
-1. Create a trade named Mason.
-2. Create a worker named Ahmad.
-3. Assign Ahmad to the Mason trade.
-4. Set Ahmad's daily rate to 80 USD.
-5. Create a construction site named Site A.
-6. Assign Ahmad to Site A.
-7. Open Weekly Entry for the current week.
-8. Select the Mason trade.
-9. Enter Ahmad's hours and assigned construction site for one or more days.
-10. The weekly cells auto-save as work logs.
-11. Generate a report for Ahmad for the selected period.
-12. Export the filtered report to Excel if needed.
-13. Open Payroll for the latest completed week.
-14. Enter a payment amount for Ahmad.
-15. Save the weekly payment.
-16. Review Ahmad's computed balance.
-17. Back up the database.
+The report can be printed in Arabic (RTL, A4 landscape) with a signature column (التوقيع) and the category name in the title.
 
 ---
 
-## 14. Main Business Rule Summary
+## 12. Worker Balances
 
-* Trades are selected when creating workers.
+The Worker Balances page shows the all-time financial position for every active worker.
+
+Per worker:
+
+* Total Earned (sum of all work log amounts, all time)
+* Total Paid (sum of all payments, all time)
+* Current Balance (Earned minus Paid)
+
+Filters: worker ID, worker name, category, outstanding balance only toggle.
+
+Grand totals are shown for the filtered result set.
+
+Supports pagination (25/50/100 rows).
+
+---
+
+## 13. Maintenance
+
+The Maintenance page allows backing up the SQLite database to a file chosen by the user.
+
+Backups protect against PC failure, accidental deletion, or database corruption.
+
+---
+
+## 14. End-to-End Example
+
+1. Create a category named Mason.
+2. Create a worker named Ahmad, assign to Mason category.
+3. Set Ahmad's daily rate to 80.
+4. Create a construction site named Site A.
+5. Assign Ahmad to Site A.
+6. Open Weekly Entry for the current week.
+7. Select the Mason category tab.
+8. Enter Ahmad's hours for one or more days (auto-saves on blur).
+9. Open Reports → filter by worker Ahmad → review earnings.
+10. Export the filtered report to Excel if needed.
+11. Open Payroll for the latest completed week.
+12. Enter a payment amount for Ahmad (auto-saves on blur).
+13. Open Weekly Report → select Mason category → review Ahmad's balance summary.
+14. Open Worker Balances to see Ahmad's all-time balance.
+15. Back up the database from the Maintenance page.
+
+---
+
+## 15. Business Rule Summary
+
+* Categories are selected when creating workers.
 * Workers are assigned to construction sites.
 * If a worker has only one assigned site it is auto-selected in the weekly entry grid.
-* Weekly Entry opens on the current Thursday-to-Wednesday week.
-* Weekly Entry supports editing current and past weeks.
-* Weekly Entry auto-saves when hours and construction site are both filled, on field blur.
-* Daily rates are snapshotted when Work Logs are created.
-* Work log totals are calculated as Daily Rate / 8 x Duration Hours.
-* Reports are read-only.
-* Worker balances are calculated from work logs minus worker payments.
-* Worker balances are not stored as separate balance rows.
+* Weekly Entry opens on the current Thursday-to-Wednesday week and supports past weeks.
+* Work logs auto-save when hours and site are both filled, on blur.
+* Daily rates are snapshotted at work log creation; correcting a rate bulk-recalculates affected logs.
+* Work log total = Daily Rate / 8 × Duration Hours.
+* Reports are read-only; filters auto-apply on change.
+* Excel export targets the currently active report tab.
 * Payroll balance for a week = earned up to week end minus payments dated up to week end.
-* Payment date is the actual date the payment is made, not the week end date.
-* WeekStartDate on WorkerPayment identifies which payroll week a payment belongs to.
-* Payment amounts can exceed the worker balance; negative balances are allowed.
-* Weekly payments auto-save per worker on field blur.
+* Payment date is the actual payment date, not the week end date.
+* WeekStartDate on WorkerPayment identifies the payroll week.
+* Payments can exceed balance; negative balances are allowed.
 * Previous payroll weeks are read-only.
-* Worker Balances page shows all-time balance for every active worker.
-* Backup and restore are required because the app stores data locally.
+* Worker Balances page shows all-time balance (all logs minus all payments).
+* Weekly Report always requires a category filter; prints in Arabic RTL.
+* Numeric inputs (daily rate, hours, payment) block negative values and non-numeric characters.
+* All list views support pagination (25/50/100 rows, default 25).
+* Backup only — no restore in the current version.

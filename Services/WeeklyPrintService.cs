@@ -78,11 +78,15 @@ public static class WeeklyPrintService
 
     private static Table BuildTable(DateTime weekStart, IList<WeeklyWorkerRow> rows, double available)
     {
-        // Worker name column gets ~17 % of page width; the rest splits evenly across 7 days
-        var workerColW = Math.Round(available * 0.17);
-        var dayW       = (available - workerColW) / 7.0;
-        var hoursColW  = Math.Round(dayW * 0.38);
-        var siteColW   = Math.Round(dayW - hoursColW);
+        // Proportional weights — sum exactly to available width, no rounding drift
+        const double workerW = 2.5;
+        const double hoursW  = 0.8;
+        const double siteW   = 1.5;
+        const double totalW  = workerW + 7 * (hoursW + siteW); // 2.5 + 16.1 = 18.6
+        double unit      = available / totalW;
+        double workerColW = workerW * unit;
+        double hoursColW  = hoursW  * unit;
+        double siteColW   = siteW   * unit;
 
         var table = new Table
         {

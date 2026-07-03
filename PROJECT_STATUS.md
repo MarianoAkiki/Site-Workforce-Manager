@@ -6,10 +6,10 @@ Site Workforce Manager is a desktop business application for managing workers, c
 
 - .NET 8
 - WPF
-- MVVM
-- SQLite
-- Entity Framework Core
-- CommunityToolkit.Mvvm
+- MVVM (CommunityToolkit.Mvvm)
+- SQLite via Entity Framework Core (`EnsureCreated()` + manual DDL migrations — no EF migrations)
+- ClosedXML for Excel export
+- WPF FlowDocument for Arabic RTL printing
 
 # Implemented Features
 
@@ -22,10 +22,10 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Total labor cost this month
 - Work logs count
 
-## Trades
+## Trades (Categories)
 
 - Trade create and update
-- Trade list view
+- Trade list view with pagination (25/50/100 rows)
 - Trade deactivate
 - Duplicate trade name prevention
 - Inactive trades excluded from new worker selection
@@ -33,29 +33,21 @@ Site Workforce Manager is a desktop business application for managing workers, c
 ## Workers
 
 - Worker create and update
-- Worker list view
+- Worker list view with pagination (25/50/100 rows)
 - Worker deactivate
 - Trade selection from master trade list
 - Daily rate history tracking
 - Add new daily rate with effective date
+- Inline rate value editing: click Edit on any rate row to correct its value
+- Correcting a rate automatically bulk-recalculates all work logs in that rate's effective period
 - View rate history per worker
 - Worker to construction site assignment management
 - Assigned sites count in worker list
 
-## Worker Rate History
-
-- Effective-dated daily rate records per worker
-- Automatic current rate lookup by work date
-- Historical rate tracking for reporting
-- Rate history UI shows only Rate and Effective From (Effective To managed internally)
-- Inline rate value editing: click Edit on any rate row to correct its value
-- Correcting a rate automatically bulk-recalculates all work logs in that rate's effective period (updates DailyRateSnapshot and TotalAmount)
-- Adding a new rate leaves existing work logs untouched; only new logs from the effective date onward use the new rate
-
 ## Construction Sites
 
 - Construction site create and update
-- Construction site list view
+- Construction site list view with pagination (25/50/100 rows)
 - Construction site deactivate
 
 ## Worker ↔ Construction Site Assignments
@@ -65,224 +57,136 @@ Site Workforce Manager is a desktop business application for managing workers, c
 - Prevent duplicate assignments
 - Prevent inactive worker or inactive site assignment
 
-## Work Logs
+## Work Logs (Weekly Entry)
 
 - Weekly work entry by trade
 - Weekly Entry opens on the current Thursday-to-Wednesday week by default
 - Previous and current weekly entries can be edited
-- Work logs auto-save when both duration hours and construction site are filled, triggered on field blur (LostFocus)
+- Work logs auto-save when both duration hours and construction site are filled, on field blur (LostFocus)
 - If worker has only one assigned construction site it is auto-selected on load
 - Create and update work logs from the weekly entry page
 - Replace existing worker/date work log when a weekly cell is edited
-- Partial weekly entry is supported; the full week does not need to be filled
-- Filter work logs by date range
-- Filter work logs by worker
-- Filter work logs by construction site
-- Automatic amount calculation
-- Automatic daily rate snapshot based on worker rate history and work date
-- Worker-based construction site filtering
-- Totals for filtered work logs
+- Partial weekly entry is supported
 
-## Reporting
+## Reporting (Reports)
 
-- Read-only Reports page
-- Filter by date from and date to
-- Filter by multiple workers or all workers
-- Filter by multiple trades or all trades
-- Filter by multiple construction sites or all construction sites
-- View matching work logs in a report grid
-- Summary by worker
-- Summary by trade
-- Summary by construction site
-- Summary by date
-- View total hours
-- View total amount
+- Read-only Reports page with 6 tabs:
+  - Work Logs (detailed rows)
+  - Payments
+  - Summary by Worker
+  - Summary by Trade (Category)
+  - Summary by Construction Site
+  - Summary by Date
+- Filter by date range, multiple workers, multiple trades, multiple construction sites
+- Filters auto-apply on change — no Apply button
+- Filter dropdowns: entire row is clickable (bare ContentPresenter item template)
+- Pagination on all 6 tabs (25/50/100 rows, default 25)
+- Stat strip: Total Hours, Total Earned, Total Paid
+- Export to Excel exports the currently active tab's data
 
-## Payroll Payments
+## Payroll
 
-- Weekly payroll/payment page
-- Payroll view grouped by trade
-- Worker balance shown for every week (earned up to week end minus payments made up to week end)
-- Payment amount auto-saves per worker on field blur — no Save button required
-- Payments can exceed worker balance (negative balance allowed)
-- Payment date recorded as the actual date the payment is made (`DateTime.Today`), not the week end date
-- Week association stored via `WeekStartDate` column on `WorkerPayment`
+- Weekly payroll/payment page (Thu–Wed weeks)
+- Grouped by trade/category
+- Worker balance shown for every week (earned up to week end minus payments dated up to week end)
+- Payment amount auto-saves per worker on field blur — no Save button
 - Previous payroll weeks are read-only; only the latest completed week is editable
-- Previous weeks still show paid amount recorded for that week
-- Live current balance popup per worker (computed on demand when icon clicked, not on page load)
+- Previous weeks show the paid amount recorded for that week
+- Live current balance popup per worker (computed on demand, not on page load)
+- Negative values shown as parentheses, e.g. (100.00) instead of -100.00
+- Category total payment shows blank when no payments entered yet (zero)
+
+## Weekly Report
+
+- Dedicated Weekly Report page
+- Mandatory filter by category (trade) — always required
+- Shows the selected Thursday-to-Wednesday week (week navigation with < / > arrows)
+- Table columns: ID, Name, 7 daily hours, Total Hours, Days, Daily Rate, Balance Before Week, Week Earnings, Total Earned to Week End, Total Paid to Week End, Balance to Week End
+- Totals row at the bottom
+- Worker count excludes the totals row
+- Negative values shown as parentheses
+- Arabic RTL print output (A4 landscape, proportional column widths, signature column التوقيع, category name in title)
+- Pagination (25/50/100 rows)
 
 ## Worker Balances
 
-- Dedicated Worker Balances page
+- Dedicated Worker Balances page with pagination (25/50/100 rows)
 - Shows all active workers with total earned, total paid, and current balance
 - Balance is all-time: sum of all work logs minus sum of all payments
-- Filter by worker name and trade
+- Filter by worker ID, worker name, trade
 - Toggle to show only workers with an outstanding balance
-- Grand total row for filtered results
+- Grand total row for filtered results (grand totals computed from full filtered set, not just visible page)
 
-## Excel Export
+## Maintenance
 
-- Export current filtered report results to Excel
-- Include detailed report rows and totals
-
-## Backup & Restore
-
-- Maintenance page
 - Backup SQLite database to selected file
-- Restore SQLite database from selected backup
-- Reload application data after restore
+- (Restore removed — backup only)
 
-## UI Improvements
+## UI
 
-- Shared light theme in a central ResourceDictionary
-- Modern sidebar styling
-- Active navigation highlighting with blue accent
-- Improved hover states for navigation buttons
-- Rounded buttons and cards
-- Improved spacing and padding across views
-- Cleaner card-style page sections
-- Improved DataGrid row height, headers, and alternating row colors
-- More prominent totals cards
-- Consistent typography, borders, and color palette
+- Shared light theme (Styles/Theme.xaml)
+- Sidebar with emoji icons; active page highlighted
+- Sidebar order: Dashboard → Categories → Construction Sites → Workers → Weekly Entry → Payroll → Weekly Report → Reports → Worker Balances → Maintenance
+- Global custom CheckBox style: 16×16, rounded (CornerRadius 4), blue fill on check, smooth hover
+- Positive-only numeric inputs: daily rate, hours, and payment fields block letters, `e`, minus, and non-numeric paste
+- Negative currency values displayed as parentheses throughout
 
 # Database Schema
 
 ## Entities
 
-- `Trade`
-  - `Id`
-  - `Name`
-  - `Description`
-  - `IsActive`
-  - `CreatedAt`
-  - `UpdatedAt`
+- `Trade` — Id, Name, Description, IsActive, CreatedAt, UpdatedAt
+- `Worker` — Id, FirstName, LastName, TradeId, Status
+- `WorkerRateHistory` — Id, WorkerId, DailyRate (TEXT), EffectiveFrom, EffectiveTo
+- `ConstructionSite` — Id, Name, Location, Status
+- `WorkerConstructionSite` — WorkerId, ConstructionSiteId, AssignedDate, Status (composite PK)
+- `WorkLog` — Id, WorkerId, ConstructionSiteId, WorkDate, DurationHours (TEXT), DailyRateSnapshot (TEXT), TotalAmount (TEXT), CreatedAt, UpdatedAt
+- `WorkerPayment` — Id, WorkerId, PaymentDate, Amount (TEXT), WeekStartDate, CreatedAt, UpdatedAt
 
-- `Worker`
-  - `Id`
-  - `FirstName`
-  - `LastName`
-  - `TradeId`
-  - `Status`
-
-- `WorkerRateHistory`
-  - `Id`
-  - `WorkerId`
-  - `DailyRate`
-  - `EffectiveFrom`
-  - `EffectiveTo`
-
-- `ConstructionSite`
-  - `Id`
-  - `Name`
-  - `Location`
-  - `Status`
-
-- `WorkerConstructionSite`
-  - `WorkerId`
-  - `ConstructionSiteId`
-  - `AssignedDate`
-  - `Status`
-
-- `WorkLog`
-  - `Id`
-  - `WorkerId`
-  - `ConstructionSiteId`
-  - `WorkDate`
-  - `DurationHours`
-  - `DailyRateSnapshot`
-  - `TotalAmount`
-  - `CreatedAt`
-  - `UpdatedAt`
-
-- `WorkerPayment`
-  - `Id`
-  - `WorkerId`
-  - `PaymentDate` — actual date the payment was made
-  - `Amount`
-  - `WeekStartDate` — identifies which payroll week this payment belongs to
-  - `CreatedAt`
-  - `UpdatedAt`
+> SQLite stores `decimal` as `TEXT`. Always cast `(double)` before `.Sum()` in LINQ then cast back to `decimal`.
 
 ## Relationships
 
-- `Trade` 1-to-many `Worker`
-- `Worker` 1-to-many `WorkerRateHistory`
-- `Worker` 1-to-many `WorkerConstructionSite`
-- `ConstructionSite` 1-to-many `WorkerConstructionSite`
-- `Worker` 1-to-many `WorkLog`
-- `Worker` 1-to-many `WorkerPayment`
-- `ConstructionSite` 1-to-many `WorkLog`
-- `WorkerConstructionSite` uses a composite key:
-  - `WorkerId`
-  - `ConstructionSiteId`
+- Trade 1-to-many Worker
+- Worker 1-to-many WorkerRateHistory
+- Worker 1-to-many WorkerConstructionSite
+- ConstructionSite 1-to-many WorkerConstructionSite
+- Worker 1-to-many WorkLog
+- Worker 1-to-many WorkerPayment
+- ConstructionSite 1-to-many WorkLog
 
 # Business Rules
 
-- Worker first name and last name are required
-- Trade name is required
+- Worker first name, last name, and trade are required
+- Trade name is required and must be unique
 - Construction site name and location are required
-- New daily rates are added with an effective date
-- Existing open worker rate history is closed when a later rate is added
-- Worker is required for a work log
-- Construction site is required for a work log
-- Work date is required for a work log
+- New daily rates are added with an effective date; existing open rate is closed automatically
 - Weekly Entry opens on the current Thursday-to-Wednesday week
-- Weekly Entry supports editing current and past weeks
-- Work log duration is entered in hours on the weekly entry page
-- Work logs auto-save only after both duration hours and construction site are filled, on field blur
-- If a worker has only one assigned construction site it is auto-selected in the weekly entry grid
-- Auto-save updates an existing log for the same worker and work date instead of creating duplicates
-- Work log total amount is calculated automatically
-- Daily rate is snapshotted on Work Log creation
-- Work log total amount uses `DailyRateSnapshot / 8 * DurationHours`
+- Work log auto-saves when both duration hours and site are filled, on blur
+- Work log total = DailyRateSnapshot / 8 × DurationHours
 - Work logs cannot be created if no valid daily rate exists for that worker on that date
 - Reports are read-only
-- Worker balances are calculated from saved work logs and saved worker payments
-- Worker balance is not stored as a separate database row
-- Weekly payroll payments are saved in `WorkerPayment` with the actual payment date and the payroll week identified by `WeekStartDate`
-- Payroll balance for a given week = all work logs up to week end minus all payments with payment date up to week end
+- Payroll balance for a week = all work logs with WorkDate ≤ WeekEnd minus all payments with PaymentDate ≤ WeekEnd
+- Payment date = actual date payment is made (not week end date)
+- WeekStartDate on WorkerPayment identifies the payroll week
 - Payment amount can exceed worker balance; negative balance is allowed
-- Previous payroll weeks are read-only; only the latest completed week accepts payments
-- Worker Balances page shows all-time balance per worker (all logs minus all payments)
-
-# Documentation
-
-- `PROJECT_STATUS.md`: Technical status, implemented features, architecture, schema, and future work.
-- `APPLICATION_FLOW.md`: Complete business flow and user workflow documentation.
-
-# Future Enhancements
-
-- Payroll module redesign
-- Advanced worker balance history
-- PDF Report Export
-- Advanced Dashboard Charts
-- User Authentication
-- Multi-user Support
-- Cloud Synchronization
-- Angular Web Version
-- Mobile Version
-- Arabic Language Support
+- Previous payroll weeks are read-only
+- Worker Balances = all-time earnings minus all-time payments
+- Weekly Report is always filtered by a mandatory category
 
 # Known Limitations
 
-- The application currently uses a local SQLite database file intended for single-user desktop usage
-- Work logs are entered through a weekly grid rather than individual start/end time records
-- Database evolution is currently handled in a simple startup-friendly way rather than through a full migration workflow
-- Restore replaces the active database file directly and is intended for local maintenance workflows
+- Single-user local SQLite database
+- Work logs entered through weekly grid (no individual time-of-day tracking)
+- Database evolution handled via startup DDL guards, not EF migrations
+- Restore removed from Maintenance; client manages backups manually
 
 # Project Status
 
-Current Phase:
-Feature Complete MVP
+Current Phase: Feature Complete MVP — deployed as single self-contained EXE, no pre-existing database.
 
-Remaining Work:
+# Documentation
 
-- UI/UX Refinement
-- End-to-End Testing
-- Bug Fixing
-- Deployment Packaging
-- Client Acceptance Testing
-
-# Next Development Phase
-
-The next phase should focus on stabilization, usability refinement, and production readiness rather than new core business modules. The main priorities are testing, packaging, UX polish, and validating the full workflow with client scenarios.
+- `PROJECT_STATUS.md` — Technical status, features, schema, business rules.
+- `APPLICATION_FLOW.md` — Complete business flow and user workflow.
+- `CLAUDE.md` — Developer reference for AI-assisted development (patterns, pitfalls, conventions).

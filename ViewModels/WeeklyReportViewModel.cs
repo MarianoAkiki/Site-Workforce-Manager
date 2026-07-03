@@ -167,7 +167,7 @@ public partial class WeeklyReportViewModel : ObservableObject
 
                 var allPayments = context.WorkerPayments
                     .AsNoTracking()
-                    .Where(p => workerIds.Contains(p.WorkerId) && p.PaymentDate <= weekEnd.Date)
+                    .Where(p => workerIds.Contains(p.WorkerId) && p.WeekStartDate <= weekStart.Date)
                     .ToList();
 
                 var allRates = context.WorkerRateHistories
@@ -205,13 +205,16 @@ public partial class WeeklyReportViewModel : ObservableObject
                 var weekEarnings = (decimal)weekLogs.Sum(l => (double)l.TotalAmount);
                 var totalEarnedUpToWeekEnd = earnedBeforeWeek + weekEarnings;
 
-                var paidBeforeWeek = (decimal)workerPayments
-                    .Where(p => p.PaymentDate < weekStart.Date)
+                // all payments for this week and prior weeks (WeekStartDate <= weekStart)
+                var paidBeforeWeek = (decimal)workerPayments.Sum(p => (double)p.Amount);
+
+                // payment specifically for this week
+                var totalPaidUpToWeekEnd = (decimal)workerPayments
+                    .Where(p => p.WeekStartDate == weekStart.Date)
                     .Sum(p => (double)p.Amount);
-                var totalPaidUpToWeekEnd = (decimal)workerPayments.Sum(p => (double)p.Amount);
 
                 var balanceBeforeWeek = Math.Round(earnedBeforeWeek - paidBeforeWeek, 2);
-                var totalBalanceTillWeekEnd = Math.Round(totalEarnedUpToWeekEnd - totalPaidUpToWeekEnd, 2);
+                var totalBalanceTillWeekEnd = Math.Round(balanceBeforeWeek + weekEarnings, 2);
 
                 var dailyRate = workerRates
                     .Where(r => r.EffectiveFrom <= weekStart.Date)
@@ -321,7 +324,7 @@ public class WeeklyReportRow
     public string WeekEarningsDisplay => WeekEarnings > 0 ? WeekEarnings.ToString("C") : string.Empty;
     public string TotalEarnedDisplay => TotalEarnedUpToWeekEnd > 0 ? TotalEarnedUpToWeekEnd.ToString("C") : string.Empty;
     public string TotalPaidDisplay => TotalPaidUpToWeekEnd > 0 ? TotalPaidUpToWeekEnd.ToString("C") : string.Empty;
-    public string TotalBalanceDisplay => FmtBalance(TotalBalanceTillWeekEnd);
+    public string TotalBalanceDisplay => TotalPaidUpToWeekEnd == 0 ? string.Empty : FmtBalance(TotalBalanceTillWeekEnd);
 
     private static string FormatHours(decimal h) => h > 0 ? h.ToString("0.##") : string.Empty;
     private static string FmtBalance(decimal v) =>

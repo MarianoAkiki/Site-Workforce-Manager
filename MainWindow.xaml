@@ -8,6 +8,7 @@
         xmlns:views="clr-namespace:Site_Workforce_Manager.Views"
         mc:Ignorable="d"
         Title="Site Workforce Manager"
+        Icon="pack://application:,,,/app-logo.png"
         Height="720"
         Width="1200"
         MinHeight="650"
@@ -146,17 +147,17 @@
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"
-                                Command="{Binding ShowReportsCommand}"
-                                Content="&#x1F4C8;  Reports"
-                                helpers:NavigationState.IsActive="{Binding IsReportsActive}"
-                                Tag="Reports"
-                                Style="{StaticResource SidebarButtonStyle}" />
-
-                        <Button Margin="0,0,0,8"
                                 Command="{Binding ShowWeeklyReportCommand}"
                                 Content="&#x1F4C4;  Weekly Report"
                                 helpers:NavigationState.IsActive="{Binding IsWeeklyReportActive}"
                                 Tag="WeeklyReport"
+                                Style="{StaticResource SidebarButtonStyle}" />
+
+                        <Button Margin="0,0,0,8"
+                                Command="{Binding ShowReportsCommand}"
+                                Content="&#x1F4C8;  Reports"
+                                helpers:NavigationState.IsActive="{Binding IsReportsActive}"
+                                Tag="Reports"
                                 Style="{StaticResource SidebarButtonStyle}" />
 
                         <Button Margin="0,0,0,8"
