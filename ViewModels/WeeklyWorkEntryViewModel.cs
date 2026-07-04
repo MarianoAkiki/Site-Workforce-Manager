@@ -125,7 +125,6 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
     private void LoadTradeOptions()
     {
         using var context = new AppDbContext();
-        var selectedTradeId = SelectedTradeOption?.Id;
         var trades = context.Trades
             .AsNoTracking()
             .Where(trade => trade.IsActive)
@@ -144,8 +143,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
             TradeOptions.Add(trade);
         }
 
-        SelectedTradeOption = TradeOptions.FirstOrDefault(trade => trade.Id == selectedTradeId)
-                              ?? TradeOptions.FirstOrDefault();
+        SelectedTradeOption = TradeOptions.FirstOrDefault();
     }
 
     private void LoadWeekDays()
@@ -212,13 +210,10 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 var assignedSitesByWorker = context.WorkerConstructionSites
                     .AsNoTracking()
                     .Include(workerSite => workerSite.ConstructionSite)
-                    .Where(workerSite =>
-                        workerIds.Contains(workerSite.WorkerId) &&
-                        workerSite.Status == EntityStatus.Active &&
-                        workerSite.ConstructionSite != null &&
-                        workerSite.ConstructionSite.Status == EntityStatus.Active)
+                    .Where(workerSite => workerIds.Contains(workerSite.WorkerId))
                     .OrderBy(workerSite => workerSite.ConstructionSite!.Name)
                     .ToList()
+                    .Where(workerSite => workerSite.ConstructionSite is { Status: EntityStatus.Active })
                     .GroupBy(workerSite => workerSite.WorkerId)
                     .ToDictionary(
                         group => group.Key,
