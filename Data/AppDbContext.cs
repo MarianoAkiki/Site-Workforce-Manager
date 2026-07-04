@@ -8,7 +8,8 @@ public class AppDbContext : DbContext
 {
     public static string GetDatabasePath()
     {
-        return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "siteworkforcemanager.db");
+        var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppDomain.CurrentDomain.BaseDirectory;
+        return Path.Combine(exeDir, "siteworkforcemanager.db");
     }
 
     public DbSet<Trade> Trades => Set<Trade>();

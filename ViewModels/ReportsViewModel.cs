@@ -344,8 +344,7 @@ public partial class ReportsViewModel : ObservableObject
     {
         IsExportConfirmationVisible = false;
         IsExportInProgress = false;
-        DateFrom = null;
-        DateTo = null;
+        SetDefaultDateRange();
         WorkerSearchText = string.Empty;
         TradeSearchText = string.Empty;
         ConstructionSiteSearchText = string.Empty;

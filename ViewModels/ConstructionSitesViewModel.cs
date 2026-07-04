@@ -181,9 +181,9 @@ public partial class ConstructionSitesViewModel : ObservableObject
 
     private void CreateSite()
     {
-        if (string.IsNullOrWhiteSpace(SiteName) || string.IsNullOrWhiteSpace(Location))
+        if (string.IsNullOrWhiteSpace(SiteName))
         {
-            MessageBox.Show("Please enter the site name and location.");
+            MessageBox.Show("Please enter the site name.");
             return;
         }
 
@@ -207,9 +207,9 @@ public partial class ConstructionSitesViewModel : ObservableObject
 
     private void UpdateSite(int siteId)
     {
-        if (string.IsNullOrWhiteSpace(SiteName) || string.IsNullOrWhiteSpace(Location))
+        if (string.IsNullOrWhiteSpace(SiteName))
         {
-            MessageBox.Show("Please enter the site name and location.");
+            MessageBox.Show("Please enter the site name.");
             return;
         }
 

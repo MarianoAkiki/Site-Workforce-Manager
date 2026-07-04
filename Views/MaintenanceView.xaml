@@ -10,6 +10,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel>
@@ -53,6 +54,23 @@
                         <Button Command="{Binding BackupDatabaseCommand}"
                                 Content="Backup Database"
                                 Style="{StaticResource PrimaryButtonStyle}" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+            <Border Grid.Row="3"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Restore" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Replace the current database with a previously backed-up file. The app must be restarted after restoring." />
+
+                    <WrapPanel Margin="0,20,0,0">
+                        <Button Command="{Binding RestoreDatabaseCommand}"
+                                Content="Restore from Backup"
+                                Style="{StaticResource BaseButtonStyle}" />
                     </WrapPanel>
                 </StackPanel>
             </Border>

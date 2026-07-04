@@ -50,4 +50,39 @@ public partial class MaintenanceViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private void RestoreDatabase()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Select Backup File",
+            Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
+            DefaultExt = ".db"
+        };
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        var confirm = MessageBox.Show(
+            "This will replace the current database with the selected backup. All unsaved changes will be lost.\n\nContinue?",
+            "Restore Database",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            DatabaseMaintenanceService.RestoreDatabase(dialog.FileName);
+            StatusMessage = $"Database restored from: {dialog.FileName}";
+            MessageBox.Show("Database restored successfully. Please restart the application.", "Restore Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Restore failed: {ex.Message}";
+            MessageBox.Show($"Restore failed: {ex.Message}");
+        }
+    }
+
 }

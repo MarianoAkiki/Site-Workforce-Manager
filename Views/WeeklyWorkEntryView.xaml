@@ -166,7 +166,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="48" />
+                        <ColumnDefinition Width="70" />
                         <ColumnDefinition Width="150" />
                         <ColumnDefinition Width="*" MinWidth="88" />
                         <ColumnDefinition Width="*" MinWidth="88" />
@@ -326,7 +326,7 @@
                             <DataTemplate>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="48" />
+                                        <ColumnDefinition Width="70" />
                                         <ColumnDefinition Width="150" />
                                         <ColumnDefinition Width="*" MinWidth="88" />
                                         <ColumnDefinition Width="*" MinWidth="88" />

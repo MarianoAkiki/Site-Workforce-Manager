@@ -89,6 +89,8 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
 
     public void LoadWeeklyEntryPage()
     {
+        WeekStart = GetCurrentWeekStart(DateTime.Today);
+        PickerDate = DateTime.Today;
         WorkerIdFilterText = string.Empty;
         WorkerNameFilterText = string.Empty;
         LoadTradeOptions();

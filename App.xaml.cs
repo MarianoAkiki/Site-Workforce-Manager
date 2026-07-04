@@ -10,6 +10,14 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        DispatcherUnhandledException += (_, args) =>
+        {
+            MessageBox.Show($"Unexpected error:\n\n{args.Exception.Message}\n\n{args.Exception.StackTrace}",
+                "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            args.Handled = true;
+            Shutdown(1);
+        };
+
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         var splash = new SplashWindow();
@@ -19,8 +27,16 @@ public partial class App : Application
         {
             DatabaseInitializer.Initialize();
             Task.Delay(1200).Wait();
-        }).ContinueWith(_ =>
+        }).ContinueWith(t =>
         {
+            if (t.Exception is not null)
+            {
+                MessageBox.Show($"Failed to initialize database:\n\n{t.Exception.InnerException?.Message ?? t.Exception.Message}",
+                    "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(1);
+                return;
+            }
+
             splash.FadeOutAndClose(() =>
             {
                 var main = new MainWindow();

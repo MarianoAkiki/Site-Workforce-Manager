@@ -84,12 +84,13 @@ Weeks run **Thursday → Wednesday** throughout the app.
 
 ## Balance Calculation
 - **Live balance** = sum of all `WorkLog.TotalAmount` for a worker − sum of all `WorkerPayment.Amount` for that worker (no date restriction).
-- **Weekly Report balance fields** are cumulative up to `WeekEnd`:
-  - `BalanceBeforeWeek` = earnings up to day before week start − payments with `PaymentDate <= WeekEnd - 7`
-  - `WeekEarnings` = sum of logs within the week
-  - `TotalEarnedUpToWeekEnd` = all logs with `WorkDate <= WeekEnd`
-  - `TotalPaidUpToWeekEnd` = all payments with `PaymentDate <= WeekEnd`
-  - `TotalBalanceTillWeekEnd` = TotalEarned − TotalPaid
+- **Weekly Report balance fields** (all scoped per worker):
+  - `BalanceBeforeWeek` = sum(`WorkLog.TotalAmount` where `WorkDate < WeekStart`) − sum(`Payment.Amount` where `WeekStartDate < WeekStart`)
+  - `WeekEarnings` = sum(`WorkLog.TotalAmount` where `WorkDate >= WeekStart AND WorkDate <= WeekEnd`)
+  - `TotalEarnedUpToWeekEnd` = `BalanceBeforeWeek` + `WeekEarnings`
+  - `TotalPaidUpToWeekEnd` = sum(`Payment.Amount` where `WeekStartDate == WeekStart`) — blank if 0
+  - `TotalBalanceTillWeekEnd` = `TotalEarnedUpToWeekEnd` − `TotalPaidUpToWeekEnd` — blank if `TotalPaidUpToWeekEnd == 0`
+  - `DailyRate` = most recent `WorkerRateHistory.DailyRate` where `EffectiveFrom <= WeekStart`
 
 ## Misc Rules
 - Do not add `ApplyFilters` buttons — all filters apply on change.

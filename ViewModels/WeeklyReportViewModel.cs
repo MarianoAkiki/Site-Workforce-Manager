@@ -112,6 +112,8 @@ public partial class WeeklyReportViewModel : ObservableObject
 
     public void LoadPage()
     {
+        WeekStart = latestFullWeekStart;
+        PickerDate = DateTime.Today;
         using var context = new AppDbContext();
         var trades = context.Trades.AsNoTracking().OrderBy(t => t.Name).ToList();
         Trades.Clear();
@@ -203,18 +205,18 @@ public partial class WeeklyReportViewModel : ObservableObject
                     .Where(l => l.WorkDate < weekStart.Date)
                     .Sum(l => (double)l.TotalAmount);
                 var weekEarnings = (decimal)weekLogs.Sum(l => (double)l.TotalAmount);
-                var totalEarnedUpToWeekEnd = earnedBeforeWeek + weekEarnings;
 
-                // all payments for this week and prior weeks (WeekStartDate <= weekStart)
-                var paidBeforeWeek = (decimal)workerPayments.Sum(p => (double)p.Amount);
+                var paidBeforeWeek = (decimal)workerPayments
+                    .Where(p => p.WeekStartDate < weekStart.Date)
+                    .Sum(p => (double)p.Amount);
 
-                // payment specifically for this week
                 var totalPaidUpToWeekEnd = (decimal)workerPayments
                     .Where(p => p.WeekStartDate == weekStart.Date)
                     .Sum(p => (double)p.Amount);
 
                 var balanceBeforeWeek = Math.Round(earnedBeforeWeek - paidBeforeWeek, 2);
-                var totalBalanceTillWeekEnd = Math.Round(balanceBeforeWeek + weekEarnings, 2);
+                var totalEarnedUpToWeekEnd = balanceBeforeWeek + weekEarnings;
+                var totalBalanceTillWeekEnd = Math.Round(totalEarnedUpToWeekEnd - totalPaidUpToWeekEnd, 2);
 
                 var dailyRate = workerRates
                     .Where(r => r.EffectiveFrom <= weekStart.Date)

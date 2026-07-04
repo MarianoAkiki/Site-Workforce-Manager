@@ -91,6 +91,8 @@ public partial class PayrollViewModel : ObservableObject
 
     public void LoadPayrollPage()
     {
+        WeekStart = latestFullWeekStart;
+        PickerDate = DateTime.Today;
         WorkerIdFilterText = string.Empty;
         WorkerNameFilterText = string.Empty;
         TradeFilterText = string.Empty;

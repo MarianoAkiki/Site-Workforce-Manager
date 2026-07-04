@@ -77,7 +77,7 @@ public static class WeeklyReportPrintService
     {
         // Proportional weights — columns always sum exactly to `available`, so the
         // table can never overflow the printable page width regardless of printer margins.
-        const double idW      = 0.6;
+        const double idW      = 0.9;
         const double nameW    = 2.2;
         const double dayW     = 1.0;
         const double hrsW     = 0.8;

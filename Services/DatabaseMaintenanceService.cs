@@ -1,4 +1,5 @@
 using System.IO;
+using Microsoft.Data.Sqlite;
 using Site_Workforce_Manager.Data;
 
 namespace Site_Workforce_Manager.Services;
@@ -22,5 +23,13 @@ public static class DatabaseMaintenanceService
         }
 
         File.Copy(databasePath, destinationFilePath, overwrite: true);
+    }
+
+    public static void RestoreDatabase(string sourceFilePath)
+    {
+        var databasePath = AppDbContext.GetDatabasePath();
+
+        SqliteConnection.ClearAllPools();
+        File.Copy(sourceFilePath, databasePath, overwrite: true);
     }
 }
