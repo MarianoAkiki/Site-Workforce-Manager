@@ -269,6 +269,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
         }
 
         site.Status = isDeactivating ? EntityStatus.Inactive : EntityStatus.Active;
+        site.DeactivatedAt = isDeactivating ? DateTime.Now : null;
         context.SaveChanges();
 
         var updatedSiteId = site.Id;

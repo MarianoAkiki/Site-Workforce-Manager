@@ -16,6 +16,7 @@ public static class DatabaseInitializer
             EnsureDailyRateHistorySchema(context);
             EnsureWorkLogsTableExists(context);
             EnsureWorkerPaymentsTableExists(context);
+            MigrateAddDeactivatedAt(context);
             EnsureLegacyTradesExist(context);
             BackfillWorkerTrades(context);
             RemoveLegacyWorkerTradeColumn(context);
@@ -217,6 +218,18 @@ public static class DatabaseInitializer
         {
             context.Database.ExecuteSqlRaw("ALTER TABLE WorkLogs DROP COLUMN Notes;");
         }
+    }
+
+    private static void MigrateAddDeactivatedAt(AppDbContext context)
+    {
+        if (!ColumnExists(context, "Workers", "DeactivatedAt"))
+            context.Database.ExecuteSqlRaw("ALTER TABLE Workers ADD COLUMN DeactivatedAt TEXT NULL;");
+
+        if (!ColumnExists(context, "Trades", "DeactivatedAt"))
+            context.Database.ExecuteSqlRaw("ALTER TABLE Trades ADD COLUMN DeactivatedAt TEXT NULL;");
+
+        if (!ColumnExists(context, "ConstructionSites", "DeactivatedAt"))
+            context.Database.ExecuteSqlRaw("ALTER TABLE ConstructionSites ADD COLUMN DeactivatedAt TEXT NULL;");
     }
 
     private static void RebuildWorkerRateHistoriesWithoutHourlyRate(AppDbContext context)

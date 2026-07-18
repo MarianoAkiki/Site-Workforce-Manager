@@ -74,7 +74,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         OnPropertyChanged(nameof(WeekRangeText));
         OnPropertyChanged(nameof(CanGoNextWeek));
         LoadWeekDays();
-        _ = LoadWorkerRowsAsync();
+        LoadTradeOptions(preserveSelection: true);
     }
 
     partial void OnWorkerIdFilterTextChanged(string value)
@@ -124,28 +124,27 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         PickerDate = WeekStart;
     }
 
-    private void LoadTradeOptions()
+    private void LoadTradeOptions(bool preserveSelection = false)
     {
+        var weekStart = WeekStart;
+        var weekEnd = WeekEnd;
+        var previousId = SelectedTradeOption?.Id;
+
         using var context = new AppDbContext();
+
         var trades = context.Trades
             .AsNoTracking()
-            .Where(trade => trade.IsActive)
+            .Where(trade => trade.DeactivatedAt == null || trade.DeactivatedAt >= weekStart)
             .OrderBy(trade => trade.Name)
-            .Select(trade => new LookupOption
-            {
-                Id = trade.Id,
-                Name = trade.Name
-            })
+            .Select(trade => new LookupOption { Id = trade.Id, Name = trade.Name })
             .ToList();
 
         TradeOptions.Clear();
+        foreach (var trade in trades) TradeOptions.Add(trade);
 
-        foreach (var trade in trades)
-        {
-            TradeOptions.Add(trade);
-        }
-
-        SelectedTradeOption = TradeOptions.FirstOrDefault();
+        SelectedTradeOption = preserveSelection && previousId.HasValue
+            ? TradeOptions.FirstOrDefault(t => t.Id == previousId) ?? TradeOptions.FirstOrDefault()
+            : TradeOptions.FirstOrDefault();
     }
 
     private void LoadWeekDays()
@@ -194,12 +193,13 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 var workers = context.Workers
                     .AsNoTracking()
                     .Include(worker => worker.Trade)
-                    .Where(worker => worker.TradeId == tradeId && worker.Status == EntityStatus.Active)
+                    .Where(worker => worker.TradeId == tradeId &&
+                                     (worker.DeactivatedAt == null || worker.DeactivatedAt >= weekStart))
                     .OrderBy(worker => worker.FirstName)
                     .ThenBy(worker => worker.LastName)
                     .ToList();
 
-                var workerIds = workers.Select(worker => worker.Id).ToList();
+                var workerIds = workers.Select(w => w.Id).ToList();
 
                 var existingLogs = context.WorkLogs
                     .AsNoTracking()
@@ -212,10 +212,11 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 var assignedSitesByWorker = context.WorkerConstructionSites
                     .AsNoTracking()
                     .Include(workerSite => workerSite.ConstructionSite)
-                    .Where(workerSite => workerIds.Contains(workerSite.WorkerId))
+                    .Where(workerSite => workerIds.Contains(workerSite.WorkerId) &&
+                                         (workerSite.ConstructionSite!.DeactivatedAt == null ||
+                                          workerSite.ConstructionSite.DeactivatedAt >= weekStart))
                     .OrderBy(workerSite => workerSite.ConstructionSite!.Name)
                     .ToList()
-                    .Where(workerSite => workerSite.ConstructionSite is { Status: EntityStatus.Active })
                     .GroupBy(workerSite => workerSite.WorkerId)
                     .ToDictionary(
                         group => group.Key,

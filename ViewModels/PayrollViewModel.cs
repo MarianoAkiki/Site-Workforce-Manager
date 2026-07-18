@@ -275,7 +275,7 @@ public partial class PayrollViewModel : ObservableObject
                 var workers = context.Workers
                     .AsNoTracking()
                     .Include(worker => worker.Trade)
-                    .Where(worker => worker.Status == EntityStatus.Active)
+                    .Where(worker => worker.DeactivatedAt == null || worker.DeactivatedAt >= weekStart)
                     .OrderBy(worker => worker.Trade!.Name)
                     .ThenBy(worker => worker.FirstName)
                     .ThenBy(worker => worker.LastName)

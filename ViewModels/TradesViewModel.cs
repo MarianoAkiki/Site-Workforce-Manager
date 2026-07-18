@@ -287,6 +287,7 @@ public partial class TradesViewModel : ObservableObject
         }
 
         trade.IsActive = !trade.IsActive;
+        trade.DeactivatedAt = isDeactivating ? DateTime.Now : null;
         trade.UpdatedAt = DateTime.Now;
         context.SaveChanges();
 

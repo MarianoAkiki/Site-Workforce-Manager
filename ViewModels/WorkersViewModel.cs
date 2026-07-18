@@ -168,7 +168,8 @@ public partial class WorkersViewModel : ObservableObject
                     .FirstOrDefault(),
                 AssignedSiteCount = worker.WorkerConstructionSites.Count,
                 Status = worker.Status.ToString(),
-                IsActive = worker.Status == EntityStatus.Active
+                IsActive = worker.Status == EntityStatus.Active,
+                DeactivatedAt = worker.DeactivatedAt
             })
             .ToList();
 
@@ -400,6 +401,7 @@ public partial class WorkersViewModel : ObservableObject
         }
 
         worker.Status = isDeactivating ? EntityStatus.Inactive : EntityStatus.Active;
+        worker.DeactivatedAt = isDeactivating ? DateTime.Now : null;
         context.SaveChanges();
 
         var updatedWorkerId = worker.Id;

@@ -152,6 +152,7 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Binding="{Binding Name}" Header="Site Name" Width="*" />
                                 <DataGridTextColumn Binding="{Binding Location}" Header="Location" Width="*" />
+                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120" />
                                 <DataGridTemplateColumn Header="Status" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>

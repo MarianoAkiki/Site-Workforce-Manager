@@ -163,6 +163,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
+                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120" />
                                 <DataGridTextColumn Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd}}" Header="Created" Width="110" />
                                 <DataGridTextColumn Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd}}" Header="Updated" Width="110" />
                                 <DataGridTemplateColumn Header="Actions" Width="90">

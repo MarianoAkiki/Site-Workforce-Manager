@@ -12,4 +12,5 @@ public class WorkerListItem
     public int AssignedSiteCount { get; set; }
     public string Status { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public DateTime? DeactivatedAt { get; set; }
 }

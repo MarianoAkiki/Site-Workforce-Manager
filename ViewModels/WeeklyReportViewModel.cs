@@ -115,7 +115,7 @@ public partial class WeeklyReportViewModel : ObservableObject
         WeekStart = latestFullWeekStart;
         PickerDate = DateTime.Today;
         using var context = new AppDbContext();
-        var trades = context.Trades.AsNoTracking().OrderBy(t => t.Name).ToList();
+        var trades = context.Trades.AsNoTracking().OrderBy(t => t.IsActive ? 0 : 1).ThenBy(t => t.Name).ToList();
         Trades.Clear();
         foreach (var t in trades) Trades.Add(t);
         SelectedTrade = Trades.FirstOrDefault();
@@ -147,14 +147,11 @@ public partial class WeeklyReportViewModel : ObservableObject
             {
                 using var context = new AppDbContext();
 
-                var workersQuery = context.Workers
+                var workers = context.Workers
                     .AsNoTracking()
                     .Include(w => w.Trade)
-                    .Where(w => w.Status == EntityStatus.Active);
-
-                workersQuery = workersQuery.Where(w => w.TradeId == selectedTradeId);
-
-                var workers = workersQuery
+                    .Where(w => w.TradeId == selectedTradeId &&
+                                (w.DeactivatedAt == null || w.DeactivatedAt >= weekStart))
                     .OrderBy(w => w.Trade!.Name)
                     .ThenBy(w => w.FirstName)
                     .ThenBy(w => w.LastName)
