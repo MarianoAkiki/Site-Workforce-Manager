@@ -8,6 +8,7 @@ public class Worker
     public int? TradeId { get; set; }
     public EntityStatus Status { get; set; } = EntityStatus.Active;
     public DateTime? DeactivatedAt { get; set; }
+    public DateTime StartedAt { get; set; } = DateTime.Today;
 
     public Trade? Trade { get; set; }
 

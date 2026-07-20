@@ -155,6 +155,7 @@
                                 <DataGridTextColumn Binding="{Binding TradeName}" Header="Category" Width="*" />
                                 <DataGridTextColumn Binding="{Binding CurrentDailyRate, StringFormat={}{0:C}}" Header="Current Daily Rate" Width="160" />
                                 <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
+                                <DataGridTextColumn Binding="{Binding StartedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Started" Width="110" />
                                 <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120" />
                                 <DataGridTemplateColumn Header="Status" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -231,6 +232,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="160" />
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Margin="0,0,16,0">
@@ -247,13 +249,19 @@
                                          Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="2">
+                            <StackPanel Grid.Column="2" Margin="0,0,16,0">
                                 <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Category" />
                                 <ComboBox MinHeight="48"
                                           FontSize="15"
                                           ItemsSource="{Binding TradeOptions}"
                                           DisplayMemberPath="Name"
                                           SelectedItem="{Binding SelectedTradeOption, Mode=TwoWay}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3">
+                                <TextBlock Style="{StaticResource FieldLabelTextStyle}" Text="Start Date" />
+                                <DatePicker Height="48"
+                                            SelectedDate="{Binding StartedAt, Mode=TwoWay}" />
                             </StackPanel>
                         </Grid>
 

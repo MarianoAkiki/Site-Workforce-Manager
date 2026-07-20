@@ -151,6 +151,7 @@ public partial class WeeklyReportViewModel : ObservableObject
                     .AsNoTracking()
                     .Include(w => w.Trade)
                     .Where(w => w.TradeId == selectedTradeId &&
+                                w.StartedAt <= weekStart &&
                                 (w.DeactivatedAt == null || w.DeactivatedAt >= weekStart))
                     .OrderBy(w => w.Trade!.Name)
                     .ThenBy(w => w.FirstName)

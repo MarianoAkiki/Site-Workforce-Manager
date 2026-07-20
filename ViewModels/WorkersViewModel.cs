@@ -48,6 +48,9 @@ public partial class WorkersViewModel : ObservableObject
     private string lastName = string.Empty;
 
     [ObservableProperty]
+    private DateTime startedAt = DateTime.Today;
+
+    [ObservableProperty]
     private string newDailyRate = string.Empty;
 
     [ObservableProperty]
@@ -110,6 +113,7 @@ public partial class WorkersViewModel : ObservableObject
 
         FirstName = value.FirstName;
         LastName = value.LastName;
+        StartedAt = value.StartedAt;
         LoadTradeOptions(value.TradeId);
         SelectedTradeOption = TradeOptions.FirstOrDefault(option => option.Id == value.TradeId);
         LoadRateHistory(value.Id);
@@ -169,7 +173,8 @@ public partial class WorkersViewModel : ObservableObject
                 AssignedSiteCount = worker.WorkerConstructionSites.Count,
                 Status = worker.Status.ToString(),
                 IsActive = worker.Status == EntityStatus.Active,
-                DeactivatedAt = worker.DeactivatedAt
+                DeactivatedAt = worker.DeactivatedAt,
+                StartedAt = worker.StartedAt
             })
             .ToList();
 
@@ -233,6 +238,7 @@ public partial class WorkersViewModel : ObservableObject
     {
         editingWorkerId = null;
         SelectedWorker = null;
+        StartedAt = DateTime.Today;
         ClearWorkerForm();
         SelectedWorkerRateHistory.Clear();
         AvailableConstructionSites.Clear();
@@ -313,7 +319,8 @@ public partial class WorkersViewModel : ObservableObject
             FirstName = FirstName.Trim(),
             LastName = LastName.Trim(),
             TradeId = tradeId,
-            Status = EntityStatus.Active
+            Status = EntityStatus.Active,
+            StartedAt = StartedAt.Date
         };
 
         context.Workers.Add(worker);
@@ -358,6 +365,7 @@ public partial class WorkersViewModel : ObservableObject
         worker.FirstName = FirstName.Trim();
         worker.LastName = LastName.Trim();
         worker.TradeId = tradeId;
+        worker.StartedAt = StartedAt.Date;
 
         context.SaveChanges();
 
@@ -775,6 +783,7 @@ public partial class WorkersViewModel : ObservableObject
     {
         FirstName = string.Empty;
         LastName = string.Empty;
+        StartedAt = DateTime.Today;
         AvailableSiteSearchText = string.Empty;
         AssignedSiteSearchText = string.Empty;
         LoadTradeOptions();

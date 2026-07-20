@@ -194,6 +194,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                     .AsNoTracking()
                     .Include(worker => worker.Trade)
                     .Where(worker => worker.TradeId == tradeId &&
+                                     worker.StartedAt <= weekStart &&
                                      (worker.DeactivatedAt == null || worker.DeactivatedAt >= weekStart))
                     .OrderBy(worker => worker.FirstName)
                     .ThenBy(worker => worker.LastName)

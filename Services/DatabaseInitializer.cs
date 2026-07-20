@@ -17,6 +17,7 @@ public static class DatabaseInitializer
             EnsureWorkLogsTableExists(context);
             EnsureWorkerPaymentsTableExists(context);
             MigrateAddDeactivatedAt(context);
+            MigrateAddStartedAt(context);
             EnsureLegacyTradesExist(context);
             BackfillWorkerTrades(context);
             RemoveLegacyWorkerTradeColumn(context);
@@ -230,6 +231,15 @@ public static class DatabaseInitializer
 
         if (!ColumnExists(context, "ConstructionSites", "DeactivatedAt"))
             context.Database.ExecuteSqlRaw("ALTER TABLE ConstructionSites ADD COLUMN DeactivatedAt TEXT NULL;");
+    }
+
+    private static void MigrateAddStartedAt(AppDbContext context)
+    {
+        if (!ColumnExists(context, "Workers", "StartedAt"))
+        {
+            context.Database.ExecuteSqlRaw("ALTER TABLE Workers ADD COLUMN StartedAt TEXT NULL;");
+            context.Database.ExecuteSqlRaw("UPDATE Workers SET StartedAt = '2000-01-01 00:00:00' WHERE StartedAt IS NULL;");
+        }
     }
 
     private static void RebuildWorkerRateHistoriesWithoutHourlyRate(AppDbContext context)
