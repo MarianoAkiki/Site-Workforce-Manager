@@ -275,8 +275,7 @@ public partial class PayrollViewModel : ObservableObject
                 var workers = context.Workers
                     .AsNoTracking()
                     .Include(worker => worker.Trade)
-                    .Where(worker => worker.StartedAt <= weekStart &&
-                                     (worker.DeactivatedAt == null || worker.DeactivatedAt >= weekStart))
+                    .Where(worker => worker.StartedAt <= weekStart)
                     .OrderBy(worker => worker.Trade!.Name)
                     .ThenBy(worker => worker.FirstName)
                     .ThenBy(worker => worker.LastName)
@@ -318,12 +317,16 @@ public partial class PayrollViewModel : ObservableObject
                     data.paidUpToWeekEndByWorker.TryGetValue(worker.Id, out var paidUpToWeekEnd);
                     data.weeklyPayrollPayments.TryGetValue(worker.Id, out var editableWeeklyPayment);
 
+                    var isDeactivatedBeforeWeek = worker.DeactivatedAt.HasValue && worker.DeactivatedAt < weekStart;
+                    var balance = Math.Round(earnedAmount - paidUpToWeekEnd, 2);
+                    if (isDeactivatedBeforeWeek && balance == 0) continue;
+
                     var row = new PayrollWorkerRow
                     {
                         WorkerId = worker.Id,
                         WorkerName = $"{worker.FirstName} {worker.LastName}".Trim(),
                         TradeName = tradeGroup.Key,
-                        Balance = Math.Round(earnedAmount - paidUpToWeekEnd, 2),
+                        Balance = balance,
                         PaymentAmountText = editableWeeklyPayment > 0 ? editableWeeklyPayment.ToString("0.##") : string.Empty,
                         IsPaymentEditable = canEdit,
                         AutoSaveRequested = canEdit ? AutoSaveRow : null,

@@ -362,10 +362,26 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
+        var newStartedAt = StartedAt.Date;
+        var logsBeforeStart = context.WorkLogs
+            .Count(log => log.WorkerId == workerId &&
+                          log.WorkDate < newStartedAt &&
+                          log.DurationHours > 0);
+
+        if (logsBeforeStart > 0)
+        {
+            ConfirmationDialogService.ShowInfo(
+                "Cannot Set Start Date",
+                $"There are {logsBeforeStart} log{(logsBeforeStart == 1 ? "" : "s")} with hours before {newStartedAt:MMM dd, yyyy}. " +
+                $"Set the duration to 0 on those logs before changing the start date to this date.");
+            StartedAt = worker.StartedAt;
+            return;
+        }
+
         worker.FirstName = FirstName.Trim();
         worker.LastName = LastName.Trim();
         worker.TradeId = tradeId;
-        worker.StartedAt = StartedAt.Date;
+        worker.StartedAt = newStartedAt;
 
         context.SaveChanges();
 
@@ -393,6 +409,28 @@ public partial class WorkersViewModel : ObservableObject
         }
 
         var isDeactivating = worker.Status == EntityStatus.Active;
+
+        if (isDeactivating)
+        {
+            var totalEarned = (decimal)context.WorkLogs
+                .Where(log => log.WorkerId == worker.Id)
+                .Sum(log => (double)log.TotalAmount);
+            var totalPaid = (decimal)context.WorkerPayments
+                .Where(p => p.WorkerId == worker.Id)
+                .Sum(p => (double)p.Amount);
+            var outstanding = Math.Round(totalEarned - totalPaid, 2);
+
+            if (outstanding != 0)
+            {
+                ConfirmationDialogService.ShowInfo(
+                    "Cannot Deactivate Worker",
+                    $"\"{worker.FirstName} {worker.LastName}\" has an outstanding balance of {(outstanding < 0 ? $"({Math.Abs(outstanding):C})" : outstanding.ToString("C"))}. " +
+                    $"Clear the balance before deactivating this worker.");
+                LoadWorkers();
+                return;
+            }
+        }
+
         var confirmed = ConfirmationDialogService.Show(
             isDeactivating ? "Deactivate worker?" : "Activate worker?",
             isDeactivating
