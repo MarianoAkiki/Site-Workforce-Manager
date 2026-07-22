@@ -71,12 +71,14 @@ public partial class ConstructionSitesViewModel : ObservableObject
     partial void OnShowActiveSitesChanged(bool value)
     {
         OnPropertyChanged(nameof(StatusFilterButtonText));
+        OnPropertyChanged(nameof(DeactivatedColumnVisibility));
         OnPropertyChanged(nameof(StatusFilterLabel));
         ApplySiteFilter();
     }
 
     public string StatusFilterButtonText => ShowActiveSites ? "Show Inactive" : "Show Active";
     public string StatusFilterLabel => ShowActiveSites ? "Active sites" : "Inactive sites";
+    public Visibility DeactivatedColumnVisibility => ShowActiveSites ? Visibility.Collapsed : Visibility.Visible;
 
     public void LoadConstructionSites()
     {

@@ -8,6 +8,7 @@
     <UserControl.Resources>
         <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True" />
+        <helpers:BindingProxy x:Key="Proxy" Data="{Binding}" />
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
 
         <Style x:Key="TableActionButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
@@ -108,6 +109,8 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="12" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="12" />
                                 <ColumnDefinition Width="Auto" />
@@ -128,12 +131,18 @@
                                         Visibility="{Binding SearchText, Converter={StaticResource StringToVisibilityConverter}}" />
                             </Grid>
 
-                            <Button Grid.Column="2"
+                            <ComboBox Grid.Column="2"
+                                      MinHeight="42"
+                                      ItemsSource="{Binding CategoryFilterOptions}"
+                                      DisplayMemberPath="Name"
+                                      SelectedItem="{Binding SelectedCategoryFilter, Mode=TwoWay}" />
+
+                            <Button Grid.Column="4"
                                     Command="{Binding ToggleStatusFilterCommand}"
                                     Content="{Binding StatusFilterButtonText}"
                                     Style="{StaticResource BaseButtonStyle}" />
 
-                            <Button Grid.Column="4"
+                            <Button Grid.Column="6"
                                     MinWidth="48"
                                     Command="{Binding OpenAddWorkerFormCommand}"
                                     Content="+"
@@ -156,7 +165,8 @@
                                 <DataGridTextColumn Binding="{Binding CurrentDailyRate, StringFormat={}{0:C}}" Header="Current Daily Rate" Width="160" />
                                 <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
                                 <DataGridTextColumn Binding="{Binding StartedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Started" Width="110" />
-                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120" />
+                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120"
+                                                    Visibility="{Binding Data.DeactivatedColumnVisibility, Source={StaticResource Proxy}}" />
                                 <DataGridTemplateColumn Header="Status" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>

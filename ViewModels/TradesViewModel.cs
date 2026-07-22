@@ -12,6 +12,8 @@ namespace Site_Workforce_Manager.ViewModels;
 
 public partial class TradesViewModel : ObservableObject
 {
+    public event Action<int>? ViewWorkersWithCategoryRequested;
+
     public TradesViewModel()
     {
         LoadTrades();
@@ -66,12 +68,14 @@ public partial class TradesViewModel : ObservableObject
     partial void OnShowActiveTradesChanged(bool value)
     {
         OnPropertyChanged(nameof(StatusFilterButtonText));
+        OnPropertyChanged(nameof(DeactivatedColumnVisibility));
         OnPropertyChanged(nameof(StatusFilterLabel));
         ApplyTradeFilter();
     }
 
     public string StatusFilterButtonText => ShowActiveTrades ? "Show Inactive" : "Show Active";
     public string StatusFilterLabel => ShowActiveTrades ? "Active categories" : "Inactive categories";
+    public Visibility DeactivatedColumnVisibility => ShowActiveTrades ? Visibility.Collapsed : Visibility.Visible;
 
     public void LoadTrades()
     {
@@ -271,6 +275,26 @@ public partial class TradesViewModel : ObservableObject
         }
 
         var isDeactivating = trade.IsActive;
+
+        if (isDeactivating)
+        {
+            var assignedWorkerCount = context.Workers.Count(w => w.TradeId == trade.Id);
+            if (assignedWorkerCount > 0)
+            {
+                var navigate = ConfirmationDialogService.Show(
+                    "Cannot Deactivate Category",
+                    $"{assignedWorkerCount} worker{(assignedWorkerCount == 1 ? " is" : "s are")} still assigned to \"{trade.Name}\". " +
+                    $"Reassign them to a different category before deactivating.",
+                    "View Workers",
+                    "Cancel",
+                    false);
+                if (navigate)
+                    ViewWorkersWithCategoryRequested?.Invoke(trade.Id);
+                LoadTrades();
+                return;
+            }
+        }
+
         var confirmed = ConfirmationDialogService.Show(
             isDeactivating ? "Deactivate category?" : "Activate category?",
             isDeactivating

@@ -13,7 +13,7 @@ public static class WeeklyPrintService
     private static readonly Brush DarkHeaderBrush  = new SolidColorBrush(Color.FromRgb(210, 210, 210));
     private static readonly Brush SubHeaderBrush   = new SolidColorBrush(Color.FromRgb(235, 235, 235));
     private static readonly Brush DateFgBrush      = new SolidColorBrush(Color.FromRgb(90, 90, 90));
-    private static readonly Brush GridLineBrush = new SolidColorBrush(Color.FromRgb(140, 155, 175));
+    private static readonly Brush GridLineBrush    = new SolidColorBrush(Color.FromRgb(60, 60, 60));
 
     public static void PrintWeeklyView(
         string tradeName,
@@ -70,8 +70,8 @@ public static class WeeklyPrintService
         });
         doc.Blocks.Add(titlePara);
 
-        // 15 columns → 16 gaps × CellSpacing(1) + 2 × BorderThickness(1) = 18px overhead
-        var available  = pageWidth - hPad * 2 - 18;
+        // 16 columns → 17 gaps × CellSpacing(1) + 2 × BorderThickness(1) = 19px overhead
+        var available  = pageWidth - hPad * 2 - 19;
         doc.Blocks.Add(BuildTable(weekStart, rows, available));
         return doc;
     }
@@ -79,11 +79,13 @@ public static class WeeklyPrintService
     private static Table BuildTable(DateTime weekStart, IList<WeeklyWorkerRow> rows, double available)
     {
         // Proportional weights — sum exactly to available width, no rounding drift
-        const double workerW = 2.5;
+        const double idW     = 0.5;
+        const double workerW = 2.0;
         const double hoursW  = 0.8;
         const double siteW   = 1.5;
-        const double totalW  = workerW + 7 * (hoursW + siteW); // 2.5 + 16.1 = 18.6
+        const double totalW  = idW + workerW + 7 * (hoursW + siteW); // 2.5 + 16.1 = 18.6
         double unit      = available / totalW;
+        double idColW     = idW     * unit;
         double workerColW = workerW * unit;
         double hoursColW  = hoursW  * unit;
         double siteColW   = siteW   * unit;
@@ -97,6 +99,7 @@ public static class WeeklyPrintService
             FontFamily      = PrintFont
         };
 
+        table.Columns.Add(new TableColumn { Width = new GridLength(idColW) });
         table.Columns.Add(new TableColumn { Width = new GridLength(workerColW) });
         for (int i = 0; i < 7; i++)
         {
@@ -107,8 +110,8 @@ public static class WeeklyPrintService
         // ── Header row 1: day names ────────────────────────────────
         var headerGroup = new TableRowGroup();
         var dayRow      = new TableRow();
-        dayRow.Cells.Add(MakeCell("العامل", colspan: 1,
-            bg: DarkHeaderBrush, fg: Brushes.Black, rtl: true, bold: true, size: 11));
+        dayRow.Cells.Add(MakeCell("#",       colspan: 1, bg: DarkHeaderBrush, fg: Brushes.Black, bold: true, size: 10));
+        dayRow.Cells.Add(MakeCell("العامل", colspan: 1, bg: DarkHeaderBrush, fg: Brushes.Black, rtl: true, bold: true, size: 11));
 
         for (int d = 0; d < 7; d++)
         {
@@ -146,6 +149,7 @@ public static class WeeklyPrintService
         // ── Header row 2: sub-labels (ساعات / ورشة) ───────────────
         var subRow = new TableRow();
         subRow.Cells.Add(MakeCell(string.Empty, colspan: 1, bg: SubHeaderBrush));
+        subRow.Cells.Add(MakeCell(string.Empty, colspan: 1, bg: SubHeaderBrush));
         for (int d = 0; d < 7; d++)
         {
             subRow.Cells.Add(MakeCell("ساعات", colspan: 1, bg: SubHeaderBrush, rtl: true, bold: true, size: 9));
@@ -160,11 +164,12 @@ public static class WeeklyPrintService
         foreach (var workerRow in rows)
         {
             var tr = new TableRow();
+            tr.Cells.Add(MakeDataCell(workerRow.WorkerId.ToString(), center: true));
             tr.Cells.Add(MakeCell(workerRow.WorkerName, colspan: 1));
             foreach (var cell in workerRow.Cells)
             {
-                tr.Cells.Add(MakeDataCell(cell.DurationHoursText,                                center: true));
-                tr.Cells.Add(MakeDataCell(cell.SelectedConstructionSiteOption?.Name ?? string.Empty));
+                tr.Cells.Add(MakeDataCell(cell.DurationHoursText, center: true));
+                tr.Cells.Add(MakeDataCell(string.Empty));  // blank — fill manually
             }
             dataGroup.Rows.Add(tr);
         }
@@ -214,7 +219,8 @@ public static class WeeklyPrintService
 
         return new TableCell(para)
         {
-            Padding = new Thickness(5, 9, 5, 9)
+            Background = Brushes.White,
+            Padding    = new Thickness(5, 9, 5, 9)
         };
     }
 

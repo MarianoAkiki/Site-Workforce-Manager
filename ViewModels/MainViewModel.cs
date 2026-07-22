@@ -10,6 +10,12 @@ public partial class MainViewModel : ObservableObject
         DashboardViewModel = new DashboardViewModel();
         TradesViewModel = new TradesViewModel();
         WorkersViewModel = new WorkersViewModel();
+        TradesViewModel.ViewWorkersWithCategoryRequested += tradeId =>
+        {
+            WorkersViewModel.FilterByCategory(tradeId);
+            CurrentPageKey = "Workers";
+            CurrentViewModel = WorkersViewModel;
+        };
         ConstructionSitesViewModel = new ConstructionSitesViewModel();
         WeeklyWorkEntryViewModel = new WeeklyWorkEntryViewModel();
         ReportsViewModel = new ReportsViewModel();

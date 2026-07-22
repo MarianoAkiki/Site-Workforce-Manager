@@ -2,11 +2,17 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:helpers="clr-namespace:Site_Workforce_Manager.Helpers"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True" />
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -40,12 +46,91 @@
                 </StackPanel>
             </Border>
 
+            <!-- Cloud / Auto Backup -->
             <Border Grid.Row="2"
                     Margin="0,20,0,0"
                     Style="{StaticResource CardBorderStyle}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                               Text="Backup" />
+                               Text="Automatic Cloud Backup" />
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="Point to a folder inside OneDrive, Google Drive, or Dropbox. A timestamped copy is saved there every time the app launches." />
+
+                    <TextBlock Margin="0,16,0,4"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               Text="Backup folder" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0"
+                                 IsReadOnly="True"
+                                 Text="{Binding CloudBackupFolder}"
+                                 VerticalContentAlignment="Center" />
+
+                        <Button Grid.Column="1"
+                                Margin="8,0,0,0"
+                                Command="{Binding BrowseCloudBackupFolderCommand}"
+                                Content="Browse…"
+                                Style="{StaticResource BaseButtonStyle}" />
+
+                        <Button Grid.Column="2"
+                                Margin="8,0,0,0"
+                                Command="{Binding ClearCloudBackupFolderCommand}"
+                                Content="Clear"
+                                Style="{StaticResource BaseButtonStyle}" />
+                    </Grid>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="100" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Text="Backups to keep (1–30)  " />
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding MaxBackupsToKeep, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+
+                    <!-- Warning when no folder configured -->
+                    <Border Margin="0,12,0,0"
+                            Padding="12,10"
+                            Background="#FFF3CD"
+                            BorderBrush="#FFC107"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Visibility="{Binding IsBackupConfigured, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                        <TextBlock Foreground="#856404"
+                                   Text="⚠  No backup folder configured — automatic backups are disabled."
+                                   TextWrapping="Wrap" />
+                    </Border>
+
+                    <TextBlock Margin="0,12,0,0"
+                               Foreground="{StaticResource TextMutedBrush}"
+                               Text="{Binding CloudBackupStatus}"
+                               Visibility="{Binding IsBackupConfigured, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <WrapPanel Margin="0,16,0,0">
+                        <Button Command="{Binding BackupNowCommand}"
+                                Content="Backup Now"
+                                Style="{StaticResource PrimaryButtonStyle}" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="3"
+                    Margin="0,20,0,0"
+                    Style="{StaticResource CardBorderStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                               Text="Manual Backup" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource TextMutedBrush}"
                                Text="Copies the current database to a file of your choice." />
@@ -57,7 +142,8 @@
                     </WrapPanel>
                 </StackPanel>
             </Border>
-            <Border Grid.Row="3"
+
+            <Border Grid.Row="4"
                     Margin="0,20,0,0"
                     Style="{StaticResource CardBorderStyle}">
                 <StackPanel>

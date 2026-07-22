@@ -197,6 +197,7 @@ public partial class ReportsViewModel : ObservableObject
         }
 
         var workLogs = query
+            .Where(workLog => workLog.DurationHours > 0)
             .OrderByDescending(workLog => workLog.WorkDate)
             .ThenBy(workLog => workLog.Worker!.FirstName)
             .ThenBy(workLog => workLog.Worker!.LastName)

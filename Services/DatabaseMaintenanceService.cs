@@ -32,4 +32,41 @@ public static class DatabaseMaintenanceService
         SqliteConnection.ClearAllPools();
         File.Copy(sourceFilePath, databasePath, overwrite: true);
     }
+
+    public static string? AutoBackupToFolder(string backupFolder, int maxBackupsToKeep, bool force = false)
+    {
+        var databasePath = AppDbContext.GetDatabasePath();
+
+        if (!File.Exists(databasePath))
+            throw new FileNotFoundException("Database file not found.", databasePath);
+
+        Directory.CreateDirectory(backupFolder);
+
+        if (!force)
+        {
+            var today = DateTime.Now.ToString("yyyyMMdd");
+            var alreadyBackedUpToday = Directory
+                .GetFiles(backupFolder, $"siteworkforcemanager_{today}_*.db")
+                .Length > 0;
+
+            if (alreadyBackedUpToday)
+                return null;
+        }
+
+        var destPath = Path.Combine(backupFolder,
+            $"siteworkforcemanager_{DateTime.Now:yyyyMMdd_HHmmss}.db");
+
+        File.Copy(databasePath, destPath, overwrite: true);
+
+        var old = Directory.GetFiles(backupFolder, "siteworkforcemanager_*.db")
+            .OrderByDescending(f => f)
+            .Skip(maxBackupsToKeep);
+
+        foreach (var f in old)
+        {
+            try { File.Delete(f); } catch { }
+        }
+
+        return destPath;
+    }
 }

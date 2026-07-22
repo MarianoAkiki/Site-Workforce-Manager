@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using Site_Workforce_Manager.Services;
 using Site_Workforce_Manager.Views;
@@ -26,6 +27,14 @@ public partial class App : Application
         Task.Run(() =>
         {
             DatabaseInitializer.Initialize();
+
+            var settings = BackupSettings.Load();
+            if (!string.IsNullOrWhiteSpace(settings.BackupFolder) && Directory.Exists(settings.BackupFolder))
+            {
+                try { DatabaseMaintenanceService.AutoBackupToFolder(settings.BackupFolder, settings.MaxBackupsToKeep); }
+                catch { }
+            }
+
             Task.Delay(1200).Wait();
         }).ContinueWith(t =>
         {

@@ -68,7 +68,7 @@ public partial class WeeklyReportViewModel : ObservableObject
         OnPropertyChanged(nameof(DayDate4));
         OnPropertyChanged(nameof(DayDate5));
         OnPropertyChanged(nameof(DayDate6));
-        _ = LoadRowsAsync();
+        LoadTradeOptions();
     }
 
     partial void OnPickerDateChanged(DateTime? value)
@@ -114,12 +114,22 @@ public partial class WeeklyReportViewModel : ObservableObject
     {
         WeekStart = latestFullWeekStart;
         PickerDate = DateTime.Today;
+        LoadTradeOptions();
+    }
+
+    private void LoadTradeOptions()
+    {
+        var previousId = SelectedTrade?.Id;
         using var context = new AppDbContext();
-        var trades = context.Trades.AsNoTracking().OrderBy(t => t.IsActive ? 0 : 1).ThenBy(t => t.Name).ToList();
+        var trades = context.Trades
+            .AsNoTracking()
+            .OrderBy(t => t.IsActive ? 0 : 1)
+            .ThenBy(t => t.Name)
+            .ToList();
         Trades.Clear();
         foreach (var t in trades) Trades.Add(t);
-        SelectedTrade = Trades.FirstOrDefault();
-        _ = LoadRowsAsync();
+        SelectedTrade = (previousId.HasValue ? Trades.FirstOrDefault(t => t.Id == previousId) : null)
+                        ?? Trades.FirstOrDefault();
     }
 
     private async Task LoadRowsAsync()
@@ -151,8 +161,7 @@ public partial class WeeklyReportViewModel : ObservableObject
                     .AsNoTracking()
                     .Include(w => w.Trade)
                     .Where(w => w.TradeId == selectedTradeId &&
-                                w.StartedAt <= weekStart &&
-                                (w.DeactivatedAt == null || w.DeactivatedAt >= weekStart))
+                                w.StartedAt <= weekEnd)
                     .OrderBy(w => w.Trade!.Name)
                     .ThenBy(w => w.FirstName)
                     .ThenBy(w => w.LastName)
@@ -215,6 +224,10 @@ public partial class WeeklyReportViewModel : ObservableObject
                 var balanceBeforeWeek = Math.Round(earnedBeforeWeek - paidBeforeWeek, 2);
                 var totalEarnedUpToWeekEnd = balanceBeforeWeek + weekEarnings;
                 var totalBalanceTillWeekEnd = Math.Round(totalEarnedUpToWeekEnd - totalPaidUpToWeekEnd, 2);
+
+                var isDeactivatedBeforeWeek = worker.DeactivatedAt.HasValue && worker.DeactivatedAt < weekStart;
+                var hasWeekActivity = weekEarnings > 0 || totalPaidUpToWeekEnd > 0;
+                if (isDeactivatedBeforeWeek && totalBalanceTillWeekEnd == 0 && !hasWeekActivity) continue;
 
                 var dailyRate = workerRates
                     .Where(r => r.EffectiveFrom <= weekStart.Date)
@@ -324,7 +337,7 @@ public class WeeklyReportRow
     public string WeekEarningsDisplay => WeekEarnings > 0 ? WeekEarnings.ToString("C") : string.Empty;
     public string TotalEarnedDisplay => TotalEarnedUpToWeekEnd > 0 ? TotalEarnedUpToWeekEnd.ToString("C") : string.Empty;
     public string TotalPaidDisplay => TotalPaidUpToWeekEnd > 0 ? TotalPaidUpToWeekEnd.ToString("C") : string.Empty;
-    public string TotalBalanceDisplay => TotalPaidUpToWeekEnd == 0 ? string.Empty : FmtBalance(TotalBalanceTillWeekEnd);
+    public string TotalBalanceDisplay => FmtBalance(TotalBalanceTillWeekEnd);
 
     private static string FormatHours(decimal h) => h > 0 ? h.ToString("0.##") : string.Empty;
     private static string FmtBalance(decimal v) =>

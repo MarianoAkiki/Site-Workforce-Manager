@@ -79,6 +79,11 @@ public partial class WorkersViewModel : ObservableObject
     private string searchText = string.Empty;
 
     [ObservableProperty]
+    private LookupOption? selectedCategoryFilter;
+
+    public ObservableCollection<LookupOption> CategoryFilterOptions { get; } = new();
+
+    [ObservableProperty]
     private bool isWorkerFormVisible;
 
     [ObservableProperty]
@@ -120,10 +125,9 @@ public partial class WorkersViewModel : ObservableObject
         LoadConstructionSiteAssignments(value.Id);
     }
 
-    partial void OnSearchTextChanged(string value)
-    {
-        ApplyWorkerFilter();
-    }
+    partial void OnSearchTextChanged(string value) => ApplyWorkerFilter();
+
+    partial void OnSelectedCategoryFilterChanged(LookupOption? value) => ApplyWorkerFilter();
 
     partial void OnAvailableSiteSearchTextChanged(string value)
     {
@@ -138,12 +142,14 @@ public partial class WorkersViewModel : ObservableObject
     partial void OnShowActiveWorkersChanged(bool value)
     {
         OnPropertyChanged(nameof(StatusFilterButtonText));
+        OnPropertyChanged(nameof(DeactivatedColumnVisibility));
         OnPropertyChanged(nameof(StatusFilterLabel));
         ApplyWorkerFilter();
     }
 
     public string StatusFilterButtonText => ShowActiveWorkers ? "Show Inactive" : "Show Active";
     public string StatusFilterLabel => ShowActiveWorkers ? "Active workers" : "Inactive workers";
+    public Visibility DeactivatedColumnVisibility => ShowActiveWorkers ? Visibility.Collapsed : Visibility.Visible;
 
     public void LoadWorkers()
     {
@@ -185,7 +191,24 @@ public partial class WorkersViewModel : ObservableObject
             Workers.Add(worker);
         }
 
-        ApplyWorkerFilter();
+        var previousCategoryId = SelectedCategoryFilter?.Id;
+        CategoryFilterOptions.Clear();
+        CategoryFilterOptions.Add(new LookupOption { Id = 0, Name = "All Categories" });
+        foreach (var cat in workers.Select(w => new { w.TradeId, w.TradeName })
+                     .Where(w => w.TradeId.HasValue)
+                     .DistinctBy(w => w.TradeId)
+                     .OrderBy(w => w.TradeName))
+        {
+            CategoryFilterOptions.Add(new LookupOption { Id = cat.TradeId!.Value, Name = cat.TradeName });
+        }
+
+        var restoredFilter = previousCategoryId.HasValue && previousCategoryId != 0
+            ? CategoryFilterOptions.FirstOrDefault(o => o.Id == previousCategoryId)
+            : CategoryFilterOptions.FirstOrDefault();
+        if (SelectedCategoryFilter?.Id != restoredFilter?.Id)
+            SelectedCategoryFilter = restoredFilter;
+        else
+            ApplyWorkerFilter();
 
         if (SelectedWorker is not null)
         {
@@ -205,6 +228,7 @@ public partial class WorkersViewModel : ObservableObject
         FilteredAvailableConstructionSites.Clear();
         FilteredAssignedConstructionSites.Clear();
         ClearWorkerForm();
+        SelectedCategoryFilter = CategoryFilterOptions.FirstOrDefault();
         LoadWorkers();
     }
 
@@ -828,12 +852,24 @@ public partial class WorkersViewModel : ObservableObject
         SelectedTradeOption = null;
     }
 
+    public void FilterByCategory(int tradeId)
+    {
+        ShowListPage();
+        SelectedCategoryFilter = CategoryFilterOptions.FirstOrDefault(o => o.Id == tradeId)
+                                 ?? CategoryFilterOptions.FirstOrDefault();
+    }
+
     private void ApplyWorkerFilter()
     {
         var search = SearchText.Trim();
+        var categoryId = SelectedCategoryFilter?.Id;
+
         var filteredWorkers = Workers
             .Where(worker => worker.IsActive == ShowActiveWorkers)
             .AsEnumerable();
+
+        if (categoryId.HasValue && categoryId != 0)
+            filteredWorkers = filteredWorkers.Where(worker => worker.TradeId == categoryId);
 
         if (!string.IsNullOrWhiteSpace(search))
         {

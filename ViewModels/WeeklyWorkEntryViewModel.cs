@@ -303,9 +303,9 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
             return;
         }
 
-        if (durationHours <= 0)
+        if (durationHours < 0)
         {
-            ShowAutoSaveError($"Duration must be greater than zero for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+            ShowAutoSaveError($"Duration cannot be negative for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
             return;
         }
 
@@ -316,22 +316,26 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         }
 
         using var context = new AppDbContext();
-        var dailyRate = GetDailyRateForDate(context, cell.WorkerId, cell.WorkDate);
 
-        if (dailyRate <= 0)
+        decimal dailyRate = 0;
+        decimal totalAmount = 0;
+        if (durationHours > 0)
         {
-            ShowAutoSaveError($"No daily rate was found for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
-            return;
+            dailyRate = GetDailyRateForDate(context, cell.WorkerId, cell.WorkDate);
+            if (dailyRate <= 0)
+            {
+                ShowAutoSaveError($"No daily rate was found for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+                return;
+            }
+            totalAmount = Math.Round(durationHours * (dailyRate / 8m), 2);
         }
 
         var existingLog = context.WorkLogs
             .FirstOrDefault(workLog =>
                 workLog.WorkerId == cell.WorkerId &&
                 workLog.WorkDate == cell.WorkDate);
-
-        var hourlyRate = dailyRate / 8m;
-        var totalAmount = Math.Round(durationHours * hourlyRate, 2);
         var now = DateTime.Now;
+        var roundedHours = Math.Round(durationHours, 2);
 
         if (existingLog is null)
         {
@@ -340,7 +344,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                 WorkerId = cell.WorkerId,
                 ConstructionSiteId = constructionSiteId,
                 WorkDate = cell.WorkDate,
-                DurationHours = Math.Round(durationHours, 2),
+                DurationHours = roundedHours,
                 DailyRateSnapshot = dailyRate,
                 TotalAmount = totalAmount,
                 CreatedAt = now,
@@ -350,7 +354,7 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
         else
         {
             existingLog.ConstructionSiteId = constructionSiteId;
-            existingLog.DurationHours = Math.Round(durationHours, 2);
+            existingLog.DurationHours = roundedHours;
             existingLog.DailyRateSnapshot = dailyRate;
             existingLog.TotalAmount = totalAmount;
             existingLog.UpdatedAt = now;

@@ -152,31 +152,31 @@ public static class WeeklyReportPrintService
         hdr.Cells.Add(ColHeader("التوقيع",         sigCol));
         rg.Rows.Add(hdr);
 
-        // Data rows (skip the totals row at the end — we add our own)
+        // Data rows
         var dataRows = rows.Where(r => !r.IsTotalsRow).ToList();
-        var rowIndex = 0;
-        foreach (var row in dataRows)
+        for (var ri = 0; ri < dataRows.Count; ri++)
         {
-            var bg = rowIndex++ % 2 == 1 ? AltRowBrush : Brushes.White;
+            var row = dataRows[ri];
+            var bg = ri % 2 == 0 ? Brushes.White : AltRowBrush;
             var tr = new TableRow();
-            tr.Cells.Add(Cell(row.WorkerId.ToString(), bg));
-            tr.Cells.Add(Cell(row.WorkerName,          bg, TextAlignment.Right));
-            tr.Cells.Add(Cell(row.Day0Display,         bg));
-            tr.Cells.Add(Cell(row.Day1Display,         bg));
-            tr.Cells.Add(Cell(row.Day2Display,         bg));
-            tr.Cells.Add(Cell(row.Day3Display,         bg));
-            tr.Cells.Add(Cell(row.Day4Display,         bg));
-            tr.Cells.Add(Cell(row.Day5Display,         bg));
-            tr.Cells.Add(Cell(row.Day6Display,         bg));
-            tr.Cells.Add(Cell(row.TotalHoursDisplay,   bg));
+            tr.Cells.Add(Cell(row.WorkerIdDisplay,      bg));
+            tr.Cells.Add(Cell(row.WorkerName,           bg, TextAlignment.Right));
+            tr.Cells.Add(Cell(row.Day0Display,          bg));
+            tr.Cells.Add(Cell(row.Day1Display,          bg));
+            tr.Cells.Add(Cell(row.Day2Display,          bg));
+            tr.Cells.Add(Cell(row.Day3Display,          bg));
+            tr.Cells.Add(Cell(row.Day4Display,          bg));
+            tr.Cells.Add(Cell(row.Day5Display,          bg));
+            tr.Cells.Add(Cell(row.Day6Display,          bg));
+            tr.Cells.Add(Cell(row.TotalHoursDisplay,    bg));
             tr.Cells.Add(Cell(row.NumberOfDays > 0 ? row.NumberOfDays.ToString() : string.Empty, bg));
-            tr.Cells.Add(Cell(row.DailyRateDisplay,    bg));
+            tr.Cells.Add(Cell(row.DailyRateDisplay,     bg));
             tr.Cells.Add(Cell(row.BalanceBeforeWeekDisplay, bg));
-            tr.Cells.Add(Cell(row.WeekEarningsDisplay, bg));
-            tr.Cells.Add(Cell(row.TotalEarnedDisplay,  bg));
-            tr.Cells.Add(Cell(row.TotalPaidDisplay,    bg));
-            tr.Cells.Add(Cell(row.TotalBalanceDisplay, bg));
-            tr.Cells.Add(Cell(string.Empty,            bg));  // signature
+            tr.Cells.Add(Cell(row.WeekEarningsDisplay,  bg));
+            tr.Cells.Add(Cell(row.TotalEarnedDisplay,   bg));
+            tr.Cells.Add(Cell(row.TotalPaidDisplay,     bg));
+            tr.Cells.Add(Cell(row.TotalBalanceDisplay,  bg));
+            tr.Cells.Add(Cell(string.Empty,             bg));  // signature
             rg.Rows.Add(tr);
         }
 

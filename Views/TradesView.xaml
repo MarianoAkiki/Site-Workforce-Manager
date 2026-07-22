@@ -9,6 +9,7 @@
         <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True" />
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+        <helpers:BindingProxy x:Key="Proxy" Data="{Binding}" />
 
         <Style x:Key="TableActionButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Padding" Value="10,6" />
@@ -163,7 +164,8 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120" />
+                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120"
+                                                    Visibility="{Binding Data.DeactivatedColumnVisibility, Source={StaticResource Proxy}}" />
                                 <DataGridTextColumn Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd}}" Header="Created" Width="110" />
                                 <DataGridTextColumn Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd}}" Header="Updated" Width="110" />
                                 <DataGridTemplateColumn Header="Actions" Width="90">
