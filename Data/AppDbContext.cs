@@ -8,8 +8,11 @@ public class AppDbContext : DbContext
 {
     public static string GetDatabasePath()
     {
-        var exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppDomain.CurrentDomain.BaseDirectory;
-        return Path.Combine(exeDir, "siteworkforcemanager.db");
+        var dataDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SiteWorkforceManager");
+        Directory.CreateDirectory(dataDir);
+        return Path.Combine(dataDir, "siteworkforcemanager.db");
     }
 
     public DbSet<Trade> Trades => Set<Trade>();
@@ -33,7 +36,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Worker>(entity =>
         {
             entity.Property(worker => worker.FirstName).IsRequired().HasMaxLength(100);
-            entity.Property(worker => worker.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(worker => worker.LastName).HasMaxLength(100);
 
             entity.HasOne(worker => worker.Trade)
                 .WithMany(trade => trade.Workers)

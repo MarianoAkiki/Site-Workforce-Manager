@@ -159,6 +159,7 @@ public partial class WorkersViewModel : ObservableObject
             .AsNoTracking()
             .Include(worker => worker.RateHistory)
             .Include(worker => worker.WorkerConstructionSites)
+                .ThenInclude(wcs => wcs.ConstructionSite)
             .OrderBy(worker => worker.FirstName)
             .ThenBy(worker => worker.LastName)
             .Select(worker => new WorkerListItem
@@ -166,7 +167,7 @@ public partial class WorkersViewModel : ObservableObject
                 Id = worker.Id,
                 FirstName = worker.FirstName,
                 LastName = worker.LastName,
-                WorkerName = worker.FirstName + " " + worker.LastName,
+                WorkerName = (worker.FirstName + " " + worker.LastName).Trim(),
                 TradeId = worker.TradeId,
                 TradeName = worker.Trade != null ? worker.Trade.Name : "No Category",
                 CurrentDailyRate = worker.RateHistory
@@ -176,7 +177,10 @@ public partial class WorkersViewModel : ObservableObject
                     .ThenByDescending(rate => rate.Id)
                     .Select(rate => rate.DailyRate)
                     .FirstOrDefault(),
-                AssignedSiteCount = worker.WorkerConstructionSites.Count,
+                AssignedSiteNames = string.Join(", ", worker.WorkerConstructionSites
+                    .Where(wcs => wcs.ConstructionSite != null)
+                    .OrderBy(wcs => wcs.ConstructionSite!.Name)
+                    .Select(wcs => wcs.ConstructionSite!.Name)),
                 Status = worker.Status.ToString(),
                 IsActive = worker.Status == EntityStatus.Active,
                 DeactivatedAt = worker.DeactivatedAt,
@@ -323,10 +327,9 @@ public partial class WorkersViewModel : ObservableObject
 
     private void CreateWorker()
     {
-        if (string.IsNullOrWhiteSpace(FirstName) ||
-            string.IsNullOrWhiteSpace(LastName))
+        if (string.IsNullOrWhiteSpace(FirstName))
         {
-            MessageBox.Show("Please enter first name and last name.");
+            MessageBox.Show("Please enter first name.");
             return;
         }
 
@@ -363,10 +366,9 @@ public partial class WorkersViewModel : ObservableObject
 
     private void UpdateWorker(int workerId)
     {
-        if (string.IsNullOrWhiteSpace(FirstName) ||
-            string.IsNullOrWhiteSpace(LastName))
+        if (string.IsNullOrWhiteSpace(FirstName))
         {
-            MessageBox.Show("Please enter first name and last name.");
+            MessageBox.Show("Please enter first name.");
             return;
         }
 
@@ -434,6 +436,7 @@ public partial class WorkersViewModel : ObservableObject
 
         var isDeactivating = worker.Status == EntityStatus.Active;
 
+        string confirmMessage;
         if (isDeactivating)
         {
             var totalEarned = (decimal)context.WorkLogs
@@ -444,22 +447,18 @@ public partial class WorkersViewModel : ObservableObject
                 .Sum(p => (double)p.Amount);
             var outstanding = Math.Round(totalEarned - totalPaid, 2);
 
-            if (outstanding != 0)
-            {
-                ConfirmationDialogService.ShowInfo(
-                    "Cannot Deactivate Worker",
-                    $"\"{worker.FirstName} {worker.LastName}\" has an outstanding balance of {(outstanding < 0 ? $"({Math.Abs(outstanding):C})" : outstanding.ToString("C"))}. " +
-                    $"Clear the balance before deactivating this worker.");
-                LoadWorkers();
-                return;
-            }
+            confirmMessage = outstanding != 0
+                ? $"\"{(worker.FirstName + " " + worker.LastName).Trim()}\" has an outstanding balance of {(outstanding < 0 ? $"({Math.Abs(outstanding):C})" : outstanding.ToString("C"))}. Deactivate anyway?"
+                : $"Are you sure you want to deactivate \"{(worker.FirstName + " " + worker.LastName).Trim()}\"? They will remain visible in history, but should not be used for new work.";
+        }
+        else
+        {
+            confirmMessage = $"Are you sure you want to activate \"{(worker.FirstName + " " + worker.LastName).Trim()}\"? They will become available again.";
         }
 
         var confirmed = ConfirmationDialogService.Show(
             isDeactivating ? "Deactivate worker?" : "Activate worker?",
-            isDeactivating
-                ? $"Are you sure you want to deactivate \"{worker.FirstName} {worker.LastName}\"? They will remain visible in history, but should not be used for new work."
-                : $"Are you sure you want to activate \"{worker.FirstName} {worker.LastName}\"? They will become available again.",
+            confirmMessage,
             isDeactivating ? "Deactivate" : "Activate",
             "Cancel",
             isDeactivating);
@@ -876,7 +875,8 @@ public partial class WorkersViewModel : ObservableObject
             filteredWorkers = filteredWorkers.Where(worker =>
                 worker.Id.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) ||
                 worker.WorkerName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                worker.TradeName.Contains(search, StringComparison.OrdinalIgnoreCase));
+                worker.TradeName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                worker.AssignedSiteNames.Contains(search, StringComparison.OrdinalIgnoreCase));
         }
 
         FilteredWorkers.Clear();

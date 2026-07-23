@@ -68,16 +68,13 @@ public partial class TradesViewModel : ObservableObject
     partial void OnShowActiveTradesChanged(bool value)
     {
         OnPropertyChanged(nameof(StatusFilterButtonText));
-        OnPropertyChanged(nameof(DeactivatedColumnVisibility));
-        OnPropertyChanged(nameof(StatusFilterLabel));
+OnPropertyChanged(nameof(StatusFilterLabel));
         ApplyTradeFilter();
     }
 
     public string StatusFilterButtonText => ShowActiveTrades ? "Show Inactive" : "Show Active";
     public string StatusFilterLabel => ShowActiveTrades ? "Active categories" : "Inactive categories";
-    public Visibility DeactivatedColumnVisibility => ShowActiveTrades ? Visibility.Collapsed : Visibility.Visible;
-
-    public void LoadTrades()
+public void LoadTrades()
     {
         using var context = new AppDbContext();
 
@@ -253,71 +250,6 @@ public partial class TradesViewModel : ObservableObject
         SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == trade.Id);
         IsTradeFormVisible = false;
         editingTradeId = null;
-    }
-
-    [RelayCommand]
-    private void ToggleTradeStatus(Trade? selectedTrade)
-    {
-        if (selectedTrade is null)
-        {
-            MessageBox.Show("Please select a category to update.");
-            return;
-        }
-
-        using var context = new AppDbContext();
-
-        var trade = context.Trades.FirstOrDefault(item => item.Id == selectedTrade.Id);
-
-        if (trade is null)
-        {
-            MessageBox.Show("The selected category could not be found.");
-            return;
-        }
-
-        var isDeactivating = trade.IsActive;
-
-        if (isDeactivating)
-        {
-            var assignedWorkerCount = context.Workers.Count(w => w.TradeId == trade.Id);
-            if (assignedWorkerCount > 0)
-            {
-                var navigate = ConfirmationDialogService.Show(
-                    "Cannot Deactivate Category",
-                    $"{assignedWorkerCount} worker{(assignedWorkerCount == 1 ? " is" : "s are")} still assigned to \"{trade.Name}\". " +
-                    $"Reassign them to a different category before deactivating.",
-                    "View Workers",
-                    "Cancel",
-                    false);
-                if (navigate)
-                    ViewWorkersWithCategoryRequested?.Invoke(trade.Id);
-                LoadTrades();
-                return;
-            }
-        }
-
-        var confirmed = ConfirmationDialogService.Show(
-            isDeactivating ? "Deactivate category?" : "Activate category?",
-            isDeactivating
-                ? $"Are you sure you want to deactivate \"{trade.Name}\"? Existing workers will keep this category, but it will not appear for new worker assignments."
-                : $"Are you sure you want to activate \"{trade.Name}\"? It will become available again for worker assignments.",
-            isDeactivating ? "Deactivate" : "Activate",
-            "Cancel",
-            isDeactivating);
-
-        if (!confirmed)
-        {
-            LoadTrades();
-            return;
-        }
-
-        trade.IsActive = !trade.IsActive;
-        trade.DeactivatedAt = isDeactivating ? DateTime.Now : null;
-        trade.UpdatedAt = DateTime.Now;
-        context.SaveChanges();
-
-        var updatedTradeId = trade.Id;
-        LoadTrades();
-        SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == updatedTradeId);
     }
 
     private void ApplyTradeFilter()

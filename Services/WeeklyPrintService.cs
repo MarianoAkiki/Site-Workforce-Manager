@@ -80,10 +80,10 @@ public static class WeeklyPrintService
     {
         // Proportional weights — sum exactly to available width, no rounding drift
         const double idW     = 0.5;
-        const double workerW = 2.0;
-        const double hoursW  = 0.8;
-        const double siteW   = 1.5;
-        const double totalW  = idW + workerW + 7 * (hoursW + siteW); // 2.5 + 16.1 = 18.6
+        const double workerW = 1.5;
+        const double hoursW  = 1.0;
+        const double siteW   = 1.9;
+        const double totalW  = idW + workerW + 7 * (hoursW + siteW); // 2.0 + 20.3 = 22.3
         double unit      = available / totalW;
         double idColW     = idW     * unit;
         double workerColW = workerW * unit;

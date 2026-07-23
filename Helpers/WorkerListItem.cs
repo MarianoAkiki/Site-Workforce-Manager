@@ -9,7 +9,7 @@ public class WorkerListItem
     public int? TradeId { get; set; }
     public string TradeName { get; set; } = string.Empty;
     public decimal CurrentDailyRate { get; set; }
-    public int AssignedSiteCount { get; set; }
+    public string AssignedSiteNames { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public DateTime? DeactivatedAt { get; set; }

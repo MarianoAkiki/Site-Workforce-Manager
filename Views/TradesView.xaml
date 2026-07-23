@@ -9,49 +9,12 @@
         <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" Invert="True" />
         <helpers:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
-        <helpers:BindingProxy x:Key="Proxy" Data="{Binding}" />
-
         <Style x:Key="TableActionButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
             <Setter Property="Padding" Value="10,6" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="MinWidth" Value="64" />
         </Style>
 
-        <Style x:Key="StatusToggleStyle" TargetType="ToggleButton">
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Foreground" Value="#64748B" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="ToggleBorder"
-                                Width="96"
-                                Padding="10,5"
-                                Background="#F1F5F9"
-                                BorderBrush="#CBD5E1"
-                                BorderThickness="1"
-                                CornerRadius="12">
-                            <TextBlock x:Name="ToggleText"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{TemplateBinding Foreground}"
-                                       Text="Inactive" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="Background" Value="#ECFDF5" />
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#A7F3D0" />
-                                <Setter Property="Foreground" Value="#047857" />
-                                <Setter TargetName="ToggleText" Property="Text" Value="Active" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="#60A5FA" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -153,19 +116,6 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Binding="{Binding Name}" Header="Category Name" Width="180" />
                                 <DataGridTextColumn Binding="{Binding Description}" Header="Description" Width="*" />
-                                <DataGridTemplateColumn Header="Status" Width="130">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ToggleButton HorizontalAlignment="Left"
-                                                          Command="{Binding DataContext.ToggleTradeStatusCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                          CommandParameter="{Binding}"
-                                                          IsChecked="{Binding IsActive, Mode=OneWay}"
-                                                          Style="{StaticResource StatusToggleStyle}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120"
-                                                    Visibility="{Binding Data.DeactivatedColumnVisibility, Source={StaticResource Proxy}}" />
                                 <DataGridTextColumn Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd}}" Header="Created" Width="110" />
                                 <DataGridTextColumn Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd}}" Header="Updated" Width="110" />
                                 <DataGridTemplateColumn Header="Actions" Width="90">

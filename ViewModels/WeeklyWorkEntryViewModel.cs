@@ -227,7 +227,25 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                             Name = workerSite.ConstructionSite!.Name
                         }).ToList());
 
-                return (workers, existingLogs, assignedSitesByWorker);
+                var assignedSiteIdsByWorker = assignedSitesByWorker
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Select(s => s.Id).ToHashSet());
+
+                var missingLogSiteIds = existingLogs
+                    .Where(log => !assignedSiteIdsByWorker.TryGetValue(log.WorkerId, out var ids) ||
+                                  !ids.Contains(log.ConstructionSiteId))
+                    .Select(log => log.ConstructionSiteId)
+                    .Distinct()
+                    .ToList();
+
+                var fallbackSitesById = missingLogSiteIds.Count > 0
+                    ? context.ConstructionSites
+                        .AsNoTracking()
+                        .Where(cs => missingLogSiteIds.Contains(cs.Id))
+                        .Select(cs => new LookupOption { Id = cs.Id, Name = cs.Name })
+                        .ToDictionary(cs => cs.Id!.Value)
+                    : new Dictionary<int, LookupOption>();
+
+                return (workers, existingLogs, assignedSitesByWorker, fallbackSitesById);
             }, cts.Token);
 
             if (cts.IsCancellationRequested) return;
@@ -261,6 +279,13 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
                     foreach (var site in assignedSites)
                     {
                         cell.ConstructionSiteOptions.Add(new LookupOption { Id = site.Id, Name = site.Name });
+                    }
+
+                    if (existingLog?.ConstructionSiteId is int logSiteId &&
+                        !cell.ConstructionSiteOptions.Any(s => s.Id == logSiteId) &&
+                        data.fallbackSitesById.TryGetValue(logSiteId, out var fallbackSite))
+                    {
+                        cell.ConstructionSiteOptions.Add(fallbackSite);
                     }
 
                     cell.SelectedConstructionSiteOption = cell.ConstructionSiteOptions

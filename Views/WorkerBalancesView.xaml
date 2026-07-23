@@ -77,10 +77,16 @@
                         </Grid>
                     </StackPanel>
 
-                    <CheckBox Grid.Column="3" VerticalAlignment="Bottom" Margin="0,0,0,6"
-                              IsChecked="{Binding ShowOnlyWithBalance}"
-                              Foreground="{StaticResource TextPrimaryBrush}"
-                              Content="Outstanding balance only" />
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,0,0,2">
+                        <Button Margin="0,0,16,0"
+                                Command="{Binding ToggleShowActiveWorkersCommand}"
+                                Content="{Binding StatusToggleButtonText}"
+                                Style="{StaticResource BaseButtonStyle}" />
+                        <CheckBox VerticalAlignment="Center"
+                                  IsChecked="{Binding ShowOnlyWithBalance}"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  Content="Outstanding balance only" />
+                    </StackPanel>
                 </Grid>
             </Border>
 

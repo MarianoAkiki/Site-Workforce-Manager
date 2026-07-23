@@ -27,6 +27,9 @@ public partial class WorkerBalancesViewModel : ObservableObject
     private bool showOnlyWithBalance;
 
     [ObservableProperty]
+    private bool showActiveWorkers = true;
+
+    [ObservableProperty]
     private decimal grandTotalEarned;
 
     [ObservableProperty]
@@ -36,6 +39,8 @@ public partial class WorkerBalancesViewModel : ObservableObject
     private decimal grandTotalBalance;
 
     public ObservableCollection<WorkerBalanceRow> FilteredRows { get; } = new();
+
+    public string StatusToggleButtonText => ShowActiveWorkers ? "Show Inactive" : "Show Active";
 
     public string GrandTotalEarnedDisplay => GrandTotalEarned.ToString("C");
     public string GrandTotalPaidDisplay => GrandTotalPaid.ToString("C");
@@ -47,6 +52,11 @@ public partial class WorkerBalancesViewModel : ObservableObject
     partial void OnWorkerNameFilterTextChanged(string value) => RefreshFilteredRows();
     partial void OnTradeFilterTextChanged(string value) => RefreshFilteredRows();
     partial void OnShowOnlyWithBalanceChanged(bool value) => RefreshFilteredRows();
+    partial void OnShowActiveWorkersChanged(bool value)
+    {
+        OnPropertyChanged(nameof(StatusToggleButtonText));
+        LoadRows();
+    }
 
     public void LoadPage()
     {
@@ -54,8 +64,12 @@ public partial class WorkerBalancesViewModel : ObservableObject
         WorkerNameFilterText = string.Empty;
         TradeFilterText = string.Empty;
         ShowOnlyWithBalance = false;
+        ShowActiveWorkers = true;
         LoadRows();
     }
+
+    [RelayCommand]
+    private void ToggleShowActiveWorkers() => ShowActiveWorkers = !ShowActiveWorkers;
 
     [RelayCommand]
     private void ClearWorkerIdFilter() => WorkerIdFilterText = string.Empty;
@@ -76,7 +90,7 @@ public partial class WorkerBalancesViewModel : ObservableObject
         var workers = context.Workers
             .AsNoTracking()
             .Include(w => w.Trade)
-            .Where(w => w.Status == EntityStatus.Active)
+            .Where(w => w.Status == (ShowActiveWorkers ? EntityStatus.Active : EntityStatus.Inactive))
             .OrderBy(w => w.Trade!.Name)
             .ThenBy(w => w.FirstName)
             .ThenBy(w => w.LastName)

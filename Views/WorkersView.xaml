@@ -121,7 +121,7 @@
                                          Padding="12,9,42,9"
                                          VerticalContentAlignment="Center"
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="Search by worker name or trade" />
+                                         ToolTip="Search by worker name, trade, or site" />
                                 <Button Margin="0,0,8,0"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
@@ -163,7 +163,17 @@
                                 <DataGridTextColumn Binding="{Binding WorkerName}" Header="Worker Name" Width="*" />
                                 <DataGridTextColumn Binding="{Binding TradeName}" Header="Category" Width="*" />
                                 <DataGridTextColumn Binding="{Binding CurrentDailyRate, StringFormat={}{0:C}}" Header="Current Daily Rate" Width="160" />
-                                <DataGridTextColumn Binding="{Binding AssignedSiteCount}" Header="Assigned Sites" Width="130" />
+                                <DataGridTemplateColumn Header="Assigned Sites" Width="2*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Margin="6,0"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding AssignedSiteNames}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding AssignedSiteNames}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Binding="{Binding StartedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Started" Width="110" />
                                 <DataGridTextColumn Binding="{Binding DeactivatedAt, StringFormat={}{0:MMM dd, yyyy}}" Header="Deactivated" Width="120"
                                                     Visibility="{Binding Data.DeactivatedColumnVisibility, Source={StaticResource Proxy}}" />

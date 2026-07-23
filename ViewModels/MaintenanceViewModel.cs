@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using Site_Workforce_Manager.Data;
 using Site_Workforce_Manager.Services;
+using System.Threading;
 
 namespace Site_Workforce_Manager.ViewModels;
 
@@ -24,8 +25,33 @@ public partial class MaintenanceViewModel : ObservableObject
     [ObservableProperty]
     private string backupStatusMessage = string.Empty;
 
+    [ObservableProperty]
+    private string updateStatusMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool isCheckingUpdate;
+
+    [ObservableProperty]
+    private bool isDownloadingUpdate;
+
+    [ObservableProperty]
+    private int downloadProgress;
+
+    [ObservableProperty]
+    private bool isUpdateAvailable;
+
+    private ReleaseInfo? _availableRelease;
+
+    public string CurrentVersionText => UpdateService.CurrentVersionText;
+    public bool IsNotDownloadingUpdate => !IsDownloadingUpdate;
+
+    partial void OnIsDownloadingUpdateChanged(bool value) => OnPropertyChanged(nameof(IsNotDownloadingUpdate));
+
     public bool IsBackupConfigured => !string.IsNullOrWhiteSpace(CloudBackupFolder);
     public string ToggleAutoBackupLabel => IsAutoBackupPaused ? "Resume Automatic Backup" : "Pause Automatic Backup";
+
+    [ObservableProperty]
+    private string updateRepoSlug = string.Empty;
 
     public void LoadMaintenanceData()
     {
@@ -35,6 +61,7 @@ public partial class MaintenanceViewModel : ObservableObject
         CloudBackupFolder = settings.BackupFolder ?? string.Empty;
         MaxBackupsToKeep = Math.Clamp(settings.MaxBackupsToKeep, 1, 30);
         IsAutoBackupPaused = settings.IsAutoBackupPaused;
+        UpdateRepoSlug = settings.UpdateRepoSlug;
         RefreshStatus();
     }
 
@@ -98,6 +125,64 @@ public partial class MaintenanceViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task CheckForUpdate()
+    {
+        IsCheckingUpdate = true;
+        IsUpdateAvailable = false;
+        UpdateStatusMessage = "Checking for updates…";
+        _availableRelease = null;
+
+        try
+        {
+            var release = await UpdateService.CheckForUpdateAsync();
+            if (release is null)
+            {
+                UpdateStatusMessage = $"You are on the latest version ({CurrentVersionText}).";
+            }
+            else
+            {
+                _availableRelease = release;
+                IsUpdateAvailable = true;
+                UpdateStatusMessage = $"Version {release.VersionText} is available.";
+            }
+        }
+        catch
+        {
+            UpdateStatusMessage = "Could not reach update server. Check your internet connection.";
+        }
+        finally
+        {
+            IsCheckingUpdate = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DownloadUpdate()
+    {
+        if (_availableRelease is null) return;
+
+        IsDownloadingUpdate = true;
+        DownloadProgress = 0;
+        UpdateStatusMessage = "Downloading update…";
+
+        try
+        {
+            var progress = new Progress<int>(p =>
+            {
+                DownloadProgress = p;
+                UpdateStatusMessage = $"Downloading… {p}%";
+            });
+
+            await UpdateService.DownloadAndReplaceAsync(_availableRelease, progress, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusMessage = $"Download failed: {ex.Message}";
+            IsDownloadingUpdate = false;
+        }
+    }
+
+    [RelayCommand]
     private void RestoreDatabase()
     {
         var dialog = new OpenFileDialog
@@ -153,13 +238,16 @@ public partial class MaintenanceViewModel : ObservableObject
             : $"Automatic backup active → {CloudBackupFolder}";
     }
 
+    partial void OnUpdateRepoSlugChanged(string value) => SaveSettings();
+
     private void SaveSettings()
     {
         new BackupSettings
         {
             BackupFolder = string.IsNullOrWhiteSpace(CloudBackupFolder) ? null : CloudBackupFolder,
             MaxBackupsToKeep = MaxBackupsToKeep,
-            IsAutoBackupPaused = IsAutoBackupPaused
+            IsAutoBackupPaused = IsAutoBackupPaused,
+            UpdateRepoSlug = string.IsNullOrWhiteSpace(UpdateRepoSlug) ? "MarianoAkiki/swm-releases" : UpdateRepoSlug
         }.Save();
     }
 }

@@ -634,18 +634,20 @@ public partial class ReportsViewModel : ObservableObject
 
         var workers = context.Workers
             .AsNoTracking()
+            .Where(worker => worker.Status == EntityStatus.Active)
             .OrderBy(worker => worker.FirstName)
             .ThenBy(worker => worker.LastName)
             .Select(worker => new SelectableLookupOption
             {
                 Id = worker.Id,
-                Name = $"{worker.FirstName} {worker.LastName}",
+                Name = (worker.FirstName + " " + worker.LastName).Trim(),
                 IsSelected = selectedWorkerIds.Contains(worker.Id)
             })
             .ToList();
 
         var trades = context.Trades
             .AsNoTracking()
+            .Where(trade => trade.IsActive)
             .OrderBy(trade => trade.Name)
             .Select(trade => new SelectableLookupOption
             {
@@ -657,6 +659,7 @@ public partial class ReportsViewModel : ObservableObject
 
         var sites = context.ConstructionSites
             .AsNoTracking()
+            .Where(site => site.Status == EntityStatus.Active)
             .OrderBy(site => site.Name)
             .Select(site => new SelectableLookupOption
             {

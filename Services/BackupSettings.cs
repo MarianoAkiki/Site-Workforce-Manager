@@ -8,10 +8,12 @@ public class BackupSettings
     public string? BackupFolder { get; set; }
     public int MaxBackupsToKeep { get; set; } = 30;
     public bool IsAutoBackupPaused { get; set; } = false;
+    public string UpdateRepoSlug { get; set; } = "MarianoAkiki/swm-releases";
 
     private static string SettingsPath =>
         Path.Combine(
-            Path.GetDirectoryName(Environment.ProcessPath) ?? AppDomain.CurrentDomain.BaseDirectory,
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "SiteWorkforceManager",
             "backup-settings.json");
 
     public static BackupSettings Load()
