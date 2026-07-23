@@ -7,6 +7,7 @@ public class BackupSettings
 {
     public string? BackupFolder { get; set; }
     public int MaxBackupsToKeep { get; set; } = 30;
+    public bool IsAutoBackupPaused { get; set; } = false;
 
     private static string SettingsPath =>
         Path.Combine(

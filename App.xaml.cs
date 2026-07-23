@@ -29,7 +29,9 @@ public partial class App : Application
             DatabaseInitializer.Initialize();
 
             var settings = BackupSettings.Load();
-            if (!string.IsNullOrWhiteSpace(settings.BackupFolder) && Directory.Exists(settings.BackupFolder))
+            if (!settings.IsAutoBackupPaused &&
+                !string.IsNullOrWhiteSpace(settings.BackupFolder) &&
+                Directory.Exists(settings.BackupFolder))
             {
                 try { DatabaseMaintenanceService.AutoBackupToFolder(settings.BackupFolder, settings.MaxBackupsToKeep); }
                 catch { }

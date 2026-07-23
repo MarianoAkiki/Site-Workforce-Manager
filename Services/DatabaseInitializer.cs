@@ -238,8 +238,22 @@ public static class DatabaseInitializer
         if (!ColumnExists(context, "Workers", "StartedAt"))
         {
             context.Database.ExecuteSqlRaw("ALTER TABLE Workers ADD COLUMN StartedAt TEXT NULL;");
-            context.Database.ExecuteSqlRaw("UPDATE Workers SET StartedAt = '2000-01-01 00:00:00' WHERE StartedAt IS NULL;");
+            var sql = ColumnExists(context, "Workers", "CreatedAt")
+                ? "UPDATE Workers SET StartedAt = CreatedAt WHERE StartedAt IS NULL;"
+                : "UPDATE Workers SET StartedAt = '2000-01-01 00:00:00' WHERE StartedAt IS NULL;";
+            context.Database.ExecuteSqlRaw(sql);
         }
+    }
+
+    public static void BackfillAfterRestore()
+    {
+        using var context = new AppDbContext();
+        context.Database.ExecuteSqlRaw(
+            "UPDATE Workers SET DeactivatedAt = datetime('now') WHERE DeactivatedAt IS NULL AND Status = 2;");
+        context.Database.ExecuteSqlRaw(
+            "UPDATE Trades SET DeactivatedAt = datetime('now') WHERE DeactivatedAt IS NULL AND IsActive = 0;");
+        context.Database.ExecuteSqlRaw(
+            "UPDATE ConstructionSites SET DeactivatedAt = datetime('now') WHERE DeactivatedAt IS NULL AND Status = 2;");
     }
 
     private static void RebuildWorkerRateHistoriesWithoutHourlyRate(AppDbContext context)

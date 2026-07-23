@@ -31,6 +31,8 @@ public static class DatabaseMaintenanceService
 
         SqliteConnection.ClearAllPools();
         File.Copy(sourceFilePath, databasePath, overwrite: true);
+        DatabaseInitializer.Initialize();
+        DatabaseInitializer.BackfillAfterRestore();
     }
 
     public static string? AutoBackupToFolder(string backupFolder, int maxBackupsToKeep, bool force = false)

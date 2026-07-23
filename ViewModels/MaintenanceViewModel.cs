@@ -13,18 +13,19 @@ public partial class MaintenanceViewModel : ObservableObject
     private string databasePath = AppDbContext.GetDatabasePath();
 
     [ObservableProperty]
-    private string statusMessage = "Use backup before major updates to keep a copy of your data.";
-
-    [ObservableProperty]
     private string cloudBackupFolder = string.Empty;
 
     [ObservableProperty]
     private int maxBackupsToKeep = 30;
 
     [ObservableProperty]
-    private string cloudBackupStatus = string.Empty;
+    private bool isAutoBackupPaused;
+
+    [ObservableProperty]
+    private string backupStatusMessage = string.Empty;
 
     public bool IsBackupConfigured => !string.IsNullOrWhiteSpace(CloudBackupFolder);
+    public string ToggleAutoBackupLabel => IsAutoBackupPaused ? "Resume Automatic Backup" : "Pause Automatic Backup";
 
     public void LoadMaintenanceData()
     {
@@ -33,41 +34,65 @@ public partial class MaintenanceViewModel : ObservableObject
         var settings = BackupSettings.Load();
         CloudBackupFolder = settings.BackupFolder ?? string.Empty;
         MaxBackupsToKeep = Math.Clamp(settings.MaxBackupsToKeep, 1, 30);
-        RefreshBackupStatus();
-    }
-
-    private void RefreshBackupStatus()
-    {
-        OnPropertyChanged(nameof(IsBackupConfigured));
-        CloudBackupStatus = IsBackupConfigured
-            ? $"Auto-backup enabled → {CloudBackupFolder}"
-            : string.Empty;
+        IsAutoBackupPaused = settings.IsAutoBackupPaused;
+        RefreshStatus();
     }
 
     [RelayCommand]
-    private void BackupDatabase()
+    private void BrowseCloudBackupFolder()
     {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Select backup destination folder",
+            Multiselect = false
+        };
+
+        if (!string.IsNullOrWhiteSpace(CloudBackupFolder))
+            dialog.InitialDirectory = CloudBackupFolder;
+
+        if (dialog.ShowDialog() != true)
+            return;
+
+        CloudBackupFolder = dialog.FolderName;
+        SaveSettings();
+        RefreshStatus();
+    }
+
+    [RelayCommand]
+    private void ClearCloudBackupFolder()
+    {
+        CloudBackupFolder = string.Empty;
+        SaveSettings();
+        RefreshStatus();
+    }
+
+    [RelayCommand]
+    private void ToggleAutoBackup()
+    {
+        IsAutoBackupPaused = !IsAutoBackupPaused;
+        OnPropertyChanged(nameof(ToggleAutoBackupLabel));
+        SaveSettings();
+        RefreshStatus();
+    }
+
+    [RelayCommand]
+    private void BackupNow()
+    {
+        if (string.IsNullOrWhiteSpace(CloudBackupFolder))
+        {
+            MessageBox.Show("No backup folder configured. Please select a destination folder first.");
+            return;
+        }
+
         try
         {
-            var dialog = new SaveFileDialog
-            {
-                Title = "Backup Database",
-                Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
-                FileName = $"siteworkforcemanager-backup-{DateTime.Now:yyyyMMdd-HHmmss}.db",
-                AddExtension = true,
-                DefaultExt = ".db"
-            };
-
-            if (dialog.ShowDialog() != true)
-                return;
-
-            DatabaseMaintenanceService.BackupDatabase(dialog.FileName);
-            StatusMessage = $"Backup created successfully: {dialog.FileName}";
-            MessageBox.Show("Database backup created successfully.");
+            var dest = DatabaseMaintenanceService.AutoBackupToFolder(CloudBackupFolder, MaxBackupsToKeep, force: true);
+            BackupStatusMessage = $"Last backup: {System.IO.Path.GetFileName(dest)}  ({DateTime.Now:HH:mm})";
+            MessageBox.Show($"Backup saved to:\n{dest}");
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Backup failed: {ex.Message}";
+            BackupStatusMessage = $"Backup failed: {ex.Message}";
             MessageBox.Show($"Backup failed: {ex.Message}");
         }
     }
@@ -97,63 +122,11 @@ public partial class MaintenanceViewModel : ObservableObject
         try
         {
             DatabaseMaintenanceService.RestoreDatabase(dialog.FileName);
-            StatusMessage = $"Database restored from: {dialog.FileName}";
             MessageBox.Show("Database restored successfully. Please restart the application.", "Restore Complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Restore failed: {ex.Message}";
             MessageBox.Show($"Restore failed: {ex.Message}");
-        }
-    }
-
-    [RelayCommand]
-    private void BrowseCloudBackupFolder()
-    {
-        var dialog = new OpenFolderDialog
-        {
-            Title = "Select a cloud-synced folder (OneDrive, Google Drive, Dropbox, etc.)",
-            Multiselect = false
-        };
-
-        if (!string.IsNullOrWhiteSpace(CloudBackupFolder))
-            dialog.InitialDirectory = CloudBackupFolder;
-
-        if (dialog.ShowDialog() != true)
-            return;
-
-        CloudBackupFolder = dialog.FolderName;
-        SaveCloudBackupSettings();
-        RefreshBackupStatus();
-    }
-
-    [RelayCommand]
-    private void ClearCloudBackupFolder()
-    {
-        CloudBackupFolder = string.Empty;
-        SaveCloudBackupSettings();
-        RefreshBackupStatus();
-    }
-
-    [RelayCommand]
-    private void BackupNow()
-    {
-        if (string.IsNullOrWhiteSpace(CloudBackupFolder))
-        {
-            MessageBox.Show("No backup folder configured. Please select a folder first.");
-            return;
-        }
-
-        try
-        {
-            var dest = DatabaseMaintenanceService.AutoBackupToFolder(CloudBackupFolder, MaxBackupsToKeep, force: true);
-            CloudBackupStatus = $"Backup created: {System.IO.Path.GetFileName(dest)}  ({DateTime.Now:HH:mm})";
-            MessageBox.Show($"Backup saved to:\n{dest}");
-        }
-        catch (Exception ex)
-        {
-            CloudBackupStatus = $"Backup failed: {ex.Message}";
-            MessageBox.Show($"Backup failed: {ex.Message}");
         }
     }
 
@@ -161,16 +134,32 @@ public partial class MaintenanceViewModel : ObservableObject
     {
         var clamped = Math.Clamp(value, 1, 30);
         if (clamped != value) { MaxBackupsToKeep = clamped; return; }
-        SaveCloudBackupSettings();
+        SaveSettings();
     }
 
-    private void SaveCloudBackupSettings()
+    private void RefreshStatus()
     {
-        var settings = new BackupSettings
+        OnPropertyChanged(nameof(IsBackupConfigured));
+        OnPropertyChanged(nameof(ToggleAutoBackupLabel));
+
+        if (!IsBackupConfigured)
+        {
+            BackupStatusMessage = string.Empty;
+            return;
+        }
+
+        BackupStatusMessage = IsAutoBackupPaused
+            ? "Automatic backup is paused — backups will not run on launch until resumed."
+            : $"Automatic backup active → {CloudBackupFolder}";
+    }
+
+    private void SaveSettings()
+    {
+        new BackupSettings
         {
             BackupFolder = string.IsNullOrWhiteSpace(CloudBackupFolder) ? null : CloudBackupFolder,
-            MaxBackupsToKeep = MaxBackupsToKeep
-        };
-        settings.Save();
+            MaxBackupsToKeep = MaxBackupsToKeep,
+            IsAutoBackupPaused = IsAutoBackupPaused
+        }.Save();
     }
 }
