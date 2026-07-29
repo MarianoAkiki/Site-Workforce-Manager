@@ -334,9 +334,9 @@ public partial class WeeklyWorkEntryViewModel : ObservableObject
             return;
         }
 
-        if (durationHours > 16)
+        if (durationHours > 24)
         {
-            ShowAutoSaveError($"Duration cannot exceed 16 hours for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
+            ShowAutoSaveError($"Duration cannot exceed 24 hours for {cell.WorkerName} on {cell.WorkDate:yyyy-MM-dd}.");
             return;
         }
 

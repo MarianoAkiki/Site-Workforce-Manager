@@ -30,7 +30,7 @@
                              helpers:PositiveDecimalBehavior.IsEnabled="True"
                              IsReadOnly="{Binding IsReadOnly}"
                              ToolTip="Duration in hours"
-                             Text="{Binding DurationHoursText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                             Text="{Binding DurationHoursText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                     <ComboBox MinHeight="30"
                               Margin="0,7,0,0"
