@@ -198,11 +198,15 @@ public partial class WeeklyReportViewModel : ObservableObject
                 var weekLogs = workerLogs.Where(l => l.WorkDate >= weekStart.Date && l.WorkDate <= weekEnd.Date).ToList();
 
                 var dayHours = new decimal[7];
+                var dayHasLog = new bool[7];
                 foreach (var log in weekLogs)
                 {
                     var idx = (int)(log.WorkDate.Date - weekStart.Date).TotalDays;
                     if (idx >= 0 && idx < 7)
+                    {
                         dayHours[idx] = log.DurationHours;
+                        dayHasLog[idx] = true;
+                    }
                 }
 
                 var totalHours = dayHours.Sum();
@@ -240,13 +244,13 @@ public partial class WeeklyReportViewModel : ObservableObject
                     WorkerName = $"{worker.FirstName} {worker.LastName}".Trim(),
                     Trade = worker.Trade?.Name ?? string.Empty,
                     DailyRate = dailyRate,
-                    Day0 = dayHours[0],
-                    Day1 = dayHours[1],
-                    Day2 = dayHours[2],
-                    Day3 = dayHours[3],
-                    Day4 = dayHours[4],
-                    Day5 = dayHours[5],
-                    Day6 = dayHours[6],
+                    Day0 = dayHours[0], Day0HasLog = dayHasLog[0],
+                    Day1 = dayHours[1], Day1HasLog = dayHasLog[1],
+                    Day2 = dayHours[2], Day2HasLog = dayHasLog[2],
+                    Day3 = dayHours[3], Day3HasLog = dayHasLog[3],
+                    Day4 = dayHours[4], Day4HasLog = dayHasLog[4],
+                    Day5 = dayHours[5], Day5HasLog = dayHasLog[5],
+                    Day6 = dayHours[6], Day6HasLog = dayHasLog[6],
                     TotalHours = Math.Round(totalHours, 2),
                     NumberOfDays = numberOfDays,
                     BalanceBeforeWeek = balanceBeforeWeek,
@@ -315,6 +319,13 @@ public class WeeklyReportRow
     public decimal Day4 { get; set; }
     public decimal Day5 { get; set; }
     public decimal Day6 { get; set; }
+    public bool Day0HasLog { get; set; }
+    public bool Day1HasLog { get; set; }
+    public bool Day2HasLog { get; set; }
+    public bool Day3HasLog { get; set; }
+    public bool Day4HasLog { get; set; }
+    public bool Day5HasLog { get; set; }
+    public bool Day6HasLog { get; set; }
     public decimal TotalHours { get; set; }
     public int NumberOfDays { get; set; }
     public decimal BalanceBeforeWeek { get; set; }
@@ -324,13 +335,13 @@ public class WeeklyReportRow
     public decimal TotalBalanceTillWeekEnd { get; set; }
 
     public string WorkerIdDisplay => IsTotalsRow ? string.Empty : WorkerId.ToString();
-    public string Day0Display => FormatHours(Day0);
-    public string Day1Display => FormatHours(Day1);
-    public string Day2Display => FormatHours(Day2);
-    public string Day3Display => FormatHours(Day3);
-    public string Day4Display => FormatHours(Day4);
-    public string Day5Display => FormatHours(Day5);
-    public string Day6Display => FormatHours(Day6);
+    public string Day0Display => FormatHours(Day0, Day0HasLog);
+    public string Day1Display => FormatHours(Day1, Day1HasLog);
+    public string Day2Display => FormatHours(Day2, Day2HasLog);
+    public string Day3Display => FormatHours(Day3, Day3HasLog);
+    public string Day4Display => FormatHours(Day4, Day4HasLog);
+    public string Day5Display => FormatHours(Day5, Day5HasLog);
+    public string Day6Display => FormatHours(Day6, Day6HasLog);
     public string TotalHoursDisplay => TotalHours > 0 ? TotalHours.ToString("0.##") : string.Empty;
     public string DailyRateDisplay => DailyRate > 0 ? DailyRate.ToString("C") : string.Empty;
     public string BalanceBeforeWeekDisplay => FmtBalance(BalanceBeforeWeek);
@@ -339,7 +350,8 @@ public class WeeklyReportRow
     public string TotalPaidDisplay => TotalPaidUpToWeekEnd > 0 ? TotalPaidUpToWeekEnd.ToString("C") : string.Empty;
     public string TotalBalanceDisplay => FmtBalance(TotalBalanceTillWeekEnd);
 
-    private static string FormatHours(decimal h) => h > 0 ? h.ToString("0.##") : string.Empty;
+    private static string FormatHours(decimal h, bool hasLog) =>
+        !hasLog ? string.Empty : h == 0 ? "0" : h.ToString("0.##");
     private static string FmtBalance(decimal v) =>
         v == 0 ? string.Empty : v < 0 ? $"({Math.Abs(v):C})" : v.ToString("C");
 }

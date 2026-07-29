@@ -101,6 +101,13 @@ public partial class WorkersViewModel : ObservableObject
     [ObservableProperty]
     private string saveButtonText = "Save Worker";
 
+    [ObservableProperty]
+    private bool isSaving;
+
+    public bool IsNotSaving => !IsSaving;
+
+    partial void OnIsSavingChanged(bool value) => OnPropertyChanged(nameof(IsNotSaving));
+
     private int? editingWorkerId;
 
     partial void OnSelectedWorkerChanged(WorkerListItem? value)
@@ -339,7 +346,23 @@ public partial class WorkersViewModel : ObservableObject
             return;
         }
 
+        IsSaving = true;
+
         using var context = new AppDbContext();
+
+        var newFullName = (FirstName.Trim() + " " + LastName.Trim()).Trim();
+        var duplicate = context.Workers
+            .AsNoTracking()
+            .ToList()
+            .Any(w => (w.FirstName.Trim() + " " + w.LastName.Trim()).Trim()
+                .Equals(newFullName, StringComparison.OrdinalIgnoreCase));
+
+        if (duplicate)
+        {
+            IsSaving = false;
+            MessageBox.Show($"A worker named \"{newFullName}\" already exists.", "Duplicate Worker", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         var worker = new Worker
         {
@@ -361,6 +384,7 @@ public partial class WorkersViewModel : ObservableObject
         FormDescription = "Update worker details, daily rates, and construction site assignments.";
         SaveButtonText = "Save Changes";
         CanManageWorkerDetails = true;
+        IsSaving = false;
         ToastNotificationService.ShowSuccess("Worker added successfully. You can now add daily rates and assign construction sites.");
     }
 
