@@ -52,6 +52,8 @@ public partial class TradesViewModel : ObservableObject
 
     private int? editingTradeId;
 
+    public bool IsEditingExisting => editingTradeId.HasValue;
+
     partial void OnSelectedTradeChanged(Trade? value)
     {
         if (value is null)
@@ -102,6 +104,7 @@ public void LoadTrades()
     {
         IsTradeFormVisible = false;
         editingTradeId = null;
+        OnPropertyChanged(nameof(IsEditingExisting));
         SelectedTrade = null;
         TradeName = string.Empty;
         Description = string.Empty;
@@ -131,6 +134,7 @@ public void LoadTrades()
         FormTitle = "Add Category";
         FormDescription = "Create a new category and make it available for worker forms.";
         SaveButtonText = "Save Category";
+        OnPropertyChanged(nameof(IsEditingExisting));
         IsTradeFormVisible = true;
     }
 
@@ -150,6 +154,7 @@ public void LoadTrades()
         FormTitle = "Edit Category";
         FormDescription = "Update the category name or description.";
         SaveButtonText = "Save Changes";
+        OnPropertyChanged(nameof(IsEditingExisting));
         IsTradeFormVisible = true;
     }
 
@@ -158,6 +163,7 @@ public void LoadTrades()
     {
         IsTradeFormVisible = false;
         editingTradeId = null;
+        OnPropertyChanged(nameof(IsEditingExisting));
         TradeName = string.Empty;
         Description = string.Empty;
     }
@@ -250,6 +256,43 @@ public void LoadTrades()
         SelectedTrade = FilteredTrades.FirstOrDefault(item => item.Id == trade.Id);
         IsTradeFormVisible = false;
         editingTradeId = null;
+    }
+
+    [RelayCommand]
+    private void DeleteTrade()
+    {
+        if (!editingTradeId.HasValue) return;
+        var tradeId = editingTradeId.Value;
+
+        using var context = new AppDbContext();
+
+        var workerCount = context.Workers.Count(w => w.TradeId == tradeId);
+        if (workerCount > 0)
+        {
+            ConfirmationDialogService.ShowInfo(
+                "Cannot Delete Category",
+                $"This category has {workerCount} worker{(workerCount == 1 ? "" : "s")} assigned to it. " +
+                "Reassign all workers to another category before deleting.");
+            return;
+        }
+
+        var trade = context.Trades.FirstOrDefault(t => t.Id == tradeId);
+        if (trade is null) return;
+
+        var confirmed = ConfirmationDialogService.Show(
+            "Delete Category",
+            $"This will permanently delete the category \"{trade.Name}\". This cannot be undone.",
+            "Delete",
+            "Cancel",
+            isDanger: true);
+
+        if (!confirmed) return;
+
+        context.Trades.Remove(trade);
+        context.SaveChanges();
+
+        ShowListPage();
+        ToastNotificationService.ShowSuccess("Category deleted.");
     }
 
     private void ApplyTradeFilter()

@@ -50,6 +50,8 @@ public partial class ConstructionSitesViewModel : ObservableObject
 
     private int? editingSiteId;
 
+    public bool IsEditingExisting => editingSiteId.HasValue;
+
     partial void OnSelectedConstructionSiteChanged(ConstructionSite? value)
     {
         if (value is null)
@@ -108,6 +110,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
     {
         IsSiteFormVisible = false;
         editingSiteId = null;
+        OnPropertyChanged(nameof(IsEditingExisting));
         SelectedConstructionSite = null;
         SiteName = string.Empty;
         Location = string.Empty;
@@ -137,6 +140,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
         FormTitle = "Add Construction Site";
         FormDescription = "Create a construction site and make it available for worker assignments.";
         SaveButtonText = "Save Site";
+        OnPropertyChanged(nameof(IsEditingExisting));
         IsSiteFormVisible = true;
     }
 
@@ -156,6 +160,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
         FormTitle = "Edit Construction Site";
         FormDescription = "Update the construction site name or location.";
         SaveButtonText = "Save Changes";
+        OnPropertyChanged(nameof(IsEditingExisting));
         IsSiteFormVisible = true;
     }
 
@@ -164,6 +169,7 @@ public partial class ConstructionSitesViewModel : ObservableObject
     {
         IsSiteFormVisible = false;
         editingSiteId = null;
+        OnPropertyChanged(nameof(IsEditingExisting));
         SelectedConstructionSite = null;
         SiteName = string.Empty;
         Location = string.Empty;
@@ -233,6 +239,50 @@ public partial class ConstructionSitesViewModel : ObservableObject
         SelectedConstructionSite = FilteredConstructionSites.FirstOrDefault(item => item.Id == site.Id);
         IsSiteFormVisible = false;
         editingSiteId = null;
+    }
+
+    [RelayCommand]
+    private void DeleteSite()
+    {
+        if (!editingSiteId.HasValue) return;
+        var siteId = editingSiteId.Value;
+
+        using var context = new AppDbContext();
+
+        var logCount = context.WorkLogs.Count(l => l.ConstructionSiteId == siteId);
+        if (logCount > 0)
+        {
+            ConfirmationDialogService.ShowInfo(
+                "Cannot Delete Construction Site",
+                $"This site has {logCount} work log{(logCount == 1 ? "" : "s")} recorded against it. " +
+                "Sites with work history cannot be deleted.");
+            return;
+        }
+
+        var site = context.ConstructionSites.FirstOrDefault(s => s.Id == siteId);
+        if (site is null) return;
+
+        var assignmentCount = context.WorkerConstructionSites.Count(a => a.ConstructionSiteId == siteId);
+        var assignmentNote = assignmentCount > 0
+            ? $" {assignmentCount} worker assignment{(assignmentCount == 1 ? "" : "s")} will also be removed."
+            : string.Empty;
+
+        var confirmed = ConfirmationDialogService.Show(
+            "Delete Construction Site",
+            $"This will permanently delete \"{site.Name}\".{assignmentNote} This cannot be undone.",
+            "Delete",
+            "Cancel",
+            isDanger: true);
+
+        if (!confirmed) return;
+
+        context.WorkerConstructionSites.RemoveRange(
+            context.WorkerConstructionSites.Where(a => a.ConstructionSiteId == siteId));
+        context.ConstructionSites.Remove(site);
+        context.SaveChanges();
+
+        ShowListPage();
+        ToastNotificationService.ShowSuccess("Construction site deleted.");
     }
 
     [RelayCommand]

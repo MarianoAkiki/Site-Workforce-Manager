@@ -294,6 +294,11 @@
                             <Button Command="{Binding CancelWorkerFormCommand}"
                                     Content="Back to List"
                                     Style="{StaticResource BaseButtonStyle}" />
+                            <Button Margin="24,0,0,0"
+                                    Command="{Binding DeleteWorkerCommand}"
+                                    Content="Delete"
+                                    Style="{StaticResource DangerButtonStyle}"
+                                    Visibility="{Binding CanManageWorkerDetails, Converter={StaticResource BoolToVisibilityConverter}}" />
                         </StackPanel>
                     </StackPanel>
                 </Border>

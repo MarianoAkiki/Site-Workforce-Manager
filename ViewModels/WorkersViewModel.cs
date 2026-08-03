@@ -440,6 +440,63 @@ public partial class WorkersViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void DeleteWorker()
+    {
+        if (!editingWorkerId.HasValue) return;
+        var workerId = editingWorkerId.Value;
+
+        using var context = new AppDbContext();
+
+        var logCount = context.WorkLogs.Count(l => l.WorkerId == workerId);
+        if (logCount > 0)
+        {
+            ConfirmationDialogService.ShowInfo(
+                "Cannot Delete Worker",
+                $"This worker has {logCount} work log{(logCount == 1 ? "" : "s")} recorded. " +
+                "Workers with work history cannot be deleted.");
+            return;
+        }
+
+        var paymentCount = context.WorkerPayments.Count(p => p.WorkerId == workerId);
+        if (paymentCount > 0)
+        {
+            ConfirmationDialogService.ShowInfo(
+                "Cannot Delete Worker",
+                $"This worker has {paymentCount} payment record{(paymentCount == 1 ? "" : "s")}. " +
+                "Workers with payment history cannot be deleted.");
+            return;
+        }
+
+        var worker = context.Workers.FirstOrDefault(w => w.Id == workerId);
+        if (worker is null) return;
+
+        var name = (worker.FirstName + " " + worker.LastName).Trim();
+        var rateCount = context.WorkerRateHistories.Count(r => r.WorkerId == workerId);
+        var rateNote = rateCount > 0
+            ? $" Their {rateCount} rate record{(rateCount == 1 ? "" : "s")} will also be deleted."
+            : string.Empty;
+
+        var confirmed = ConfirmationDialogService.Show(
+            "Delete Worker",
+            $"This will permanently delete \"{name}\".{rateNote} This cannot be undone.",
+            "Delete",
+            "Cancel",
+            isDanger: true);
+
+        if (!confirmed) return;
+
+        context.WorkerConstructionSites.RemoveRange(
+            context.WorkerConstructionSites.Where(a => a.WorkerId == workerId));
+        context.WorkerRateHistories.RemoveRange(
+            context.WorkerRateHistories.Where(r => r.WorkerId == workerId));
+        context.Workers.Remove(worker);
+        context.SaveChanges();
+
+        ShowListPage();
+        ToastNotificationService.ShowSuccess("Worker deleted.");
+    }
+
+    [RelayCommand]
     private void ToggleWorkerStatus(WorkerListItem? selectedWorker)
     {
         if (selectedWorker is null)

@@ -248,6 +248,11 @@
                             <Button Command="{Binding CancelSiteFormCommand}"
                                     Content="Cancel"
                                     Style="{StaticResource BaseButtonStyle}" />
+                            <Button Margin="24,0,0,0"
+                                    Command="{Binding DeleteSiteCommand}"
+                                    Content="Delete"
+                                    Style="{StaticResource DangerButtonStyle}"
+                                    Visibility="{Binding IsEditingExisting, Converter={StaticResource BoolToVisibilityConverter}}" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
