@@ -433,8 +433,9 @@ public partial class PayrollViewModel : ObservableObject
 
     private static DateTime GetLatestFullWeekStart(DateTime today)
     {
-        // daysSinceWednesday = 0 when today IS Wednesday (week ends today) — no override needed.
         var daysSinceWednesday = ((int)today.DayOfWeek - (int)DayOfWeek.Wednesday + 7) % 7;
+        // 0 means today IS Wednesday — the week ends today but isn't over, so step back a full week.
+        if (daysSinceWednesday == 0) daysSinceWednesday = 7;
         var lastCompletedWednesday = today.Date.AddDays(-daysSinceWednesday);
         return lastCompletedWednesday.AddDays(-6);
     }

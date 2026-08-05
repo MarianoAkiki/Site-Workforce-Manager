@@ -295,6 +295,7 @@ public partial class WeeklyReportViewModel : ObservableObject
     private static DateTime GetLatestFullWeekStart(DateTime today)
     {
         var daysSinceWednesday = ((int)today.DayOfWeek - (int)DayOfWeek.Wednesday + 7) % 7;
+        if (daysSinceWednesday == 0) daysSinceWednesday = 7;
         return today.Date.AddDays(-daysSinceWednesday).AddDays(-6);
     }
 
