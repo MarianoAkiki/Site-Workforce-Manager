@@ -180,15 +180,6 @@ public partial class PayrollViewModel : ObservableObject
             return;
         }
 
-        if (paymentAmount == 0)
-        {
-            RemoveExistingWeeklyPayment(context, row);
-            context.SaveChanges();
-            StatusMessage = $"Payment cleared for {row.WorkerName}.";
-            RecalculateGrandTotals();
-            return;
-        }
-
         var existingPayment = FindExistingWeeklyPayment(context, row.WorkerId);
         var now = DateTime.Now;
 
@@ -300,7 +291,7 @@ public partial class PayrollViewModel : ObservableObject
                 var weeklyPayrollPayments = context.WorkerPayments
                     .AsNoTracking()
                     .Where(payment => workerIds.Contains(payment.WorkerId) && payment.WeekStartDate == weekStart.Date)
-                    .ToDictionary(payment => payment.WorkerId, payment => payment.Amount);
+                    .ToDictionary(payment => payment.WorkerId, payment => (decimal?)payment.Amount);
 
                 return (workers, earnedByWorker, paidUpToWeekEndByWorker, weeklyPayrollPayments);
             }, cts.Token);
@@ -327,7 +318,7 @@ public partial class PayrollViewModel : ObservableObject
                         WorkerName = $"{worker.FirstName} {worker.LastName}".Trim(),
                         TradeName = tradeGroup.Key,
                         Balance = balance,
-                        PaymentAmountText = editableWeeklyPayment > 0 ? editableWeeklyPayment.ToString("0.##") : string.Empty,
+                        PaymentAmountText = editableWeeklyPayment.HasValue ? editableWeeklyPayment.Value.ToString("0.##") : string.Empty,
                         IsPaymentEditable = canEdit,
                         AutoSaveRequested = canEdit ? AutoSaveRow : null,
                         LiveBalanceRequested = ComputeLiveBalance

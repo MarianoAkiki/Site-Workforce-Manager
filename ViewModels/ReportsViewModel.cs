@@ -220,6 +220,7 @@ public partial class ReportsViewModel : ObservableObject
             paymentQuery = paymentQuery.Where(p => p.Worker!.TradeId.HasValue && selectedTradeIds.Contains(p.Worker.TradeId.Value));
 
         var payments = paymentQuery
+            .Where(p => p.Amount != 0)
             .OrderByDescending(p => p.PaymentDate)
             .ThenBy(p => p.Worker!.FirstName)
             .ToList();

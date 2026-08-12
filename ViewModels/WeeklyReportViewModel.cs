@@ -221,16 +221,16 @@ public partial class WeeklyReportViewModel : ObservableObject
                     .Where(p => p.WeekStartDate < weekStart.Date)
                     .Sum(p => (double)p.Amount);
 
-                var totalPaidUpToWeekEnd = (decimal)workerPayments
-                    .Where(p => p.WeekStartDate == weekStart.Date)
-                    .Sum(p => (double)p.Amount);
+                var weekPayments = workerPayments.Where(p => p.WeekStartDate == weekStart.Date).ToList();
+                var totalPaidUpToWeekEnd = (decimal)weekPayments.Sum(p => (double)p.Amount);
+                var hasWeekPayment = weekPayments.Count > 0;
 
                 var balanceBeforeWeek = Math.Round(earnedBeforeWeek - paidBeforeWeek, 2);
                 var totalEarnedUpToWeekEnd = balanceBeforeWeek + weekEarnings;
                 var totalBalanceTillWeekEnd = Math.Round(totalEarnedUpToWeekEnd - totalPaidUpToWeekEnd, 2);
 
                 var isDeactivatedBeforeWeek = worker.DeactivatedAt.HasValue && worker.DeactivatedAt < weekStart;
-                var hasWeekActivity = weekEarnings > 0 || totalPaidUpToWeekEnd > 0;
+                var hasWeekActivity = weekEarnings > 0 || hasWeekPayment;
                 if (isDeactivatedBeforeWeek && totalBalanceTillWeekEnd == 0 && !hasWeekActivity) continue;
 
                 var dailyRate = workerRates
@@ -257,6 +257,7 @@ public partial class WeeklyReportViewModel : ObservableObject
                     WeekEarnings = Math.Round(weekEarnings, 2),
                     TotalEarnedUpToWeekEnd = Math.Round(totalEarnedUpToWeekEnd, 2),
                     TotalPaidUpToWeekEnd = Math.Round(totalPaidUpToWeekEnd, 2),
+                    HasWeekPayment = hasWeekPayment,
                     TotalBalanceTillWeekEnd = totalBalanceTillWeekEnd,
                 });
             }
@@ -333,6 +334,7 @@ public class WeeklyReportRow
     public decimal WeekEarnings { get; set; }
     public decimal TotalEarnedUpToWeekEnd { get; set; }
     public decimal TotalPaidUpToWeekEnd { get; set; }
+    public bool HasWeekPayment { get; set; }
     public decimal TotalBalanceTillWeekEnd { get; set; }
 
     public string WorkerIdDisplay => IsTotalsRow ? string.Empty : WorkerId.ToString();
@@ -348,7 +350,7 @@ public class WeeklyReportRow
     public string BalanceBeforeWeekDisplay => FmtBalance(BalanceBeforeWeek);
     public string WeekEarningsDisplay => WeekEarnings > 0 ? WeekEarnings.ToString("C") : string.Empty;
     public string TotalEarnedDisplay => TotalEarnedUpToWeekEnd > 0 ? TotalEarnedUpToWeekEnd.ToString("C") : string.Empty;
-    public string TotalPaidDisplay => TotalPaidUpToWeekEnd > 0 ? TotalPaidUpToWeekEnd.ToString("C") : string.Empty;
+    public string TotalPaidDisplay => (TotalPaidUpToWeekEnd > 0 || HasWeekPayment) ? TotalPaidUpToWeekEnd.ToString("C") : string.Empty;
     public string TotalBalanceDisplay => FmtBalance(TotalBalanceTillWeekEnd);
 
     private static string FormatHours(decimal h, bool hasLog) =>
