@@ -58,7 +58,7 @@ public partial class PayrollViewModel : ObservableObject
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
     public bool CanGoNextWeek => WeekStart < latestFullWeekStart;
-    public bool CanEditSelectedWeek => WeekStart == latestFullWeekStart;
+    public bool CanEditSelectedWeek => WeekStart >= latestFullWeekStart.AddDays(-14);
     public DateTime MaxPickerDate => latestFullWeekStart;
     public string BalanceHeaderText => "Balance";
     public string PaymentHeaderText => CanEditSelectedWeek ? "Payment Amount" : "Paid This Week";
