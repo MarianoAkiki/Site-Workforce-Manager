@@ -283,7 +283,7 @@ public partial class PayrollViewModel : ObservableObject
 
                 var paidUpToWeekEndByWorker = context.WorkerPayments
                     .AsNoTracking()
-                    .Where(payment => workerIds.Contains(payment.WorkerId) && payment.PaymentDate <= weekEnd.Date)
+                    .Where(payment => workerIds.Contains(payment.WorkerId) && payment.WeekStartDate < weekStart.Date)
                     .GroupBy(payment => payment.WorkerId)
                     .Select(g => new { WorkerId = g.Key, Total = g.Sum(p => (double)p.Amount) })
                     .ToDictionary(x => x.WorkerId, x => (decimal)x.Total);
