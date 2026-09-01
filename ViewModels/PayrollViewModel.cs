@@ -14,13 +14,15 @@ namespace Site_Workforce_Manager.ViewModels;
 public partial class PayrollViewModel : ObservableObject
 {
     private readonly DateTime latestFullWeekStart;
+    private readonly DateTime currentWeekStart;
     private readonly List<PayrollTradeGroup> allTradeGroups = new();
     private CancellationTokenSource? loadCts;
 
     public PayrollViewModel()
     {
         latestFullWeekStart = GetLatestFullWeekStart(DateTime.Today);
-        WeekStart = latestFullWeekStart;
+        currentWeekStart = latestFullWeekStart.AddDays(7);
+        WeekStart = currentWeekStart;
         PickerDate = DateTime.Today;
         LoadPayrollPage();
     }
@@ -57,9 +59,9 @@ public partial class PayrollViewModel : ObservableObject
 
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public string WeekRangeText => $"{WeekStart:dddd, MMM dd, yyyy} - {WeekEnd:dddd, MMM dd, yyyy}";
-    public bool CanGoNextWeek => WeekStart < latestFullWeekStart;
+    public bool CanGoNextWeek => WeekStart < currentWeekStart;
     public bool CanEditSelectedWeek => WeekStart >= latestFullWeekStart.AddDays(-14);
-    public DateTime MaxPickerDate => latestFullWeekStart;
+    public DateTime MaxPickerDate => currentWeekStart;
     public string BalanceHeaderText => "Balance";
     public string PaymentHeaderText => CanEditSelectedWeek ? "Payment Amount" : "Paid This Week";
     public string GrandTotalBalanceDisplay => PayrollFmt.Fmt(GrandTotalBalance);
@@ -69,7 +71,7 @@ public partial class PayrollViewModel : ObservableObject
     {
         if (value is null) return;
         var thursday = SnapToWeekStart(value.Value);
-        if (thursday > latestFullWeekStart) thursday = latestFullWeekStart;
+        if (thursday > currentWeekStart) thursday = currentWeekStart;
         if (thursday != WeekStart)
             WeekStart = thursday;
     }
@@ -91,7 +93,7 @@ public partial class PayrollViewModel : ObservableObject
 
     public void LoadPayrollPage()
     {
-        WeekStart = latestFullWeekStart;
+        WeekStart = currentWeekStart;
         PickerDate = DateTime.Today;
         WorkerIdFilterText = string.Empty;
         WorkerNameFilterText = string.Empty;
@@ -102,7 +104,7 @@ public partial class PayrollViewModel : ObservableObject
     [RelayCommand]
     private void GoToToday()
     {
-        WeekStart = latestFullWeekStart;
+        WeekStart = currentWeekStart;
         PickerDate = DateTime.Today;
     }
 

@@ -12,11 +12,13 @@ public partial class WeeklyReportViewModel : ObservableObject
 {
     private CancellationTokenSource? loadCts;
     private readonly DateTime latestFullWeekStart;
+    private readonly DateTime currentWeekStart;
 
     public WeeklyReportViewModel()
     {
         latestFullWeekStart = GetLatestFullWeekStart(DateTime.Today);
-        WeekStart = latestFullWeekStart;
+        currentWeekStart = latestFullWeekStart.AddDays(7);
+        WeekStart = currentWeekStart;
         PickerDate = DateTime.Today;
     }
 
@@ -31,8 +33,8 @@ public partial class WeeklyReportViewModel : ObservableObject
 
     public DateTime WeekEnd => WeekStart.AddDays(6);
     public string WeekRangeText => $"{WeekStart:ddd, MMM dd yyyy} – {WeekEnd:ddd, MMM dd yyyy}";
-    public bool CanGoNextWeek => WeekStart < latestFullWeekStart;
-    public DateTime MaxPickerDate => latestFullWeekStart;
+    public bool CanGoNextWeek => WeekStart < currentWeekStart;
+    public DateTime MaxPickerDate => currentWeekStart;
 
     public string DayName0 => WeekStart.ToString("ddd");
     public string DayName1 => WeekStart.AddDays(1).ToString("ddd");
@@ -75,7 +77,7 @@ public partial class WeeklyReportViewModel : ObservableObject
     {
         if (value is null) return;
         var thursday = SnapToWeekStart(value.Value);
-        if (thursday > latestFullWeekStart) thursday = latestFullWeekStart;
+        if (thursday > currentWeekStart) thursday = currentWeekStart;
         if (thursday != WeekStart) WeekStart = thursday;
     }
 
@@ -91,7 +93,7 @@ public partial class WeeklyReportViewModel : ObservableObject
     [RelayCommand]
     private void GoToToday()
     {
-        WeekStart = latestFullWeekStart;
+        WeekStart = currentWeekStart;
         PickerDate = DateTime.Today;
     }
 
@@ -112,7 +114,7 @@ public partial class WeeklyReportViewModel : ObservableObject
 
     public void LoadPage()
     {
-        WeekStart = latestFullWeekStart;
+        WeekStart = currentWeekStart;
         PickerDate = DateTime.Today;
         LoadTradeOptions();
     }
